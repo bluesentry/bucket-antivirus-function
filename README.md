@@ -47,6 +47,7 @@ be kept as private.
 In this bucket, create a directory named clamav_defs (this is the default name of the directory, can be changed at the environment variables)
  copy main.cvd | daily.cvd | bytecode.cvd from [https://www.clamav.net/downloads](https://www.clamav.net/downloads)
  this is needed for the first run of the script.
+
 To allow public access, useful for other accounts,
 add the following policy to the bucket.
 
