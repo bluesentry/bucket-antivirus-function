@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/upsidetravel/bucket-antivirus-function.svg?style=svg)](https://circleci.com/gh/upsidetravel/bucket-antivirus-function)
 
-Scan new objects added to any s3 bucket using AWS Lambda.
+Scan new objects added to any s3 bucket using AWS Lambda. [more details in this post](https://engineering.upside.com/s3-antivirus-scanning-with-lambda-and-clamav-7d33f9c5092e)
 
 ## Features
 
@@ -42,7 +42,12 @@ the [amazonlinux](https://hub.docker.com/_/amazonlinux/) [Docker](https://www.do
 
 Create an s3 bucket to store current antivirus definitions.  This
 provides the fastest download speeds for the scanner.  This bucket can
-be kept as private.  To allow public access, useful for other accounts,
+be kept as private.  
+
+In this bucket, create a directory named clamav_defs (this is the default name of the directory, can be changed at the environment variables)
+ copy main.cvd | daily.cvd | bytecode.cvd from [https://www.clamav.net/downloads](https://www.clamav.net/downloads)
+ this is needed for the first run of the script.
+To allow public access, useful for other accounts,
 add the following policy to the bucket.
 
 ```json
@@ -104,6 +109,7 @@ following policy document
             "s3:GetObject",
             "s3:GetObjectTagging",
             "s3:PutObject",
+            "s3:PutObjectTagging",
             "s3:PutObjectVersionTagging"
          ],
          "Effect":"Allow",
