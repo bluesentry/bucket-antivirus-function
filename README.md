@@ -183,7 +183,6 @@ configured for `PUT` and `POST`. Metadata is immutable, which requires
 the function to copy the object over itself with updated metadata. This
 can cause a continuous loop of scanning if improperly configured.
 
-
 ## Configuration
 
 Runtime configuration is accomplished using environment variables.  See
@@ -203,6 +202,46 @@ the table below for reference.
 | CLAMSCAN_PATH | Path to ClamAV clamscan binary | ./bin/clamscan | No |
 | FRESHCLAM_PATH | Path to ClamAV freshclam binary | ./bin/freshclam | No |
 | DATADOG_API_KEY | API Key for pushing metrics to DataDog (optional) | | No |
+
+## S3 Bucket Policy Examples
+
+### Deny to download the object if not "CLEAN"
+This policy doesn't allow to download the object until:
+1) The lambda that run Clam-AV is finished 
+2) The file is not CLEAN
+```
+{
+    "Effect": "Deny",
+    "Principal": "*",
+    "Action": ["s3:GetObject"],
+    "Resource": "arn:aws:s3:::my-bucket/*",
+    "Condition": {
+        "StringNotEquals": {
+            "s3:ExistingObjectTag/av-status": "CLEAN"
+        }
+    }
+}
+```   
+
+### Deny to download and re-tag "INFECTED" object
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Action": ["s3:GetObject", "s3:PutObjectTagging"],
+      "Principal": "*",
+      "Resource": ["arn:aws:s3:::my-bucket/*"],
+      "Condition": {
+        "StringEquals": {
+          "s3:ExistingObjectTag/av-status": "INFECTED"
+        }
+      }
+    }
+  ]
+}
+```
 
 ## License
 
