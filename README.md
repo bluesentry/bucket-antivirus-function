@@ -204,6 +204,56 @@ the table below for reference.
 | FRESHCLAM_PATH | Path to ClamAV freshclam binary | ./bin/freshclam | No |
 | DATADOG_API_KEY | API Key for pushing metrics to DataDog (optional) | | No |
 
+
+## S3 Bucket Policy Examples
+
+### Deny to download the object if not "CLEAN"
+This policy doesn't allow to download the object until:
+1) The lambda that run Clam-AV is finished (so the object has a tag)
+2) The file is not CLEAN
+
+Please make sure to check cloudtrail for the arn:aws:sts, just find the event open it and copy the sts.       
+It should be in the format provided below:
+```
+ {
+    "Effect": "Deny",
+    "NotPrincipal": {
+        "AWS": [
+            "arn:aws:iam::<<aws-account-number>>:role/<<bucket-antivirus-role>>",
+            "arn:aws:sts::<<aws-account-number>>:assumed-role/<<bucket-antivirus-role>>/<<bucket-antivirus-role>>",
+            "arn:aws:iam::<<aws-account-number>>:root"
+        ]
+    },
+    "Action": "s3:GetObject",
+    "Resource": "arn:aws:s3:::<<bucket-name>>/*",
+    "Condition": {
+        "StringNotEquals": {
+            "s3:ExistingObjectTag/av-status": "CLEAN"
+        }
+    }
+}
+```   
+
+### Deny to download and re-tag "INFECTED" object
+```
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Action": ["s3:GetObject", "s3:PutObjectTagging"],
+      "Principal": "*",
+      "Resource": ["arn:aws:s3:::<<bucket-name>>/*"],
+      "Condition": {
+        "StringEquals": {
+          "s3:ExistingObjectTag/av-status": "INFECTED"
+        }
+      }
+    }
+  ]
+}
+```
+
 ## License
 
 ```
