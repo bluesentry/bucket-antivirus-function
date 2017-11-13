@@ -32,11 +32,13 @@ def update_defs_from_s3(bucket, prefix):
     for filename in AV_DEFINITION_FILENAMES:
         s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
         local_path = os.path.join(AV_DEFINITION_PATH, filename)
-        if os.path.exists(local_path) and md5_from_file(local_path) == md5_from_s3_tags(bucket, s3_path):
+        s3_md5 = md5_from_s3_tags(bucket, s3_path)
+        if os.path.exists(local_path) and md5_from_file(local_path) == s3_md5:
             print("Not downloading %s because local md5 matches s3." % filename)
             continue
-        print("Downloading definition file %s from s3://%s" % (filename, os.path.join(bucket, prefix)))
-        s3.Bucket(bucket).download_file(s3_path, local_path)
+        if s3_md5:
+            print("Downloading definition file %s from s3://%s" % (filename, os.path.join(bucket, prefix)))
+            s3.Bucket(bucket).download_file(s3_path, local_path)
 
 
 def upload_defs_to_s3(bucket, prefix, local_path):
@@ -93,7 +95,8 @@ def md5_from_s3_tags(bucket, key):
     try:
         tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["TagSet"]
     except botocore.exceptions.ClientError as e:
-        if e.response['Error']['Code'] == "404":
+        expected_errors = {'404', 'AccessDenied'}
+        if e.response['Error']['Code'] in expected_errors:
             return ""
         else:
             raise
