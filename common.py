@@ -28,7 +28,7 @@ CLAMAVLIB_PATH = os.getenv("CLAMAVLIB_PATH", "./bin")
 CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
 
-AV_DEFINITION_FILENAMES = ["main.cvd", "daily.cvd", "bytecode.cvd"]
+AV_DEFINITION_FILENAMES = ["main.cvd","daily.cvd", "daily.cud", "bytecode.cvd", "bytecode.cud"]
 
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
