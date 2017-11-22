@@ -64,7 +64,6 @@ def set_av_tags(s3_object, result):
     for tag in curr_tags:
         if tag["Key"] in [AV_STATUS_METADATA, AV_TIMESTAMP_METADATA]:
             new_tags.remove(tag)
-            break
     new_tags.append({"Key": AV_STATUS_METADATA, "Value": result})
     new_tags.append({"Key": AV_TIMESTAMP_METADATA, "Value": datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")})
     s3_client.put_object_tagging(
