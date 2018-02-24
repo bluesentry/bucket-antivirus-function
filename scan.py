@@ -72,6 +72,21 @@ def set_av_tags(s3_object, result):
         Tagging={"TagSet": new_tags}
     )
 
+def sns_start_scan(s3_object):
+    if AV_SCAN_START_SNS_ARN is None:
+        return
+    message = {
+        "bucket": s3_object.bucket_name,
+        "key": s3_object.key,
+        AV_SCAN_START_METADATA: True,
+        AV_TIMESTAMP_METADATA: datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")
+    }
+    sns_client = boto3.client("sns")
+    sns_client.publish(
+        TargetArn=AV_SCAN_START_SNS_ARN,
+        Message=json.dumps({'default': json.dumps(message)}),
+        MessageStructure="json"
+    )
 
 def sns_scan_results(s3_object, result):
     if AV_STATUS_SNS_ARN is None:
@@ -95,6 +110,7 @@ def lambda_handler(event, context):
     print("Script starting at %s\n" %
           (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
     s3_object = event_object(event)
+    sns_start_scan(s3_object)
     file_path = download_s3_object(s3_object, "/tmp")
     clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
     scan_result = clamav.scan_file(file_path)
