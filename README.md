@@ -201,6 +201,7 @@ the table below for reference.
 | CLAMSCAN_PATH | Path to ClamAV clamscan binary | ./bin/clamscan | No |
 | FRESHCLAM_PATH | Path to ClamAV freshclam binary | ./bin/freshclam | No |
 | DATADOG_API_KEY | API Key for pushing metrics to DataDog (optional) | | No |
+| AV_PROCESS_ORIGINAL_VERSION_ONLY | Controls that only original version of an S3 key is processed (if bucket versioning is enabled) | False | No |
 
 ## License
 
