@@ -47,7 +47,7 @@ def verify_s3_object_version(s3_object):
                 print("Detected multiple object versions in %s.%s, aborting processing" % (s3_object.bucket_name, s3_object.key))
                 raise Exception("Detected multiple object versions in %s.%s, aborting processing" % (s3_object.bucket_name, s3_object.key))
             else:
-                print("Detected only 1 object versions in %s.%s, proceeding with processing" % (s3_object.bucket_name, s3_object.key))
+                print("Detected only 1 object version in %s.%s, proceeding with processing" % (s3_object.bucket_name, s3_object.key))
         else:
             # misconfigured bucket, left with no or suspended versioning
             print("Unable to implement check for original version, as versioning is not enabled in bucket %s" % s3_object.bucket_name)
