@@ -190,6 +190,8 @@ the table below for reference.
 | AV_DEFINITION_S3_BUCKET | Bucket containing antivirus definition files |  | Yes |
 | AV_DEFINITION_S3_PREFIX | Prefix for antivirus definition files | clamav_defs | No |
 | AV_DEFINITION_PATH | Path containing files at runtime | /tmp/clamav_defs | No |
+| AV_SCAN_START_SNS_ARN | SNS topic ARN to publish notification about start of scan | | No |
+| AV_SCAN_START_METADATA | The tag/metada indicating the start of the scan | av-scan-start | No |
 | AV_STATUS_CLEAN | The value assigned to clean items inside of tags/metadata | CLEAN | No |
 | AV_STATUS_INFECTED | The value assigned to clean items inside of tags/metadata | INFECTED | No |
 | AV_STATUS_METADATA | The tag/metadata name representing file's AV status | av-status | No |
@@ -199,6 +201,7 @@ the table below for reference.
 | CLAMSCAN_PATH | Path to ClamAV clamscan binary | ./bin/clamscan | No |
 | FRESHCLAM_PATH | Path to ClamAV freshclam binary | ./bin/freshclam | No |
 | DATADOG_API_KEY | API Key for pushing metrics to DataDog (optional) | | No |
+| AV_PROCESS_ORIGINAL_VERSION_ONLY | Controls that only original version of an S3 key is processed (if bucket versioning is enabled) | False | No |
 
 
 ## S3 Bucket Policy Examples
