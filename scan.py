@@ -92,6 +92,16 @@ def set_av_tags(s3_object, result):
         Tagging={"TagSet": new_tags}
     )
 
+def sns_message_attributes(s3_object):
+    message_attributes = {}
+    if 'sns-msg-attr-application' in s3_object.metadata:
+        message_attributes['application'] = {"DataType": "String",
+                                             "StringValue": s3_object.metadata['sns-msg-attr-application']}
+    if 'sns-msg-attr-environment' in s3_object.metadata:
+        message_attributes['environment'] = {"DataType": "String",
+                                             "StringValue": s3_object.metadata['sns-msg-attr-environment']}
+    return message_attributes
+
 def sns_start_scan(s3_object):
     if AV_SCAN_START_SNS_ARN is None:
         return
@@ -106,7 +116,8 @@ def sns_start_scan(s3_object):
     sns_client.publish(
         TargetArn=AV_SCAN_START_SNS_ARN,
         Message=json.dumps({'default': json.dumps(message)}),
-        MessageStructure="json"
+        MessageStructure="json",
+        MessageAttributes=sns_message_attributes(s3_object)
     )
 
 def sns_scan_results(s3_object, result):
@@ -123,7 +134,8 @@ def sns_scan_results(s3_object, result):
     sns_client.publish(
         TargetArn=AV_STATUS_SNS_ARN,
         Message=json.dumps({'default': json.dumps(message)}),
-        MessageStructure="json"
+        MessageStructure="json",
+        MessageAttributes=sns_message_attributes(s3_object)
     )
 
 
