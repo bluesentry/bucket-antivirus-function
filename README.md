@@ -197,7 +197,7 @@ the table below for reference.
 | AV_STATUS_SKIPPED | The value assigned to skipped items inside of tags/metadata | SKIPPED | No |
 | AV_STATUS_METADATA | The tag/metadata name representing file's AV status | av-status | No |
 | AV_STATUS_SNS_ARN | SNS topic ARN to publish scan results (optional) | | No |
-| AV_SCAN_MAX_FILE_SIZE | Maximum file size (in bytes) to scan (optional) no limit if not set | No |
+| AV_SCAN_MAX_FILE_SIZE | Maximum file size (in bytes) to scan (optional) no limit if not set |  | No |
 | AV_TIMESTAMP_METADATA | The tag/metadata name representing file's scan time | av-timestamp | No |
 | CLAMAVLIB_PATH | Path to ClamAV library files | ./bin | No |
 | CLAMSCAN_PATH | Path to ClamAV clamscan binary | ./bin/clamscan | No |
