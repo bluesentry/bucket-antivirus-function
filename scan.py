@@ -53,6 +53,14 @@ def verify_s3_object_version(s3_object):
             print("Unable to implement check for original version, as versioning is not enabled in bucket %s" % s3_object.bucket_name)
             raise Exception("Object versioning is not enabled in bucket %s" % s3_object.bucket_name)
 
+def check_s3_object_size(s3_object):
+    if AV_SCAN_MAX_FILE_SIZE is not None:
+        s3_object_summary = s3.ObjectSummary(s3_object.bucket_name, s3_object.key)
+        if s3_object_summary.size > int(AV_SCAN_MAX_FILE_SIZE):
+            return AV_STATUS_SKIPPED
+    return None
+
+
 def download_s3_object(s3_object, local_prefix):
     local_path = "%s/%s/%s" % (local_prefix, s3_object.bucket_name, s3_object.key)
     create_dir(os.path.dirname(local_path))
@@ -134,9 +142,13 @@ def lambda_handler(event, context):
     s3_object = event_object(event)
     verify_s3_object_version(s3_object)
     sns_start_scan(s3_object)
-    file_path = download_s3_object(s3_object, "/tmp")
-    clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
-    scan_result = clamav.scan_file(file_path)
+    s3_object_size_result = check_s3_object_size(s3_object)
+    if s3_object_size_result == AV_STATUS_SKIPPED:
+        scan_result = s3_object_size_result
+    else:
+        file_path = download_s3_object(s3_object, "/tmp")
+        clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
+        scan_result = clamav.scan_file(file_path)
     print("Scan of s3://%s resulted in %s\n" % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result))
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result)
