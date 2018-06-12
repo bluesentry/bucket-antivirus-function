@@ -42,7 +42,7 @@ the [amazonlinux](https://hub.docker.com/_/amazonlinux/) [Docker](https://www.do
 
 Create an s3 bucket to store current antivirus definitions.  This
 provides the fastest download speeds for the scanner.  This bucket can
-be kept as private.  
+be kept as private.
 
 To allow public access, useful for other accounts,
 add the following policy to the bucket.
@@ -193,9 +193,11 @@ the table below for reference.
 | AV_SCAN_START_SNS_ARN | SNS topic ARN to publish notification about start of scan | | No |
 | AV_SCAN_START_METADATA | The tag/metada indicating the start of the scan | av-scan-start | No |
 | AV_STATUS_CLEAN | The value assigned to clean items inside of tags/metadata | CLEAN | No |
-| AV_STATUS_INFECTED | The value assigned to clean items inside of tags/metadata | INFECTED | No |
+| AV_STATUS_INFECTED | The value assigned to infected items inside of tags/metadata | INFECTED | No |
+| AV_STATUS_SKIPPED | The value assigned to skipped items inside of tags/metadata | SKIPPED | No |
 | AV_STATUS_METADATA | The tag/metadata name representing file's AV status | av-status | No |
 | AV_STATUS_SNS_ARN | SNS topic ARN to publish scan results (optional) | | No |
+| AV_SCAN_MAX_FILE_SIZE | Maximum file size (in bytes) to scan (optional) no limit if not set |  | No |
 | AV_TIMESTAMP_METADATA | The tag/metadata name representing file's scan time | av-timestamp | No |
 | CLAMAVLIB_PATH | Path to ClamAV library files | ./bin | No |
 | CLAMSCAN_PATH | Path to ClamAV clamscan binary | ./bin/clamscan | No |
@@ -211,7 +213,7 @@ This policy doesn't allow to download the object until:
 1) The lambda that run Clam-AV is finished (so the object has a tag)
 2) The file is not CLEAN
 
-Please make sure to check cloudtrail for the arn:aws:sts, just find the event open it and copy the sts.       
+Please make sure to check cloudtrail for the arn:aws:sts, just find the event open it and copy the sts.
 It should be in the format provided below:
 ```
  {
@@ -231,7 +233,7 @@ It should be in the format provided below:
         }
     }
 }
-```   
+```
 
 ### Deny to download and re-tag "INFECTED" object
 ```
