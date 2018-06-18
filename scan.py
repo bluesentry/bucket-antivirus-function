@@ -55,6 +55,7 @@ def verify_s3_object_version(s3_object):
 
 def download_s3_object(s3_object, local_prefix):
     local_path = "%s/%s/%s" % (local_prefix, s3_object.bucket_name, s3_object.key)
+    print("Downloading key %s from bucket %s to local path %s" % (s3_object.key, s3_object.bucket_name, local_path))
     create_dir(os.path.dirname(local_path))
     s3_object.download_file(local_path)
     return local_path
