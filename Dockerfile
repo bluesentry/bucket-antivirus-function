@@ -42,4 +42,39 @@ RUN zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py bin
 WORKDIR /usr/local/lib/python3.7/site-packages
 RUN zip -r9 /opt/app/build/lambda.zip *
 
+# AWS Lambda Python 3.8 runtime dependencies
+RUN mkdir -p /opt/app/lib
+WORKDIR /tmp
+ENV PYTHON38_LIBS "binutils bzip2-libs libxml2 libprelude gnutls libtool-ltdl libcurl nettle libnghttp2 libidn2 libssh2 openldap libunistring cyrus-sasl-lib nss"
+RUN for lib in $PYTHON38_LIBS; do \
+	yumdownloader -x \*i686 --archlist=x86_64 $lib; \
+	rpm2cpio $lib*.rpm | cpio -idmv; \
+	done
+RUN cp \
+	/tmp/usr/lib64/libbfd*.so \
+	/tmp/usr/lib64/libopcodes*.so \
+	/tmp/usr/lib64/libbz2.so.1 \
+	/tmp/usr/lib64/libxml2.so.2 \
+	/tmp/usr/lib64/libprelude.so.28 \
+	/tmp/usr/lib64/libgnutls.so.28 \
+	/tmp/usr/lib64/libltdl.so.7 \
+	/tmp/usr/lib64/libcurl.so.4 \
+	/tmp/usr/lib64/libnettle.so.4 \
+	/tmp/usr/lib64/libhogweed.so.2 \
+	/tmp/usr/lib64/libnghttp2.so.14 \
+	/tmp/usr/lib64/libidn2.so.0 \
+	/tmp/usr/lib64/libssh2.so.1 \
+	/tmp/usr/lib64/libldap-2.4.so.2 \
+	/tmp/usr/lib64/liblber-2.4.so.2 \
+	/tmp/usr/lib64/libunistring.so.0 \
+	/tmp/usr/lib64/libsasl2.so.3 \
+	/tmp/usr/lib64/libssl3.so \
+	/tmp/usr/lib64/libsmime3.so \
+	/tmp/usr/lib64/libnss3.so \
+	/opt/app/lib/
+RUN cp /tmp/usr/bin/ld.bfd /opt/app/bin/ld
+WORKDIR /opt/app
+RUN cp /opt/app/build/lambda.zip /opt/app/build/lambda-3.8.zip
+RUN zip -r9 /opt/app/build/lambda-3.8.zip lib bin/ld
+
 WORKDIR /opt/app

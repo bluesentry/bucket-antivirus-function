@@ -37,6 +37,7 @@ archive: clean  ## Create the archive for AWS lambda
 	docker build -t bucket-antivirus-function:latest .
 	mkdir -p ./build/
 	docker run -v $(current_dir)/build:/opt/mount --rm --entrypoint cp bucket-antivirus-function:latest /opt/app/build/lambda.zip /opt/mount/lambda.zip
+	docker run -v $(current_dir)/build:/opt/mount --rm --entrypoint cp bucket-antivirus-function:latest /opt/app/build/lambda-3.8.zip /opt/mount/
 
 .PHONY: pre_commit_install  ## Ensure that pre-commit hook is installed and kept up to date
 pre_commit_install: .git/hooks/pre-commit ## Ensure pre-commit is installed
