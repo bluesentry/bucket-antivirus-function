@@ -21,6 +21,7 @@ set -e
 yum update -y
 yum install -y cpio python27-pip zip
 pip install --no-cache-dir virtualenv
+pip install --upgrade pip
 virtualenv env
 . env/bin/activate
 pip install --no-cache-dir -r requirements.txt
