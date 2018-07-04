@@ -8,7 +8,7 @@ steps:
     code: make
 
 - task: PublishBuildArtifacts@1
-  displayName: Publish Artifact: lambda.zip
+  displayName: Publishp
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/build/lambda.zip'
     ArtifactName: lambda.zip
