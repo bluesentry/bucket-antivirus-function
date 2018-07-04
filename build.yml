@@ -1,6 +1,5 @@
 queue:
   name: Hosted Linux Preview
-  condition: succeeded()
 steps:
 - task: tsuyoshiushio.shell-exec.shellexec.shellexec@0
   displayName: Make
