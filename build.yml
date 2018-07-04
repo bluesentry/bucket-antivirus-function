@@ -1,0 +1,15 @@
+queue:
+  name: Hosted Linux Preview
+  condition: succeeded()
+steps:
+- task: tsuyoshiushio.shell-exec.shellexec.shellexec@0
+  displayName: Make
+  inputs:
+    code: make
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish Artifact: lambda.zip
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/build/lambda.zip'
+    ArtifactName: lambda.zip
+
