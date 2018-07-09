@@ -12,13 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import botocore
 import hashlib
 import os
 import pwd
 import re
-from common import *
-from subprocess import check_output, Popen, PIPE, STDOUT
+from subprocess import PIPE, STDOUT, Popen, check_output
+
+import botocore
+from common import (
+    AV_DEFINITION_FILENAMES,
+    AV_DEFINITION_PATH,
+    AV_DEFINITION_S3_PREFIX,
+    AV_STATUS_CLEAN,
+    AV_STATUS_INFECTED,
+    CLAMAVLIB_PATH,
+    CLAMSCAN_PATH,
+    FRESHCLAM_PATH,
+    create_dir,
+    s3,
+    s3_client,
+)
 
 
 def current_library_search_path():
@@ -37,7 +50,9 @@ def update_defs_from_s3(bucket, prefix):
             print("Not downloading %s because local md5 matches s3." % filename)
             continue
         if s3_md5:
-            print("Downloading definition file %s from s3://%s" % (filename, os.path.join(bucket, prefix)))
+            print("Downloading definition file %s from s3://%s" %
+                  (filename, os.path.join(bucket, prefix))
+                  )
             s3.Bucket(bucket).download_file(s3_path, local_path)
 
 
@@ -47,7 +62,9 @@ def upload_defs_to_s3(bucket, prefix, local_path):
         if os.path.exists(local_file_path):
             local_file_md5 = md5_from_file(local_file_path)
             if local_file_md5 != md5_from_s3_tags(bucket, os.path.join(prefix, filename)):
-                print("Uploading %s to s3://%s" % (local_file_path, os.path.join(bucket, prefix, filename)))
+                print("Uploading %s to s3://%s" %
+                      (local_file_path, os.path.join(bucket, prefix, filename))
+                      )
                 s3_object = s3.Object(bucket, os.path.join(prefix, filename))
                 s3_object.upload_file(os.path.join(local_path, filename))
                 s3_client.put_object_tagging(
@@ -63,7 +80,9 @@ def update_defs_from_freshclam(path, library_path=""):
     create_dir(path)
     fc_env = os.environ.copy()
     if library_path:
-        fc_env["LD_LIBRARY_PATH"] = "%s:%s" % (":".join(current_library_search_path()), CLAMAVLIB_PATH)
+        fc_env["LD_LIBRARY_PATH"] = "%s:%s" % (
+            ":".join(current_library_search_path()), CLAMAVLIB_PATH
+        )
     print("Starting freshclam with defs in %s." % path)
     fc_proc = Popen(
         [

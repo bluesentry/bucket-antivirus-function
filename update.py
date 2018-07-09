@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import clamav
-from common import *
-from datetime import datetime
 import os
+from datetime import datetime
+
+import clamav
+from common import (
+    AV_DEFINITION_PATH,
+    AV_DEFINITION_S3_BUCKET,
+    AV_DEFINITION_S3_PREFIX,
+    CLAMAVLIB_PATH,
+)
 
 
 def lambda_handler(event, context):
@@ -32,6 +38,10 @@ def lambda_handler(event, context):
         if os.path.exists(os.path.join(AV_DEFINITION_PATH, "main.cvd")):
             os.remove(os.path.join(AV_DEFINITION_PATH, "main.cvd"))
         clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
-    clamav.upload_defs_to_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX, AV_DEFINITION_PATH)
+    clamav.upload_defs_to_s3(
+        AV_DEFINITION_S3_BUCKET,
+        AV_DEFINITION_S3_PREFIX,
+        AV_DEFINITION_PATH
+    )
     print("Script finished at %s\n" %
           datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"))

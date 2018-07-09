@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datadog
 import os
-from common import *
+
+import datadog
+from common import AV_STATUS_CLEAN, AV_STATUS_INFECTED
 
 
 def send(env, bucket, key, status):
@@ -34,9 +35,10 @@ def send(env, bucket, key, status):
         elif status == AV_STATUS_INFECTED:
             result_metric_name = "infected"
             datadog.api.Event.create(
-                    title = "Infected S3 Object Found",
-                    text = "Virus found in s3://%s/%s." % (bucket, key),
-                    tags = metric_tags)
+                title="Infected S3 Object Found",
+                text="Virus found in s3://%s/%s." % (bucket, key),
+                tags=metric_tags
+            )
 
         scanned_metric = {
             "metric": "s3_antivirus.scanned",
