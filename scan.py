@@ -24,9 +24,12 @@ import metrics
 from common import (
     AV_DEFINITION_S3_BUCKET,
     AV_DEFINITION_S3_PREFIX,
+    AV_FILE_CONTENTS,
     AV_PROCESS_ORIGINAL_VERSION_ONLY,
     AV_SCAN_START_METADATA,
     AV_SCAN_START_SNS_ARN,
+    AV_STATUS_CLEAN,
+    AV_STATUS_INFECTED,
     AV_STATUS_METADATA,
     AV_STATUS_SNS_ARN,
     AV_TIMESTAMP_METADATA,
@@ -82,6 +85,16 @@ def verify_s3_object_version(s3_object):
             )
 
 
+def verify_s3_tags(s3_object):
+    # Check no existing virus scan has taken place
+    keys = [k['Key'] for k in s3_client.get_object_tagging(Bucket=s3_object.bucket_name,
+                                                           Key=s3_object.key)['TagSet']]
+    if AV_STATUS_METADATA in keys:
+        raise Exception(
+            "Object already scanned %s" % s3_object.key
+        )
+
+
 def download_s3_object(s3_object, local_prefix):
     local_path = "%s/%s/%s" % (local_prefix, s3_object.bucket_name, s3_object.key)
     create_dir(os.path.dirname(local_path))
@@ -123,6 +136,25 @@ def set_av_tags(s3_object, result):
         Bucket=s3_object.bucket_name,
         Key=s3_object.key,
         Tagging={"TagSet": new_tags}
+    )
+
+
+def copy_file(s3_object):
+    key = os.path.join(s3_object.bucket_name, s3_object.key)
+    newkey = "{}.infected".format(s3_object.key)
+    s3_client.copy_object(
+        Bucket=s3_object.bucket_name,
+        CopySource=key,
+        Key=newkey,
+    )
+    return s3.Object(s3_object.bucket_name, newkey)
+
+
+def replace_file_contents(s3_object, contents):
+    s3_client.put_object(
+        Bucket=s3_object.bucket_name,
+        Body=contents,
+        Key=s3_object.key
     )
 
 
@@ -168,6 +200,7 @@ def lambda_handler(event, context):
           (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
     s3_object = event_object(event)
     verify_s3_object_version(s3_object)
+    verify_s3_tags(s3_object)
     sns_start_scan(s3_object)
     file_path = download_s3_object(s3_object, "/tmp")
     clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
@@ -177,7 +210,13 @@ def lambda_handler(event, context):
           )
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result)
-    set_av_tags(s3_object, scan_result)
+    if scan_result == AV_STATUS_INFECTED:
+        s3_original = copy_file(s3_object)
+        set_av_tags(s3_original, AV_STATUS_INFECTED)
+        replace_file_contents(s3_object, AV_FILE_CONTENTS)
+        set_av_tags(s3_object, AV_STATUS_CLEAN)
+    else:
+        set_av_tags(s3_object, scan_result)
     sns_scan_results(s3_object, scan_result)
     metrics.send(
         env=ENV,

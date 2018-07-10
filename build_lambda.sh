@@ -14,16 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-lambda_output_file=/opt/app/build/lambda.zip
 
 set -e
 
 yum update -y
-yum install -y cpio python27-pip zip
+yum install -y cpio python27-pip zip git
 pip install --no-cache-dir virtualenv
 virtualenv env
 . env/bin/activate
 pip install --no-cache-dir -r requirements.txt
+
+lambda_output_file=/opt/app/build/lambda_$(git rev-parse --short HEAD).zip
 
 pushd /tmp
 yumdownloader -x \*i686 --archlist=x86_64 clamav clamav-lib clamav-update

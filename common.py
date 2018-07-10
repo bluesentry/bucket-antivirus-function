@@ -32,6 +32,7 @@ CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
 AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv("AV_PROCESS_ORIGINAL_VERSION_ONLY", "False")
 
+AV_FILE_CONTENTS = os.getenv("AV_FILE_CONTENTS", "Virus detected. Contact Wazoku support.")  # noqa
 AV_DEFINITION_FILENAMES = ["main.cvd", "daily.cvd", "daily.cud", "bytecode.cvd", "bytecode.cud"]  # noqa
 
 s3 = boto3.resource('s3')
