@@ -146,9 +146,15 @@ def lambda_handler(event, context):
     s3_object = event_object(event)
     verify_s3_object_version(s3_object)
     sns_start_scan(s3_object)
-    file_path = download_s3_object(s3_object, "/tmp")
-    clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
-    scan_result = clamav.scan_file(file_path)
+
+    if str_to_bool(IS_AV_ENABLED):
+        file_path = download_s3_object(s3_object, "/tmp")
+        clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
+        scan_result = clamav.scan_file(file_path)
+    else:
+        print("NOOP - returning AV_STATUS_CLEAN")
+        scan_result = AV_STATUS_CLEAN
+        
     print("Scan of s3://%s resulted in %s\n" % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result))
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result)
