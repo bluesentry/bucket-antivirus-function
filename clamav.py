@@ -107,6 +107,30 @@ def md5_from_s3_tags(bucket, key):
 
 
 def scan_file(path):
-    print("Starting clamscan of %s. -- noop return AV_STATUS_CLEAN" % path)
-    return AV_STATUS_CLEAN
-
+    av_env = os.environ.copy()
+    av_env["LD_LIBRARY_PATH"] = CLAMAVLIB_PATH
+    print("Starting clamscan of %s." % path)
+    av_proc = Popen(
+        [
+            CLAMSCAN_PATH,
+            "-v",
+            "-a",
+            "--stdout",
+            "-d",
+            AV_DEFINITION_PATH,
+            path
+        ],
+        stderr=STDOUT,
+        stdout=PIPE,
+        env=av_env
+    )
+    output = av_proc.communicate()[0]
+    print("clamscan output:\n%s" % output)
+    if av_proc.returncode == 0:
+        return AV_STATUS_CLEAN
+    elif av_proc.returncode == 1:
+        return AV_STATUS_INFECTED
+    else:
+        msg = "Unexpected exit code from clamscan: %s.\n" % av_proc.returncode
+        print(msg)
+        raise Exception(msg)
