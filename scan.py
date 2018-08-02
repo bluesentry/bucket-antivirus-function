@@ -147,6 +147,7 @@ def lambda_handler(event, context):
     verify_s3_object_version(s3_object)
     sns_start_scan(s3_object)
 
+    file_path = None
     if str_to_bool(IS_AV_ENABLED):
         file_path = download_s3_object(s3_object, "/tmp")
         clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
@@ -163,7 +164,8 @@ def lambda_handler(event, context):
     metrics.send(env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result)
     # Delete downloaded file to free up room on re-usable lambda function container
     try:
-        os.remove(file_path)
+        if file_path is not None:
+            os.remove(file_path)
     except OSError:
         pass
     print("Script finished at %s\n" %
