@@ -45,13 +45,16 @@ def verify_s3_object_version(s3_object):
             versions = list(bucket.object_versions.filter(Prefix=s3_object.key))
             if len(versions) > 1:
                 print("Detected multiple object versions in %s.%s, aborting processing" % (s3_object.bucket_name, s3_object.key))
-                raise Exception("Detected multiple object versions in %s.%s, aborting processing" % (s3_object.bucket_name, s3_object.key))
+                #raise Exception("Detected multiple object versions in %s.%s, aborting processing" % (s3_object.bucket_name, s3_object.key))
+                return False
             else:
                 print("Detected only 1 object version in %s.%s, proceeding with processing" % (s3_object.bucket_name, s3_object.key))
+                return True
         else:
             # misconfigured bucket, left with no or suspended versioning
             print("Unable to implement check for original version, as versioning is not enabled in bucket %s" % s3_object.bucket_name)
             raise Exception("Object versioning is not enabled in bucket %s" % s3_object.bucket_name)
+    return False
 
 def download_s3_object(s3_object, local_prefix):
     local_path = "%s/%s/%s" % (local_prefix, s3_object.bucket_name, s3_object.key)
@@ -144,7 +147,11 @@ def lambda_handler(event, context):
     print("Script starting at %s\n" %
           (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
     s3_object = event_object(event)
-    verify_s3_object_version(s3_object)
+    is_one_version = verify_s3_object_version(s3_object)
+
+    if not is_one_version:
+        return
+
     sns_start_scan(s3_object)
 
     file_path = None
