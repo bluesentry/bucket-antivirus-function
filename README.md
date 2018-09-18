@@ -161,7 +161,7 @@ created in step 1.
 10. Set *Lambda handler* to `scan.lambda_handler`
 11. Add a single environment variable named `AV_DEFINITION_S3_BUCKET`
 and set its value to the name of the bucket created to store your AV
-definitions.
+definitions. If your bucket is `s3://my-bucket`, the value should be `my-bucket`.
 12. Under *Basic settings*, set *Timeout* to **5 minutes** and *Memory* to
 **1024**
 13. Save the function.  Testing is easiest performed by uploading a
