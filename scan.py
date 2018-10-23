@@ -155,6 +155,7 @@ def is_file_content_type_allowed(file_path):
                           "image/gif",
                           "image/png",
                           "image/jpeg",
+                          "image/jpg",
                           "application/pdf"]
 
     content_type = magic.from_file(file_path, mime=True)
