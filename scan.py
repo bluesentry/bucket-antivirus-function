@@ -150,9 +150,7 @@ def is_content_type_match_file_content(s3_object, file_path):
 
 
 def is_file_content_type_allowed(file_path):
-    allowed_mime_types = ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                          "application/vnd.ms-excel",
-                          "image/gif",
+    allowed_mime_types = ["image/gif",
                           "image/png",
                           "image/jpeg",
                           "image/jpg",
