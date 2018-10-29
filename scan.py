@@ -21,6 +21,7 @@ import urllib
 from common import *
 from datetime import datetime
 from distutils.util import strtobool
+import magic
 
 ENV = os.getenv("ENV", "")
 
@@ -142,6 +143,36 @@ def sns_scan_results(s3_object, result):
     )
 
 
+def is_content_type_match_file_content(s3_object, file_path):
+    content_type = magic.from_file(file_path, mime=True)
+    print("comparing s3_content_type=[%s] vs magic_content_type=[%s]" % (s3_object.content_type, content_type))
+    return content_type is not None and content_type == s3_object.content_type
+
+
+def is_file_content_type_allowed(file_path):
+    allowed_mime_types = ["image/gif",
+                          "image/png",
+                          "image/jpeg",
+                          "image/jpg",
+                          "application/pdf"]
+
+    content_type = magic.from_file(file_path, mime=True)
+    print("Checking content type:[%s] is allowed" % content_type)
+
+    return content_type in allowed_mime_types
+
+
+def scan_file(s3_object, file_path):
+    # Uncomment this when file extension validation is added to BPO and VQ-ORCH
+    # if not is_content_type_match_file_content(s3_object, file_path):
+    #     return AV_STATUS_INFECTED
+
+    if not is_file_content_type_allowed(file_path):
+        return AV_STATUS_INFECTED
+
+    return clamav.scan_file(file_path)
+
+
 def lambda_handler(event, context):
     start_time = datetime.utcnow()
     print("Script starting at %s\n" %
@@ -151,18 +182,17 @@ def lambda_handler(event, context):
 
     if not is_one_version:
         return
-
     sns_start_scan(s3_object)
 
     file_path = None
     if str_to_bool(IS_AV_ENABLED):
         file_path = download_s3_object(s3_object, "/tmp")
         clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
-        scan_result = clamav.scan_file(file_path)
+        scan_result = scan_file(s3_object, file_path)
     else:
         print("NOOP - returning AV_STATUS_CLEAN")
         scan_result = AV_STATUS_CLEAN
-        
+
     print("Scan of s3://%s resulted in %s\n" % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result))
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result)
