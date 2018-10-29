@@ -149,25 +149,24 @@ def is_content_type_match_file_content(s3_object, file_path):
     return content_type is not None and content_type == s3_object.content_type
 
 
-def is_file_content_type_allowed(file_path):
-    allowed_mime_types = ["image/gif",
-                          "image/png",
-                          "image/jpeg",
-                          "image/jpg",
-                          "application/pdf"]
-
+def is_content_type_in_static_valid_mime_list(file_path):
     content_type = magic.from_file(file_path, mime=True)
-    print("Checking content type:[%s] is allowed" % content_type)
+    print("Verifying content_type=[%s] against static list of [%s]" % (content_type, MIME_VALIDATION_STATIC_VALID_LIST))
+    return content_type is not None and content_type in MIME_VALIDATION_STATIC_VALID_LIST.split(",")
 
-    return content_type in allowed_mime_types
+
+def is_mime_valid(s3_object, file_path):
+    if MIME_VALIDATION == MIME_VALIDATION_S3_CONTENT_TYPE:
+        return is_content_type_match_file_content(s3_object, file_path)
+    if MIME_VALIDATION == MIME_VALIDATION_STATIC:
+        return is_content_type_in_static_valid_mime_list(file_path)
+
+    print("MIME Validation is not enabled returning True")
+    return True
 
 
 def scan_file(s3_object, file_path):
-    # Uncomment this when file extension validation is added to BPO and VQ-ORCH
-    # if not is_content_type_match_file_content(s3_object, file_path):
-    #     return AV_STATUS_INFECTED
-
-    if not is_file_content_type_allowed(file_path):
+    if not is_mime_valid(s3_object, file_path):
         return AV_STATUS_INFECTED
 
     return clamav.scan_file(file_path)
@@ -207,6 +206,7 @@ def lambda_handler(event, context):
         pass
     print("Script finished at %s\n" %
           datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"))
+
 
 def str_to_bool(s):
     return bool(strtobool(str(s)))
