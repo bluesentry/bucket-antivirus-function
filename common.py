@@ -16,6 +16,10 @@ import boto3
 import errno
 import os
 
+MIME_VALIDATION_NONE = "no-validation"
+MIME_VALIDATION_STATIC = "static"
+MIME_VALIDATION_S3_CONTENT_TYPE = "s3-content-type"
+
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
 AV_DEFINITION_PATH = os.getenv("AV_DEFINITION_PATH", "/tmp/clamav_defs")
@@ -31,6 +35,8 @@ CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
 AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv("AV_PROCESS_ORIGINAL_VERSION_ONLY", "False")
 IS_AV_ENABLED = os.getenv("IS_AV_ENABLED", "True")
+MIME_VALIDATION = os.getenv("MIME_VALIDATION", MIME_VALIDATION_STATIC)
+MIME_VALIDATION_STATIC_VALID_LIST = os.getenv("VALID_MIMES", "image/gif,image/png,image/jpeg,image/jpg,application/pdf")
 
 AV_DEFINITION_FILENAMES = ["main.cvd","daily.cvd", "daily.cud", "bytecode.cvd", "bytecode.cud"]
 
