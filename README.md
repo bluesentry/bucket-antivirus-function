@@ -184,14 +184,19 @@ First ensure that `make` completed successfully and the file `build/lambda.zip` 
 If you want to apply this to an existing S3 bucket, run:
 
         export TF_VAR_target_bucket=<BUCKET TO SCAN>
+        terraform init
         terraform import aws_s3_bucket.av_target_bucket $TF_VAR_target_bucket
 
 Then apply the configuration:
 
+        terraform init
         terraform plan
         terraform apply
 
 You will be prompted for the name of the bucket that holds the definition files.
+You may want to run a warum-up for the definitions:
+
+     aws lambda invoke --function-name update_av_definitions /dev/stdout
 
 To add this configuration to an existing terraform project, just copy the `scan_uploaded_files.tf` and `update_av_definitions.tf` and add the variables `target_bucket` and `av_definitions_bucket`.
 
