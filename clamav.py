@@ -27,9 +27,11 @@ def current_library_search_path():
     return rd_ld.findall(ld_verbose)
 
 
-def update_defs_from_s3(bucket, prefix):
+def update_defs_from_s3(bucket, prefix, exclude_daily=False):
     create_dir(AV_DEFINITION_PATH)
     for filename in AV_DEFINITION_FILENAMES:
+        if exclude_daily and filename == "daily.cvd":
+            continue
         s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
         local_path = os.path.join(AV_DEFINITION_PATH, filename)
         s3_md5 = md5_from_s3_tags(bucket, s3_path)
