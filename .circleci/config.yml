@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: ~/src
     docker:
-      - image: docker:17.05.0-ce
+      - image: circleci/node:7.10
     steps:
       - add_ssh_keys:
           fingerprints:
