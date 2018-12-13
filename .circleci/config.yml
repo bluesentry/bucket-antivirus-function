@@ -55,7 +55,7 @@ jobs:
           git tag "release/$VERSION"
           git push origin master --tags
           pwd
-          find .. -name "*.zip" --print
+          find . -name build -exec ls -la {} \;
 #          aws --region eu-west-1 s3 sync ~/build s3://s3-repository-s3repositorybucket-138dzyat89h8m
       - store_artifacts:
           path: ~/build
