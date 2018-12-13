@@ -1,8 +1,8 @@
-certifi==2017.7.27.1
+certifi==2018.11.29
 chardet==3.0.4
-datadog==0.16.0
-decorator==4.1.2
-idna==2.5
-requests==2.18.3
-simplejson==3.11.1
-urllib3==1.22
+datadog==0.26.0
+decorator==4.3
+idna==2.8
+requests==2.21
+simplejson==3.16
+urllib3==1.24.1
