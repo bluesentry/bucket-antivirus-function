@@ -37,8 +37,7 @@ jobs:
           exclusive: true   # default - true
       - run:
           name: Dependencies
-          command: apk add --no-cache make git curl openssh
-      - run: sudo apt-get -y -qq install awscli
+          command: sudo apt-get -y -qq install make git curl openssh awscli
       - run: aws configure set default.s3.signature_version s3v4
       - checkout
       - run:
