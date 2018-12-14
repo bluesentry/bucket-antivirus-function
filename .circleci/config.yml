@@ -38,26 +38,30 @@ jobs:
       - run:
           name: Dependencies
           command: sudo apt-get -y -qq install make git curl openssh-client awscli
-      - run: aws configure set default.s3.signature_version s3v4
+      - run:
+          name: Configure AWS
+          command: aws configure set default.s3.signature_version s3v4
       - checkout
       - run:
           name: Build
           command: make archive
-      - run: |
-          BASE_VERSION=0.1
-          set +e
-          LATEST_INCREMENT=$(git tag -l release/${BASE_VERSION}.*|sed "s/release\/${BASE_VERSION}.//"|grep -o "[0-9]*"|sort -rn|head -1)
-          set -e
-          LATEST_INCREMENT=${LATEST_INCREMENT:--1}
-          NEW_INCREMENT=$((LATEST_INCREMENT + 1))
-          VERSION="${BASE_VERSION}.${NEW_INCREMENT}"
-          echo "Deploying version ${VERSION}"
-          git tag "release/${VERSION}"
-          git push origin master --tags
-          mkdir build
-          mv /opt/app/build/lambda.zip build/lambda-${VERSION}.zip
-          ls -la build
-          aws --region eu-west-1 s3 sync build s3://s3-repository-s3repositorybucket-138dzyat89h8m
+      - run:
+          name: Deploy
+          command: |
+            BASE_VERSION=0.1
+            set +e
+            LATEST_INCREMENT=$(git tag -l release/${BASE_VERSION}.*|sed "s/release\/${BASE_VERSION}.//"|grep -o "[0-9]*"|sort -rn|head -1)
+            set -e
+            LATEST_INCREMENT=${LATEST_INCREMENT:--1}
+            NEW_INCREMENT=$((LATEST_INCREMENT + 1))
+            VERSION="${BASE_VERSION}.${NEW_INCREMENT}"
+            echo "Deploying version ${VERSION}"
+            git tag "release/${VERSION}"
+            git push origin master --tags
+            mkdir build
+            mv /opt/app/build/lambda.zip build/lambda-${VERSION}.zip
+            ls -la build
+            aws --region eu-west-1 s3 sync build s3://s3-repository-s3repositorybucket-138dzyat89h8m
       - store_artifacts:
           path: build
 
