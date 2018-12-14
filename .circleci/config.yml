@@ -35,7 +35,7 @@ jobs:
             git tag "release/${VERSION}"
             git push origin master --tags
             mkdir build
-            mv /opt/app/build/lambda.zip build/lambda-${VERSION}.zip
+            docker cp src:/opt/app/build/lambda.zip build/lambda-${VERSION}.zip
             ls -la build
             aws --region eu-west-1 s3 sync build s3://s3-repository-s3repositorybucket-138dzyat89h8m
       - store_artifacts:
