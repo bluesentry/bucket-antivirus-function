@@ -52,13 +52,14 @@ jobs:
           NEW_INCREMENT=$((LATEST_INCREMENT + 1))
           VERSION="${BASE_VERSION}.${NEW_INCREMENT}"
           echo "Deploying version ${VERSION}"
-          git tag "release/$VERSION"
+          git tag "release/${VERSION}"
           git push origin master --tags
-          pwd
-          find . -name build -exec ls -la {} \;
-#          aws --region eu-west-1 s3 sync ~/build s3://s3-repository-s3repositorybucket-138dzyat89h8m
+          mkdir build
+          mv /opt/app/build/lambda.zip build/lambda-${VERSION}.zip
+          ls -la build
+          aws --region eu-west-1 s3 sync build s3://s3-repository-s3repositorybucket-138dzyat89h8m
       - store_artifacts:
-          path: ~/build
+          path: build
 
   # `pre_commit_deps` is used for cache pre-commit sources
   pre_commit_deps:
