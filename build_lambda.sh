@@ -27,10 +27,11 @@ virtualenv env
 pip install --no-cache-dir -r requirements.txt
 
 pushd /tmp
-yumdownloader -x \*i686 --archlist=x86_64 clamav clamav-lib clamav-update json-c
+yumdownloader -x \*i686 --archlist=x86_64 clamav clamav-lib clamav-update pcre2 json-c
 rpm2cpio clamav-0*.rpm | cpio -idmv
 rpm2cpio clamav-lib*.rpm | cpio -idmv
 rpm2cpio clamav-update*.rpm | cpio -idmv
+rpm2cpio pcre2*.rpm | cpio -idmv
 rpm2cpio json-c*.rpm | cpio -idmv
 popd
 mkdir -p bin
