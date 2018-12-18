@@ -123,7 +123,13 @@ def sns_scan_results(s3_object, result):
     sns_client.publish(
         TargetArn=AV_STATUS_SNS_ARN,
         Message=json.dumps({'default': json.dumps(message)}),
-        MessageStructure="json"
+        MessageStructure="json",
+        MessageAttributes = {
+            AV_STATUS_METADATA: {
+                'DataType': 'String',
+                'StringValue': result
+            }
+    }
     )
 
 
