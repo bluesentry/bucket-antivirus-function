@@ -38,7 +38,7 @@ the [amazonlinux](https://hub.docker.com/_/amazonlinux/) [Docker](https://www.do
  image.  The resulting archive will be built at `build/lambda.zip`.  This file will be
  uploaded to AWS for both Lambda functions below.
 
-### AV Defintion Bucket
+### AV Definition Bucket
 
 Create an s3 bucket to store current antivirus definitions.  This
 provides the fastest download speeds for the scanner.  This bucket can
