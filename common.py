@@ -40,7 +40,7 @@ s3_client = boto3.client('s3')
 def create_dir(path):
     if not os.path.exists(path):
         try:
-            print("Attempting to create directiory %s.\n" % path)
+            print("Attempting to create directory %s.\n" % path)
             os.makedirs(path)
         except OSError as exc:
             if exc.errno != errno.EEXIST:
