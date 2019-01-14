@@ -28,6 +28,7 @@ or INFECTED, along with the date and time of the scan.
 - Object metadata is updated to reflect the result of the scan (optional)
 - Metrics are sent to [DataDog](https://www.datadoghq.com/) (optional)
 - Scan results are published to a SNS topic (optional)
+- Files found to be INFECTED are automatically deleted (optional)
 
 ## Installation
 
@@ -203,7 +204,7 @@ the table below for reference.
 | FRESHCLAM_PATH | Path to ClamAV freshclam binary | ./bin/freshclam | No |
 | DATADOG_API_KEY | API Key for pushing metrics to DataDog (optional) | | No |
 | AV_PROCESS_ORIGINAL_VERSION_ONLY | Controls that only original version of an S3 key is processed (if bucket versioning is enabled) | False | No |
-
+| AV_DELETE_INFECTED_FILES | Controls whether infected files should be automatically deleted | False | No |
 
 ## S3 Bucket Policy Examples
 

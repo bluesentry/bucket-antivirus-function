@@ -59,6 +59,13 @@ def download_s3_object(s3_object, local_prefix):
     s3_object.download_file(local_path)
     return local_path
 
+def delete_s3_object(s3_object):
+    try:
+        s3_object.delete()
+    except:
+        print("Failed to delete infected file: %s.%s" % (s3_object.bucket_name, s3_object.key))
+    else:
+        print("Infected file deleted: %s.%s" % (s3_object.bucket_name, s3_object.key))
 
 def set_av_metadata(s3_object, result):
     content_type = s3_object.content_type
@@ -154,6 +161,8 @@ def lambda_handler(event, context):
         os.remove(file_path)
     except OSError:
         pass
+    if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
+        delete_s3_object(s3_object)
     print("Script finished at %s\n" %
           datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"))
 

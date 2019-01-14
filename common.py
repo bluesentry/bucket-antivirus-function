@@ -30,6 +30,7 @@ CLAMAVLIB_PATH = os.getenv("CLAMAVLIB_PATH", "./bin")
 CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
 AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv("AV_PROCESS_ORIGINAL_VERSION_ONLY", "False")
+AV_DELETE_INFECTED_FILES = os.getenv("AV_DELETE_INFECTED_FILES", "False")
 
 AV_DEFINITION_FILENAMES = ["main.cvd","daily.cvd", "daily.cud", "bytecode.cvd", "bytecode.cud"]
 
@@ -40,7 +41,7 @@ s3_client = boto3.client('s3')
 def create_dir(path):
     if not os.path.exists(path):
         try:
-            print("Attempting to create directiory %s.\n" % path)
+            print("Attempting to create directory %s.\n" % path)
             os.makedirs(path)
         except OSError as exc:
             if exc.errno != errno.EEXIST:
