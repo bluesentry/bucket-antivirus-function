@@ -32,7 +32,8 @@ FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
 AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv("AV_PROCESS_ORIGINAL_VERSION_ONLY", "False")
 AV_DELETE_INFECTED_FILES = os.getenv("AV_DELETE_INFECTED_FILES", "False")
 
-AV_DEFINITION_FILENAMES = ["main.cvd","daily.cvd", "daily.cud", "bytecode.cvd", "bytecode.cud"]
+AV_DEFINITION_FILE_PREFIXES = ["main", "daily", "bytecode"]
+AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')

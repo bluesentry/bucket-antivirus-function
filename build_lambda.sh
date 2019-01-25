@@ -24,7 +24,9 @@ yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarc
 pip install --no-cache-dir virtualenv
 virtualenv env
 . env/bin/activate
-pip install --no-cache-dir -r requirements.txt
+# This had --no-cache-dir, tracing through multiple tickets led to a problem in wheel
+pip install -r requirements.txt
+rm -rf /root/.cache/pip
 
 pushd /tmp
 yumdownloader -x \*i686 --archlist=x86_64 clamav clamav-lib clamav-update json-c pcre2
