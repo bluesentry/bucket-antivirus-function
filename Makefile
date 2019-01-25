@@ -16,11 +16,15 @@ AMZ_LINUX_VERSION:=2
 current_dir := $(shell pwd)
 container_dir := /opt/app
 circleci := ${CIRCLECI}
+uid := $(shell id -u)
+gid := $(shell id -g)
 
 all: archive
 
 clean:
-	rm -rf compile/lambda.zip
+	rm -rf bin
+	rm -rf build/lambda.zip
+	rm -rf env
 
 archive: clean
 ifeq ($(circleci), true)
@@ -33,6 +37,8 @@ ifeq ($(circleci), true)
 else
 	docker run --rm -ti \
 		-v $(current_dir):$(container_dir) \
+		-e USERID=$(uid) \
+		-e GROUPID=$(gid) \
 		amazonlinux:$(AMZ_LINUX_VERSION) \
 		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
 endif
