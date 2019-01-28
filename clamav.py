@@ -33,7 +33,7 @@ def update_defs_from_s3(bucket, prefix):
     create_dir(AV_DEFINITION_PATH)
     to_download = {}
     for file_prefix in AV_DEFINITION_FILE_PREFIXES:
-        s3_time_previous = None
+        s3_best_time = None
         for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
             filename = file_prefix + '.' + file_suffix
             s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
@@ -41,14 +41,16 @@ def update_defs_from_s3(bucket, prefix):
             s3_md5 = md5_from_s3_tags(bucket, s3_path)
             s3_time = time_from_s3(bucket, s3_path)
 
-            if s3_time_previous is not None and s3_time < s3_time_previous:
+            if s3_best_time is not None and s3_time < s3_best_time:
                 print("Not downloading older file in series: %s" % filename)
                 continue
+            else:
+                s3_best_time = s3_time
+
             if os.path.exists(local_path) and md5_from_file(local_path) == s3_md5:
                 print("Not downloading %s because local md5 matches s3." % filename)
                 continue
             if s3_md5:
-                s3_time_previous = s3_time
                 print("Downloading definition file %s from s3://%s" % (filename, os.path.join(bucket, prefix)))
                 to_download[file_prefix] = {"s3_path": s3_path, "local_path": local_path}
 
