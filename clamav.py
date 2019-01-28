@@ -19,6 +19,8 @@ import pwd
 import re
 from common import *
 from subprocess import check_output, Popen, PIPE, STDOUT
+from pytz import utc
+from datetime import datetime
 
 
 def current_library_search_path():
@@ -37,7 +39,7 @@ def update_defs_from_s3(bucket, prefix):
             s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
             local_path = os.path.join(AV_DEFINITION_PATH, filename)
             s3_md5 = md5_from_s3_tags(bucket, s3_path)
-            s3_time = s3.Object(bucket, s3_path).last_modified
+            s3_time = time_from_s3(bucket, s3_path)
 
             if s3_time_previous is not None and s3_time < s3_time_previous:
                 print("Not downloading older file in series: %s" % filename)
@@ -122,6 +124,16 @@ def md5_from_s3_tags(bucket, key):
             return tag["Value"]
     return ""
 
+def time_from_s3(bucket, key):
+    try:
+        time = s3.Object(bucket, key).last_modified
+    except botocore.exceptions.ClientError as e:
+        expected_errors = {'404', 'AccessDenied', 'NoSuchKey'}
+        if e.response['Error']['Code'] in expected_errors:
+            return datetime.fromtimestamp(0, utc)
+        else:
+            raise
+    return time
 
 def scan_file(path):
     av_env = os.environ.copy()
