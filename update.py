@@ -32,6 +32,11 @@ def lambda_handler(event, context):
         if os.path.exists(os.path.join(AV_DEFINITION_PATH, "main.cvd")):
             os.remove(os.path.join(AV_DEFINITION_PATH, "main.cvd"))
         clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
+    # When freshclam applies updates it replaces daily.cvd with daily.cld.
+    # Adding 'CompressLocalDatabase yes' to freshclam.conf ensures this file is compressed
+    # so we can rename daily.cld to daily.cvd and upload it to S3.
+    if os.path.exists(os.path.join(AV_DEFINITION_PATH, "daily.cld")):
+        os.rename(os.path.join(AV_DEFINITION_PATH, "daily.cld"), os.path.join(AV_DEFINITION_PATH, "daily.cvd"))
     clamav.upload_defs_to_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX, AV_DEFINITION_PATH)
     print("Script finished at %s\n" %
           datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"))

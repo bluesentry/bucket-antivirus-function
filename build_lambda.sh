@@ -37,6 +37,7 @@ popd
 mkdir -p bin
 cp /tmp/usr/bin/clamscan /tmp/usr/bin/freshclam /tmp/usr/lib64/* bin/.
 echo "DatabaseMirror database.clamav.net" > bin/freshclam.conf
+echo "CompressLocalDatabase yes" >> bin/freshclam.conf
 
 mkdir -p build
 zip -r9 $lambda_output_file *.py bin
