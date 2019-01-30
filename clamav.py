@@ -128,7 +128,7 @@ def md5_from_s3_tags(bucket, key):
 
 def time_from_s3(bucket, key):
     try:
-        time = s3.Object(bucket, key).last_modified
+        time = s3_client.head_object(Bucket=bucket, Key=key)["LastModified"]
     except botocore.exceptions.ClientError as e:
         expected_errors = {'404', 'AccessDenied', 'NoSuchKey'}
         if e.response['Error']['Code'] in expected_errors:
