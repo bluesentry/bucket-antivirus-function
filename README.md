@@ -205,7 +205,7 @@ the table below for reference.
 | DATADOG_API_KEY | API Key for pushing metrics to DataDog (optional) | | No |
 | AV_PROCESS_ORIGINAL_VERSION_ONLY | Controls that only original version of an S3 key is processed (if bucket versioning is enabled) | False | No |
 | DESTINATION_BUCKET | Clean files will be moved to this bucket in folder named after source bucket |  | No |
-| DESTINATION_PATH | Folder to move files to within destination bucket | | No |
+| DESTINATION_PATH | Folder to move files to within destination bucket must add "/" to the end| | No |
 | AV_DELETE_INFECTED_FILES | Controls whether infected files should be automatically deleted | False | No |
 
 ## S3 Bucket Policy Examples
