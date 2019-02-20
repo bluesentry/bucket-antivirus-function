@@ -21,6 +21,7 @@ import urllib
 from common import *
 from datetime import datetime
 from distutils.util import strtobool
+from botocore.client import ClientError
 
 ENV = os.getenv("ENV", "")
 
@@ -139,6 +140,26 @@ def sns_scan_results(s3_object, result):
     }
     )
 
+def move_to_s3_bucket(s3_object, bucket, path=''):
+    try:
+        lookup = s3.meta.client.head_bucket(Bucket=bucket)
+    except ClientError:
+        lookup = None
+    if lookup is not None:
+        source_bucket = s3_object.bucket_name
+        destination_bucket = bucket
+        key = s3_object.key
+        destination_path = "%s%s/%s" % (path,source_bucket,key)
+        try:
+            copy_source = {'Bucket': source_bucket, 'Key': key}
+            s3_client.copy_object(CopySource = copy_source, Bucket = destination_bucket, Key = destination_path)
+            s3_client.delete_object(Bucket = source_bucket, Key = key)
+        except Exception as e:
+            print(e)
+            print('Error getting object from bucket.')
+    else:
+        print('Destination Bucket does not exist!')
+    return
 
 def lambda_handler(event, context):
     start_time = datetime.utcnow()
@@ -156,6 +177,9 @@ def lambda_handler(event, context):
     set_av_tags(s3_object, scan_result)
     sns_scan_results(s3_object, scan_result)
     metrics.send(env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result)
+    # Move Items with clean results to destination bucket
+    if scan_result == AV_STATUS_CLEAN:
+        move_to_s3_bucket(s3_object, DESTINATION_BUCKET, DESTINATION_PATH)
     # Delete downloaded file to free up room on re-usable lambda function container
     try:
         os.remove(file_path)
