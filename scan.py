@@ -178,7 +178,7 @@ def lambda_handler(event, context):
     sns_scan_results(s3_object, scan_result)
     metrics.send(env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result)
     # Move Items with clean results to destination bucket
-    if scan_result == AV_STATUS_CLEAN:
+    if (DESTINATION_BUCKET != None) and (scan_result == AV_STATUS_CLEAN):
         move_to_s3_bucket(s3_object, DESTINATION_BUCKET, DESTINATION_PATH)
     # Delete downloaded file to free up room on re-usable lambda function container
     try:
