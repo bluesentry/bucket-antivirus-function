@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-lambda_output_file=/opt/app/build/lambda.zip
+lambda_output_file=$(pwd)/build/lambda.zip
 
 set -e
 
