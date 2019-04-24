@@ -22,7 +22,7 @@ from subprocess import check_output, Popen, PIPE, STDOUT
 
 
 def current_library_search_path():
-    ld_verbose = check_output(["ld", "--verbose"])
+    ld_verbose = check_output(["ld", "--verbose"]).decode('utf-8')
     rd_ld = re.compile("SEARCH_DIR\(\"([A-z0-9/-]*)\"\)")
     return rd_ld.findall(ld_verbose)
 
@@ -95,14 +95,16 @@ def md5_from_s3_tags(bucket, key):
     try:
         tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["TagSet"]
     except botocore.exceptions.ClientError as e:
-        expected_errors = {'404', 'AccessDenied', 'NoSuchKey'}
+        expected_errors = ('404', 'AccessDenied', 'NoSuchKey')
         if e.response['Error']['Code'] in expected_errors:
+            print("Returning empty string, error response code from GetTag: %s" % e.response['Error']['Code'])
             return ""
         else:
             raise
     for tag in tags:
         if tag["Key"] == "md5":
             return tag["Value"]
+    print("No tag for Key md5 found for %s/%s" % bucket, key)
     return ""
 
 
