@@ -19,7 +19,8 @@ lambda_output_file=/opt/app/build/lambda.zip
 set -e
 
 yum update -y
-yum install -y cpio python27-pip zip
+yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+yum install -y cpio python2-pip zip pcre2 json-c
 pip install --no-cache-dir virtualenv
 virtualenv env
 . env/bin/activate
@@ -32,7 +33,7 @@ rpm2cpio clamav-lib*.rpm | cpio -idmv
 rpm2cpio clamav-update*.rpm | cpio -idmv
 popd
 mkdir -p bin
-cp /tmp/usr/bin/clamscan /tmp/usr/bin/freshclam /tmp/usr/lib64/* bin/.
+cp /tmp/usr/bin/clamscan /tmp/usr/bin/freshclam /tmp/usr/lib64/* /usr/lib64/libjson-c.so.2 /usr/lib64/libpcre2-8.so.0 bin/.
 echo "DatabaseMirror database.clamav.net" > bin/freshclam.conf
 
 mkdir -p build

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-AMZ_LINUX_VERSION:=2018.03.0.20180622
+CENT_OS_VERSION:=centos7.6.1810
 current_dir := $(shell pwd)
 container_dir := /opt/app
 circleci := ${CIRCLECI}
@@ -28,11 +28,11 @@ ifeq ($(circleci), true)
 	docker cp $(current_dir)/. src:$(container_dir)
 	docker run --rm \
 		--volumes-from src \
-		amazonlinux:$(AMZ_LINUX_VERSION) \
+		centos:$(CENT_OS_VERSION) \
 		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
 else
 	docker run --rm \
 		-v $(current_dir):$(container_dir) \
-		amazonlinux:$(AMZ_LINUX_VERSION) \
+		centos:$(CENT_OS_VERSION) \
 		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
 endif
