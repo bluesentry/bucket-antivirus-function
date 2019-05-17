@@ -19,8 +19,11 @@ lambda_output_file=/opt/app/build/lambda.zip
 set -e
 
 yum update -y
-yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 yum install -y cpio python2-pip zip pcre2 json-c
+amazon-linux-extras enable epel
+yum clean metadata
+yum install -y epel-release
+yum install -y yum-utils
 pip install --no-cache-dir virtualenv
 virtualenv env
 . env/bin/activate

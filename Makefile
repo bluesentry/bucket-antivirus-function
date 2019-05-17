@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-CENT_OS_VERSION:=centos7.6.1810
+LINUX_DOCKER_IMAGE:=docker-upgrade.artifactory.build.upgrade.com/container-base:2.0.20190212-15
 current_dir := $(shell pwd)
 container_dir := /opt/app
 circleci := ${CIRCLECI}
@@ -27,12 +27,14 @@ ifeq ($(circleci), true)
 	docker create -v $(container_dir) --name src alpine:3.4 /bin/true
 	docker cp $(current_dir)/. src:$(container_dir)
 	docker run --rm \
+		--user root \
 		--volumes-from src \
-		centos:$(CENT_OS_VERSION) \
+		$(LINUX_DOCKER_IMAGE) \
 		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
 else
 	docker run --rm \
+		--user root \
 		-v $(current_dir):$(container_dir) \
-		centos:$(CENT_OS_VERSION) \
+		$(LINUX_DOCKER_IMAGE) \
 		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
 endif
