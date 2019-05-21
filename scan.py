@@ -26,12 +26,15 @@ ENV = os.getenv("ENV", "")
 
 
 def event_object(event):
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.unquote_plus(event['Records'][0]['s3']['object']['key'].encode('utf8'))
-    if (not bucket) or (not key):
-        print("Unable to retrieve object from event.\n%s" % event)
-        raise Exception("Unable to retrieve object from event.")
-    return s3.Object(bucket, key)
+    objects_list = []
+    for record in event['Records']:
+        bucket = record['s3']['bucket']['name']
+        key = urllib.unquote_plus(record['s3']['object']['key'].encode('utf8'))
+        if (not bucket) or (not key):
+            print("Unable to retrieve object from event.\n%s" % event)
+            raise Exception("Unable to retrieve object from event.")
+        objects_list.append(s3.Object(bucket, key))
+    return objects_list
 
 def verify_s3_object_version(s3_object):
     # validate that we only process the original version of a file, if asked to do so
@@ -144,27 +147,28 @@ def lambda_handler(event, context):
     start_time = datetime.utcnow()
     print("Script starting at %s\n" %
           (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
-    s3_object = event_object(event)
-    verify_s3_object_version(s3_object)
-    sns_start_scan(s3_object)
-    file_path = download_s3_object(s3_object, "/tmp")
-    clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
-    scan_result = clamav.scan_file(file_path)
-    print("Scan of s3://%s resulted in %s\n" % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result))
-    if "AV_UPDATE_METADATA" in os.environ:
-        set_av_metadata(s3_object, scan_result)
-    set_av_tags(s3_object, scan_result)
-    sns_scan_results(s3_object, scan_result)
-    metrics.send(env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result)
-    # Delete downloaded file to free up room on re-usable lambda function container
-    try:
-        os.remove(file_path)
-    except OSError:
-        pass
-    if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
-        delete_s3_object(s3_object)
-    print("Script finished at %s\n" %
-          datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"))
+    s3_objects_list = event_object(event)
+    for s3_object in s3_objects_list:
+        verify_s3_object_version(s3_object)
+        sns_start_scan(s3_object)
+        file_path = download_s3_object(s3_object, "/tmp")
+        clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
+        scan_result = clamav.scan_file(file_path)
+        print("Scan of s3://%s resulted in %s\n" % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result))
+        if "AV_UPDATE_METADATA" in os.environ:
+            set_av_metadata(s3_object, scan_result)
+        set_av_tags(s3_object, scan_result)
+        sns_scan_results(s3_object, scan_result)
+        metrics.send(env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result)
+        # Delete downloaded file to free up room on re-usable lambda function container
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
+        if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
+            delete_s3_object(s3_object)
+        print("Script finished at %s\n" %
+              datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"))
 
 def str_to_bool(s):
     return bool(strtobool(str(s)))
