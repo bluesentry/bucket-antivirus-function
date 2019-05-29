@@ -20,7 +20,7 @@ circleci := ${CIRCLECI}
 all: archive
 
 clean:
-	rm -rf compile/lambda.zip
+	rm -rf compile/lambda.zip build bin env
 
 archive: clean
 ifeq ($(circleci), true)
