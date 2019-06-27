@@ -26,8 +26,9 @@ ENV = os.getenv("ENV", "")
 
 
 def event_object(event):
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.unquote_plus(event['Records'][0]['s3']['object']['key'].encode('utf8'))
+    message = json.loads(event['Records'][0]['Sns']['Message'])
+    bucket = message['Records'][0]['s3']['bucket']['name']
+    key = urllib.unquote_plus(message['Records'][0]['s3']['object']['key'].encode('utf8'))
     if (not bucket) or (not key):
         print("Unable to retrieve object from event.\n%s" % event)
         raise Exception("Unable to retrieve object from event.")
