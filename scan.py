@@ -23,9 +23,12 @@ from datetime import datetime
 from distutils.util import strtobool
 
 ENV = os.getenv("ENV", "")
+EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
 
 def event_object(event):
+    if EVENT_SOURCE.upper() == "SNS":
+        event = json.loads(event['Records'][0]['Sns']['Message'])
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = urllib.unquote_plus(event['Records'][0]['s3']['object']['key'].encode('utf8'))
     if (not bucket) or (not key):
