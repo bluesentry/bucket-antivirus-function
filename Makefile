@@ -26,12 +26,12 @@ archive: clean
 ifeq ($(circleci), true)
 	docker create -v $(container_dir) --name src alpine:3.4 /bin/true
 	docker cp $(current_dir)/. src:$(container_dir)
-	docker run --rm -ti \
+	docker run --rm -t \
 		--volumes-from src \
 		amazonlinux:$(AMZ_LINUX_VERSION) \
 		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
 else
-	docker run --rm -ti \
+	docker run --rm -t \
 		-v $(current_dir):$(container_dir) \
 		amazonlinux:$(AMZ_LINUX_VERSION) \
 		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
