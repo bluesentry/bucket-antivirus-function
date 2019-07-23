@@ -17,7 +17,7 @@ import clamav
 import copy
 import json
 import metrics
-import urllib
+import urllib.parse
 from common import *
 from datetime import datetime
 from distutils.util import strtobool
@@ -30,7 +30,7 @@ def event_object(event):
     if EVENT_SOURCE.upper() == "SNS":
         event = json.loads(event['Records'][0]['Sns']['Message'])
     bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.unquote_plus(event['Records'][0]['s3']['object']['key'].encode('utf8'))
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'])
     if (not bucket) or (not key):
         print("Unable to retrieve object from event.\n%s" % event)
         raise Exception("Unable to retrieve object from event.")
