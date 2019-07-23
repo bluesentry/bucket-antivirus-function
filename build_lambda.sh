@@ -18,6 +18,17 @@ lambda_output_file=/opt/app/build/lambda.zip
 
 set -e
 
+function finish {
+    for d in "bin" "build" "env"; do
+        p="/opt/app/$d"
+        if [ -d "$p" ]; then
+            chown -R $USERID:$GROUPID $p
+        fi
+    done
+}
+
+trap finish INT TERM EXIT
+
 yum update -y
 yum install -y cpio python2-pip yum-utils zip
 yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
