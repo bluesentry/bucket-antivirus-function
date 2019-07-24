@@ -142,30 +142,50 @@ def sns_scan_results(s3_object, result):
     }
     )
 
+def is_content_type_whitelisted(s3_object):
+    content_type = s3_object.content_type
+
+    for mimetype in [x.strip() for x in AV_MIMETYPE_WHITELIST.split(',') if x]:
+        if mimetype.endswith('*'):
+            if content_type.startswith(mimetype[:-1]):
+                return True
+        else:
+            if content_type == mimetype:
+                return True
+    
+    return False
+                
 
 def lambda_handler(event, context):
     start_time = datetime.utcnow()
     print("Script starting at %s\n" %
           (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
     s3_object = event_object(event)
-    verify_s3_object_version(s3_object)
-    sns_start_scan(s3_object)
-    file_path = download_s3_object(s3_object, "/tmp")
-    clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
-    scan_result = clamav.scan_file(file_path)
-    print("Scan of s3://%s resulted in %s\n" % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result))
-    if "AV_UPDATE_METADATA" in os.environ:
-        set_av_metadata(s3_object, scan_result)
-    set_av_tags(s3_object, scan_result)
-    sns_scan_results(s3_object, scan_result)
-    metrics.send(env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result)
-    # Delete downloaded file to free up room on re-usable lambda function container
-    try:
-        os.remove(file_path)
-    except OSError:
-        pass
-    if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
-        delete_s3_object(s3_object)
+    s3_object_name = os.path.join(s3_object.bucket_name, s3_object.key)
+
+    if is_content_type_whitelisted(s3_object):
+        print("Content type whitelisted. Not scanning s3://%s\n" % (s3_object_name))
+    else:    
+        verify_s3_object_version(s3_object)
+        sns_start_scan(s3_object)
+        file_path = download_s3_object(s3_object, "/tmp")
+        clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
+        scan_result = clamav.scan_file(file_path)
+        print("Scan of s3://%s resulted in %s\n" % (s3_object_name, scan_result))
+        if "AV_UPDATE_METADATA" in os.environ:
+            set_av_metadata(s3_object, scan_result)
+        set_av_tags(s3_object, scan_result)
+        sns_scan_results(s3_object, scan_result)
+        metrics.send(env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result)
+
+        # Delete downloaded file to free up room on re-usable lambda function container
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
+        if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
+            delete_s3_object(s3_object)
+
     print("Script finished at %s\n" %
           datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"))
 

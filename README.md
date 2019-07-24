@@ -204,6 +204,7 @@ the table below for reference.
 | FRESHCLAM_PATH | Path to ClamAV freshclam binary | ./bin/freshclam | No |
 | DATADOG_API_KEY | API Key for pushing metrics to DataDog (optional) | | No |
 | AV_PROCESS_ORIGINAL_VERSION_ONLY | Controls that only original version of an S3 key is processed (if bucket versioning is enabled) | False | No |
+| AV_MIMETYPE_WHITELIST | Comma separated list of mimetypes (accepts wildcarded mimetypes) that are whitelisted and do not need to be scanned | | No |
 | AV_DELETE_INFECTED_FILES | Controls whether infected files should be automatically deleted | False | No |
 | EVENT_SOURCE | The source of antivirus scan event "S3" or "SNS" (optional) | S3 | No |
 
