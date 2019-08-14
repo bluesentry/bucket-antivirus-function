@@ -22,7 +22,7 @@ from subprocess import check_output, Popen, PIPE, STDOUT
 
 
 def current_library_search_path():
-    ld_verbose = check_output(["ld", "--verbose"])
+    ld_verbose = check_output(["ld", "--verbose"]).decode('utf-8')
     rd_ld = re.compile("SEARCH_DIR\(\"([A-z0-9/-]*)\"\)")
     return rd_ld.findall(ld_verbose)
 

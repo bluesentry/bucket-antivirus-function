@@ -17,7 +17,7 @@ import clamav
 import copy
 import json
 import metrics
-import urllib
+from urllib.parse import unquote_plus
 from common import *
 from datetime import datetime
 from distutils.util import strtobool
@@ -30,11 +30,12 @@ def event_object(event):
     if EVENT_SOURCE.upper() == "SNS":
         event = json.loads(event['Records'][0]['Sns']['Message'])
     bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.unquote_plus(event['Records'][0]['s3']['object']['key'].encode('utf8'))
+    key = unquote_plus(event['Records'][0]['s3']['object']['key'])
     if (not bucket) or (not key):
         print("Unable to retrieve object from event.\n%s" % event)
         raise Exception("Unable to retrieve object from event.")
     return s3.Object(bucket, key)
+
 
 def verify_s3_object_version(s3_object):
     # validate that we only process the original version of a file, if asked to do so
@@ -43,24 +44,30 @@ def verify_s3_object_version(s3_object):
     # downstream services may consume latest version by mistake and get the infected version instead
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
         bucketVersioning = s3.BucketVersioning(s3_object.bucket_name)
-        if (bucketVersioning.status == "Enabled"):
+        if bucketVersioning.status == "Enabled":
             bucket = s3.Bucket(s3_object.bucket_name)
             versions = list(bucket.object_versions.filter(Prefix=s3_object.key))
             if len(versions) > 1:
-                print("Detected multiple object versions in %s.%s, aborting processing" % (s3_object.bucket_name, s3_object.key))
-                raise Exception("Detected multiple object versions in %s.%s, aborting processing" % (s3_object.bucket_name, s3_object.key))
+                print("Detected multiple object versions in %s.%s, aborting processing" % (
+                    s3_object.bucket_name, s3_object.key))
+                raise Exception("Detected multiple object versions in %s.%s, aborting processing" % (
+                    s3_object.bucket_name, s3_object.key))
             else:
-                print("Detected only 1 object version in %s.%s, proceeding with processing" % (s3_object.bucket_name, s3_object.key))
+                print("Detected only 1 object version in %s.%s, proceeding with processing" % (
+                    s3_object.bucket_name, s3_object.key))
         else:
             # misconfigured bucket, left with no or suspended versioning
-            print("Unable to implement check for original version, as versioning is not enabled in bucket %s" % s3_object.bucket_name)
+            print(
+                "Unable to implement check for original version, as versioning is not enabled in bucket %s" % s3_object.bucket_name)
             raise Exception("Object versioning is not enabled in bucket %s" % s3_object.bucket_name)
+
 
 def download_s3_object(s3_object, local_prefix):
     local_path = "%s/%s/%s" % (local_prefix, s3_object.bucket_name, s3_object.key)
     create_dir(os.path.dirname(local_path))
     s3_object.download_file(local_path)
     return local_path
+
 
 def delete_s3_object(s3_object):
     try:
@@ -69,6 +76,7 @@ def delete_s3_object(s3_object):
         print("Failed to delete infected file: %s.%s" % (s3_object.bucket_name, s3_object.key))
     else:
         print("Infected file deleted: %s.%s" % (s3_object.bucket_name, s3_object.key))
+
 
 def set_av_metadata(s3_object, result):
     content_type = s3_object.content_type
@@ -102,6 +110,7 @@ def set_av_tags(s3_object, result):
         Tagging={"TagSet": new_tags}
     )
 
+
 def sns_start_scan(s3_object):
     if AV_SCAN_START_SNS_ARN is None:
         return
@@ -119,6 +128,7 @@ def sns_start_scan(s3_object):
         MessageStructure="json"
     )
 
+
 def sns_scan_results(s3_object, result):
     if AV_STATUS_SNS_ARN is None:
         return
@@ -134,12 +144,12 @@ def sns_scan_results(s3_object, result):
         TargetArn=AV_STATUS_SNS_ARN,
         Message=json.dumps({'default': json.dumps(message)}),
         MessageStructure="json",
-        MessageAttributes = {
+        MessageAttributes={
             AV_STATUS_METADATA: {
                 'DataType': 'String',
                 'StringValue': result
             }
-    }
+        }
     )
 
 
@@ -168,6 +178,7 @@ def lambda_handler(event, context):
         delete_s3_object(s3_object)
     print("Script finished at %s\n" %
           datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"))
+
 
 def str_to_bool(s):
     return bool(strtobool(str(s)))
