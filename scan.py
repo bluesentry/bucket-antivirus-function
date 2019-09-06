@@ -103,7 +103,7 @@ def set_av_tags(s3_object, result):
     )
 
 def sns_start_scan(s3_object):
-    if AV_SCAN_START_SNS_ARN is None:
+    if AV_SCAN_START_SNS_ARN in [None, ""]:
         return
     message = {
         "bucket": s3_object.bucket_name,
@@ -120,7 +120,7 @@ def sns_start_scan(s3_object):
     )
 
 def sns_scan_results(s3_object, result):
-    if AV_STATUS_SNS_ARN is None:
+    if AV_STATUS_SNS_ARN in [None, ""]:
         return
     message = {
         "bucket": s3_object.bucket_name,
