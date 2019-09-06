@@ -147,10 +147,27 @@ following policy document
       },
       {
          "Action":[
-            "s3:*"
+            "s3:GetObject",
+            "s3:GetObjectTagging",
+            "s3:PutObjectTagging",
+            "s3:PutObjectVersionTagging",
          ],
          "Effect":"Allow",
-         "Resource":"*"
+         "Resource": ["arn:aws:s3:::<bucket-name-1>/*", "arn:aws:s3:::<bucket-name-2>/*"]
+      },
+      {
+         "Action":[
+            "kms:Decrypt",
+         ],
+         "Effect":"Allow",
+         "Resource": ["arn:aws:s3:::<bucket-name-1>/*", "arn:aws:s3:::<bucket-name-2>/*"]
+      },
+      {
+         "Action":[
+            "sns:Publish",
+         ],
+         "Effect":"Allow",
+         "Resource": ["arn:aws:sns:::<av-scan-start>", "arn:aws:sns:::<av-status>"]
       }
    ]
 }
