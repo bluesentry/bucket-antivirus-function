@@ -256,6 +256,20 @@ It should be in the format provided below:
 }
 ```
 
+## Manually Scanning Buckets
+
+You may want to scan all the objects in a bucket that have not previously been scanned or were created
+prior to setting up your lambda functions. To do this you can use the `scan_bucket.py` utility.
+
+```sh
+pip install boto3
+scan_bucket.py --lambda-function-name=<lambda_function_name> --s3-bucket-name=<s3-bucket-to-scan>
+```
+
+This tool will scan all objects that have not been previously scanned in the bucket and invoke the lambda function
+asynchronously. As such you'll have to go to your cloudwatch logs to see the scan results or failures. Additionally,
+the script uses the same environment variables you'd use in your lambda so you can configure them similarly.
+
 ## License
 
 ```
