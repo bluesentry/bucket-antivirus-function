@@ -103,7 +103,7 @@ def set_av_tags(s3_object, result):
     )
 
 def sns_start_scan(s3_object):
-    if AV_SCAN_START_SNS_ARN is None:
+    if AV_SCAN_START_SNS_ARN in [None, ""]:
         return
     message = {
         "bucket": s3_object.bucket_name,
@@ -122,7 +122,7 @@ def sns_start_scan(s3_object):
 
 def sns_scan_results(s3_object, result):
     # Don't publish if SNS ARN has not been supplied
-    if AV_STATUS_SNS_ARN is None:
+    if AV_STATUS_SNS_ARN in [None, ""]:
         return
     # Don't publish if result is CLEAN and CLEAN results should not be published
     if result == AV_STATUS_CLEAN and not str_to_bool(AV_STATUS_SNS_PUBLISH_CLEAN):

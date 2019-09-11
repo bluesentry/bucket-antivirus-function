@@ -147,10 +147,46 @@ following policy document
       },
       {
          "Action":[
-            "s3:*"
+            "s3:GetObject",
+            "s3:GetObjectTagging",
+            "s3:PutObjectTagging",
+            "s3:PutObjectVersionTagging",
          ],
          "Effect":"Allow",
-         "Resource":"*"
+         "Resource": [
+           "arn:aws:s3:::<bucket-name-1>/*",
+           "arn:aws:s3:::<bucket-name-2>/*"
+         ]
+      },
+      {
+         "Action":[
+            "s3:GetObject",
+            "s3:GetObjectTagging",
+         ],
+         "Effect":"Allow",
+         "Resource": [
+           "arn:aws:s3:::<av-definition-s3-bucket>/*"
+         ]
+      },
+      {
+         "Action":[
+            "kms:Decrypt",
+         ],
+         "Effect":"Allow",
+         "Resource": [
+           "arn:aws:s3:::<bucket-name-1>/*",
+           "arn:aws:s3:::<bucket-name-2>/*"
+         ]
+      },
+      {
+         "Action":[
+            "sns:Publish",
+         ],
+         "Effect":"Allow",
+         "Resource": [
+           "arn:aws:sns:::<av-scan-start>",
+           "arn:aws:sns:::<av-status>"
+         ]
       }
    ]
 }
@@ -257,6 +293,20 @@ It should be in the format provided below:
   ]
 }
 ```
+
+## Manually Scanning Buckets
+
+You may want to scan all the objects in a bucket that have not previously been scanned or were created
+prior to setting up your lambda functions. To do this you can use the `scan_bucket.py` utility.
+
+```sh
+pip install boto3
+scan_bucket.py --lambda-function-name=<lambda_function_name> --s3-bucket-name=<s3-bucket-to-scan>
+```
+
+This tool will scan all objects that have not been previously scanned in the bucket and invoke the lambda function
+asynchronously. As such you'll have to go to your cloudwatch logs to see the scan results or failures. Additionally,
+the script uses the same environment variables you'd use in your lambda so you can configure them similarly.
 
 ## License
 
