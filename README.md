@@ -153,7 +153,10 @@ following policy document
             "s3:PutObjectVersionTagging",
          ],
          "Effect":"Allow",
-         "Resource": ["arn:aws:s3:::<bucket-name-1>/*", "arn:aws:s3:::<bucket-name-2>/*"]
+         "Resource": [
+           "arn:aws:s3:::<bucket-name-1>/*",
+           "arn:aws:s3:::<bucket-name-2>/*"
+         ]
       },
       {
          "Action":[
@@ -161,21 +164,29 @@ following policy document
             "s3:GetObjectTagging",
          ],
          "Effect":"Allow",
-         "Resource": ["arn:aws:s3:::<av-definition-s3-bucket>/*"]
+         "Resource": [
+           "arn:aws:s3:::<av-definition-s3-bucket>/*"
+         ]
       },
       {
          "Action":[
             "kms:Decrypt",
          ],
          "Effect":"Allow",
-         "Resource": ["arn:aws:s3:::<bucket-name-1>/*", "arn:aws:s3:::<bucket-name-2>/*"]
+         "Resource": [
+           "arn:aws:s3:::<bucket-name-1>/*",
+           "arn:aws:s3:::<bucket-name-2>/*"
+         ]
       },
       {
          "Action":[
             "sns:Publish",
          ],
          "Effect":"Allow",
-         "Resource": ["arn:aws:sns:::<av-scan-start>", "arn:aws:sns:::<av-status>"]
+         "Resource": [
+           "arn:aws:sns:::<av-scan-start>",
+           "arn:aws:sns:::<av-status>"
+         ]
       }
    ]
 }
