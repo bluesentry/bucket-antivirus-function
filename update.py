@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import clamav
-from common import *
+from common import *  # noqa
 from datetime import datetime
 import os
 

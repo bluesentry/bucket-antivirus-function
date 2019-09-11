@@ -18,7 +18,7 @@ import copy
 import json
 import metrics
 import urllib
-from common import *
+from common import *  # noqa
 from datetime import datetime
 from distutils.util import strtobool
 
@@ -82,7 +82,7 @@ def download_s3_object(s3_object, local_prefix):
 def delete_s3_object(s3_object):
     try:
         s3_object.delete()
-    except:
+    except Exception:
         print(
             "Failed to delete infected file: %s.%s"
             % (s3_object.bucket_name, s3_object.key)

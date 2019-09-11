@@ -14,7 +14,7 @@
 
 import datadog
 import os
-from common import *
+from common import *  # noqa
 
 
 def send(env, bucket, key, status):

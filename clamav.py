@@ -17,7 +17,7 @@ import hashlib
 import os
 import pwd
 import re
-from common import *
+from common import *  # noqa
 from subprocess import check_output, Popen, PIPE, STDOUT
 
 
