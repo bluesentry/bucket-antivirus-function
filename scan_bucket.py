@@ -99,7 +99,7 @@ def main(lambda_function_name, s3_bucket_name, limit):
     # Scan the objects in the bucket
     s3_object_list = get_objects(s3_bucket_name)
     if limit:
-        s3_object_list = s3_object_list[:min(limit, len(s3_object_list))]
+        s3_object_list = s3_object_list[: min(limit, len(s3_object_list))]
     for key_name in s3_object_list:
         scan_object(lambda_client, lambda_function_name, s3_bucket_name, key_name)
 
@@ -114,9 +114,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--s3-bucket-name", required=True, help="The name of the S3 bucket to scan"
     )
-    parser.add_argument(
-        "--limit", type=int, help="The number of records to limit to"
-    )
+    parser.add_argument("--limit", type=int, help="The number of records to limit to")
     args = parser.parse_args()
 
     main(args.lambda_function_name, args.s3_bucket_name, args.limit)
