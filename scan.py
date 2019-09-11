@@ -121,7 +121,7 @@ def sns_start_scan(s3_object):
 
 
 def sns_scan_results(s3_object, result):
-    # Don't publish if SNS ARN has been supplied
+    # Don't publish if SNS ARN has not been supplied
     if AV_STATUS_SNS_ARN is None:
         return
     # Don't publish if result is CLEAN and CLEAN results should not be published
