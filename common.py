@@ -31,13 +31,21 @@ AV_TIMESTAMP_METADATA = os.getenv("AV_TIMESTAMP_METADATA", "av-timestamp")
 CLAMAVLIB_PATH = os.getenv("CLAMAVLIB_PATH", "./bin")
 CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
-AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv("AV_PROCESS_ORIGINAL_VERSION_ONLY", "False")
+AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv(
+    "AV_PROCESS_ORIGINAL_VERSION_ONLY", "False"
+)
 AV_DELETE_INFECTED_FILES = os.getenv("AV_DELETE_INFECTED_FILES", "False")
 
-AV_DEFINITION_FILENAMES = ["main.cvd", "daily.cvd", "daily.cud", "bytecode.cvd", "bytecode.cud"]
+AV_DEFINITION_FILENAMES = [
+    "main.cvd",
+    "daily.cvd",
+    "daily.cud",
+    "bytecode.cvd",
+    "bytecode.cud",
+]
 
-s3 = boto3.resource('s3')
-s3_client = boto3.client('s3')
+s3 = boto3.resource("s3")
+s3_client = boto3.client("s3")
 
 
 def create_dir(path):

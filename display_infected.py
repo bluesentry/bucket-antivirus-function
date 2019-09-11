@@ -71,7 +71,9 @@ def main(s3_bucket_name):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Scan an S3 bucket for infected files.")
+    parser = argparse.ArgumentParser(
+        description="Scan an S3 bucket for infected files."
+    )
     parser.add_argument(
         "--s3-bucket-name", required=True, help="The name of the S3 bucket to scan"
     )
