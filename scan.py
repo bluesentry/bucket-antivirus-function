@@ -119,8 +119,16 @@ def sns_start_scan(s3_object):
         MessageStructure="json"
     )
 
+
 def sns_scan_results(s3_object, result):
+    # Don't publish if SNS ARN has not been supplied
     if AV_STATUS_SNS_ARN in [None, ""]:
+        return
+    # Don't publish if result is CLEAN and CLEAN results should not be published
+    if result == AV_STATUS_CLEAN and not str_to_bool(AV_STATUS_SNS_PUBLISH_CLEAN):
+        return
+    # Don't publish if result is INFECTED and INFECTED results should not be published
+    if result == AV_STATUS_INFECTED and not str_to_bool(AV_STATUS_SNS_PUBLISH_INFECTED):
         return
     message = {
         "bucket": s3_object.bucket_name,
