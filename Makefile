@@ -17,13 +17,21 @@ current_dir := $(shell pwd)
 container_dir := /opt/app
 circleci := ${CIRCLECI}
 
-all: archive
+.PHONY: help
+help:  ## Print the help documentation
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-clean:
+all: archive  ## Build the entire project
+
+.PHONY: clean
+clean:  ## Clean build artifacts
 	rm -rf bin/
 	rm -rf build/
+	find ./ -type d -name '__pycache__' -delete
+	find ./ -type f -name '*.pyc' -delete
 
-archive: clean
+.PHONY: archive
+archive: clean  ## Create the archive for AWS lambda
 ifeq ($(circleci), true)
 	docker create -v $(container_dir) --name src alpine:3.4 /bin/true
 	docker cp $(current_dir)/. src:$(container_dir)
@@ -37,3 +45,18 @@ else
 		amazonlinux:$(AMZ_LINUX_VERSION) \
 		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
 endif
+
+.PHONY: ensure_pre_commit  ## Ensure that pre-commit hook is installed and kept up to date
+ensure_pre_commit: .git/hooks/pre-commit ## Ensure pre-commit is installed
+.git/hooks/pre-commit: /usr/local/bin/pre-commit
+	pip install pre-commit==1.18.3
+	pre-commit install
+	pre-commit install-hooks
+
+.PHONY: pre_commit_tests
+pre_commit_tests: ## Run pre-commit tests
+	pre-commit run --all-files
+
+.PHONY: test
+test: clean
+	nosetests
