@@ -46,8 +46,8 @@ else
 		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
 endif
 
-.PHONY: ensure_pre_commit  ## Ensure that pre-commit hook is installed and kept up to date
-ensure_pre_commit: .git/hooks/pre-commit ## Ensure pre-commit is installed
+.PHONY: pre_commit_install  ## Ensure that pre-commit hook is installed and kept up to date
+pre_commit_install: .git/hooks/pre-commit ## Ensure pre-commit is installed
 .git/hooks/pre-commit: /usr/local/bin/pre-commit
 	pip install pre-commit==1.18.3
 	pre-commit install
@@ -58,5 +58,5 @@ pre_commit_tests: ## Run pre-commit tests
 	pre-commit run --all-files
 
 .PHONY: test
-test: clean
+test: clean  ## Run python tests
 	nosetests

@@ -323,7 +323,7 @@ these tests are run by CircleCI.
 ### pre-commit Tests
 
 The pre-commit tests ensure that code submitted to this repository meet the standards of the repository. To get started
-with these tests run `make ensure_pre_commit`. This will install the pre-commit tool and then install it in this
+with these tests run `make pre_commit_install`. This will install the pre-commit tool and then install it in this
 repository. Then the github pre-commit hook will run these tests before you commit your code.
 
 To run the tests manually run `make pre_commit_tests` or `pre-commit run -a`.
@@ -335,7 +335,7 @@ to install the developer resources and then run the tests:
 
 ```sh
 pip install -r requirements-dev.txt
-make tests
+make test
 ```
 
 ## License
