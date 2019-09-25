@@ -2,7 +2,7 @@
 #
 # Caches
 #
-# Caches may have a `v1-` prefix, since caches in CircleCI 2.0 are immutable.
+# Caches may require a prefix, since caches in CircleCI 2.0 are immutable.
 # A prefix provides an easy way to invalidate a cache.  See https://circleci.com/docs/2.0/caching/#clearing-cache
 #
 ############
