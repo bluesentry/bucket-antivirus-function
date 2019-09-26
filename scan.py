@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Upside Travel, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import boto3
-import clamav
 import copy
 import json
-import metrics
 import urllib
-from common import *  # noqa
 from datetime import datetime
 from distutils.util import strtobool
+
+import boto3
+
+import clamav
+import metrics
+from common import *  # noqa
 
 ENV = os.getenv("ENV", "")
 EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
@@ -34,6 +37,7 @@ def event_object(event):
     if (not bucket) or (not key):
         print("Unable to retrieve object from event.\n%s" % event)
         raise Exception("Unable to retrieve object from event.")
+    s3 = boto3.resource("s3")
     return s3.Object(bucket, key)
 
 
@@ -42,6 +46,7 @@ def verify_s3_object_version(s3_object):
     # security check to disallow processing of a new (possibly infected) object version
     # while a clean initial version is getting processed
     # downstream services may consume latest version by mistake and get the infected version instead
+    s3 = boto3.resource("s3")
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
         bucketVersioning = s3.BucketVersioning(s3_object.bucket_name)
         if bucketVersioning.status == "Enabled":
@@ -109,6 +114,7 @@ def set_av_metadata(s3_object, result):
 
 
 def set_av_tags(s3_object, result):
+    s3_client = boto3.client("s3")
     curr_tags = s3_client.get_object_tagging(
         Bucket=s3_object.bucket_name, Key=s3_object.key
     )["TagSet"]

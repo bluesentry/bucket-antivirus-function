@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Upside Travel, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,18 +13,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import botocore
 import hashlib
 import os
 import pwd
 import re
-from common import *  # noqa
 from subprocess import check_output, Popen, PIPE, STDOUT
+
+import boto3
+import botocore
+
+from common import *  # noqa
+
+
+RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"
 
 
 def current_library_search_path():
     ld_verbose = check_output(["ld", "--verbose"])
-    rd_ld = re.compile('SEARCH_DIR\("([A-z0-9/-]*)"\)')
+    rd_ld = re.compile(RE_SEARCH_DIR)
     return rd_ld.findall(ld_verbose)
 
 
@@ -41,10 +48,12 @@ def update_defs_from_s3(bucket, prefix):
                 "Downloading definition file %s from s3://%s"
                 % (filename, os.path.join(bucket, prefix))
             )
+            s3 = boto3.resource("s3")
             s3.Bucket(bucket).download_file(s3_path, local_path)
 
 
 def upload_defs_to_s3(bucket, prefix, local_path):
+    s3_client = boto3.client("s3")
     for filename in AV_DEFINITION_FILENAMES:
         local_file_path = os.path.join(local_path, filename)
         if os.path.exists(local_file_path):
@@ -56,6 +65,7 @@ def upload_defs_to_s3(bucket, prefix, local_path):
                     "Uploading %s to s3://%s"
                     % (local_file_path, os.path.join(bucket, prefix, filename))
                 )
+                s3 = boto3.resource("s3")
                 s3_object = s3.Object(bucket, os.path.join(prefix, filename))
                 s3_object.upload_file(os.path.join(local_path, filename))
                 s3_client.put_object_tagging(
@@ -105,6 +115,7 @@ def md5_from_file(filename):
 
 
 def md5_from_s3_tags(bucket, key):
+    s3_client = boto3.client("s3")
     try:
         tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["TagSet"]
     except botocore.exceptions.ClientError as e:

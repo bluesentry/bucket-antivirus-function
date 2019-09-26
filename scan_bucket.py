@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Upside Travel, Inc.
 #
@@ -17,11 +18,14 @@
 import argparse
 import json
 import sys
+
+import boto3
+
 from common import *  # noqa
 
 
 # Get all objects in an S3 bucket that have not been previously scanned
-def get_objects(s3_bucket_name):
+def get_objects(s3_client, s3_bucket_name):
 
     s3_object_list = []
 
@@ -37,14 +41,14 @@ def get_objects(s3_bucket_name):
         for key in s3_list_objects_result["Contents"]:
             key_name = key["Key"]
             # Don't include objects that have been scanned
-            if not object_previously_scanned(s3_bucket_name, key_name):
+            if not object_previously_scanned(s3_client, s3_bucket_name, key_name):
                 s3_object_list.append(key_name)
 
     return s3_object_list
 
 
 # Determine if an object has been previously scanned for viruses
-def object_previously_scanned(s3_bucket_name, key_name):
+def object_previously_scanned(s3_client, s3_bucket_name, key_name):
     s3_object_tags = s3_client.get_object_tagging(Bucket=s3_bucket_name, Key=key_name)
     if "TagSet" not in s3_object_tags:
         return False
@@ -90,6 +94,7 @@ def main(lambda_function_name, s3_bucket_name, limit):
         sys.exit(1)
 
     # Verify the S3 bucket exists
+    s3_client = boto3.client("s3")
     try:
         s3_client.head_bucket(Bucket=s3_bucket_name)
     except Exception:
@@ -97,7 +102,7 @@ def main(lambda_function_name, s3_bucket_name, limit):
         sys.exit(1)
 
     # Scan the objects in the bucket
-    s3_object_list = get_objects(s3_bucket_name)
+    s3_object_list = get_objects(s3_client, s3_bucket_name)
     if limit:
         s3_object_list = s3_object_list[: min(limit, len(s3_object_list))]
     for key_name in s3_object_list:
