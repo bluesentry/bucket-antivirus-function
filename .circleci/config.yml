@@ -95,5 +95,5 @@ workflows:
       - test
       - build:
           requires:
-            - pre_commit_tests
+            - pre_commit_test
             - test
