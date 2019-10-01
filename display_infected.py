@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# -*- coding: utf-8 -*-
 
 # Upside Travel, Inc.
 #
@@ -16,11 +17,14 @@
 
 import argparse
 import sys
+
+import boto3
+
 from common import *  # noqa
 
 
 # Get all objects in an S3 bucket that are infected
-def get_objects(s3_bucket_name):
+def get_objects(s3_client, s3_bucket_name):
 
     s3_object_list = []
 
@@ -36,14 +40,14 @@ def get_objects(s3_bucket_name):
         for key in s3_list_objects_result["Contents"]:
             key_name = key["Key"]
             # Include only infected objects
-            if object_infected(s3_bucket_name, key_name):
+            if object_infected(s3_client, s3_bucket_name, key_name):
                 s3_object_list.append(key_name)
 
     return s3_object_list
 
 
 # Determine if an object has been previously scanned for viruses
-def object_infected(s3_bucket_name, key_name):
+def object_infected(s3_client, s3_bucket_name, key_name):
     s3_object_tags = s3_client.get_object_tagging(Bucket=s3_bucket_name, Key=key_name)
     if "TagSet" not in s3_object_tags:
         return False
@@ -58,6 +62,7 @@ def object_infected(s3_bucket_name, key_name):
 def main(s3_bucket_name):
 
     # Verify the S3 bucket exists
+    s3_client = boto3.client("s3")
     try:
         s3_client.head_bucket(Bucket=s3_bucket_name)
     except Exception:
@@ -65,7 +70,7 @@ def main(s3_bucket_name):
         sys.exit(1)
 
     # Scan the objects in the bucket
-    s3_object_list = get_objects(s3_bucket_name)
+    s3_object_list = get_objects(s3_client, s3_bucket_name)
     for key_name in s3_object_list:
         print("Infected: {}/{}".format(s3_bucket_name, key_name))
 

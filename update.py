@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Upside Travel, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import clamav
-from common import *  # noqa
 from datetime import datetime
 import os
+
+import clamav
+from common import *  # noqa
 
 
 def lambda_handler(event, context):
