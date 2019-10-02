@@ -124,7 +124,12 @@ class TestDisplayInfected(unittest.TestCase):
         s3_event = format_s3_event(self.s3_bucket_name, key_name)
         expected_s3_event = {
             "Records": [
-                {"s3": {"bucket": {"name": self.s3_bucket_name}, "object": {"key": key_name}}}
+                {
+                    "s3": {
+                        "bucket": {"name": self.s3_bucket_name},
+                        "object": {"key": key_name},
+                    }
+                }
             ]
         }
         self.assertEquals(s3_event, expected_s3_event)

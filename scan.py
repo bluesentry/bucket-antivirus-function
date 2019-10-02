@@ -68,7 +68,11 @@ def verify_s3_object_version(s3_client, s3_object):
     # downstream services may consume latest version by mistake and get the infected version instead
     bucket_versioning = s3_client.get_bucket_versioning(Bucket=s3_object.bucket_name)
     if bucket_versioning["Status"] == "Enabled":
-        versions = list(s3_client.list_object_versions(Bucket=s3_object.bucket_name, Prefix=s3_object.key)["Versions"])
+        versions = list(
+            s3_client.list_object_versions(
+                Bucket=s3_object.bucket_name, Prefix=s3_object.key
+            )["Versions"]
+        )
         if len(versions) > 1:
             raise Exception(
                 "Detected multiple object versions in %s.%s, aborting processing"
@@ -125,12 +129,7 @@ def set_av_tags(s3_object, result):
         if tag["Key"] in [AV_STATUS_METADATA, AV_TIMESTAMP_METADATA]:
             new_tags.remove(tag)
     new_tags.append({"Key": AV_STATUS_METADATA, "Value": result})
-    new_tags.append(
-        {
-            "Key": AV_TIMESTAMP_METADATA,
-            "Value": get_timestamp(),
-        }
-    )
+    new_tags.append({"Key": AV_TIMESTAMP_METADATA, "Value": get_timestamp()})
     s3_client.put_object_tagging(
         Bucket=s3_object.bucket_name, Key=s3_object.key, Tagging={"TagSet": new_tags}
     )
