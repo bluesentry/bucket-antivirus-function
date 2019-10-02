@@ -25,20 +25,41 @@ import clamav
 import metrics
 from common import *  # noqa
 
-ENV = os.getenv("ENV", "")
-EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
+def event_object(event, event_source="s3"):
 
-def event_object(event):
-    if EVENT_SOURCE.upper() == "SNS":
+    # SNS events are slightly different
+    if event_source.upper() == "SNS":
         event = json.loads(event["Records"][0]["Sns"]["Message"])
-    bucket = event["Records"][0]["s3"]["bucket"]["name"]
-    key = urllib.unquote_plus(event["Records"][0]["s3"]["object"]["key"].encode("utf8"))
-    if (not bucket) or (not key):
-        print("Unable to retrieve object from event.\n%s" % event)
-        raise Exception("Unable to retrieve object from event.")
+
+    # Break down the record
+    records = event["Records"]
+    if len(records) == 0:
+        raise Exception("No records found in event!")
+    record = records[0]
+
+    s3_obj = record["s3"]
+
+    # Get the bucket name
+    if "bucket" not in s3_obj:
+        raise Exception("No bucket found in event!")
+    bucket_name = s3_obj["bucket"].get("name", None)
+
+    # Get the key name
+    if "object" not in s3_obj:
+        raise Exception("No key found in event!")
+    key_name = s3_obj["object"].get("key", None)
+
+    if key_name:
+        key_name = urllib.unquote_plus(key_name.encode("utf8"))
+
+    # Ensure both bucket and key exist
+    if (not bucket_name) or (not key_name):
+        raise Exception("Unable to retrieve object from event.\n{}".format(event))
+
+    # Create and return the object
     s3 = boto3.resource("s3")
-    return s3.Object(bucket, key)
+    return s3.Object(bucket_name, key_name)
 
 
 def verify_s3_object_version(s3_object):
@@ -181,9 +202,13 @@ def sns_scan_results(s3_object, result):
 
 
 def lambda_handler(event, context):
+    # Get some environment variables
+    ENV = os.getenv("ENV", "")
+    EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
+
     start_time = datetime.utcnow()
     print("Script starting at %s\n" % (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
-    s3_object = event_object(event)
+    s3_object = event_object(event, event_source=EVENT_SOURCE)
     verify_s3_object_version(s3_object)
     sns_start_scan(s3_object)
     file_path = download_s3_object(s3_object, "/tmp")
