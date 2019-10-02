@@ -27,6 +27,7 @@ all: archive  ## Build the entire project
 clean:  ## Clean build artifacts
 	rm -rf bin/
 	rm -rf build/
+	rm -f .coverage
 	find ./ -type d -name '__pycache__' -delete
 	find ./ -type f -name '*.pyc' -delete
 
@@ -60,3 +61,7 @@ pre_commit_tests: ## Run pre-commit tests
 .PHONY: test
 test: clean  ## Run python tests
 	nosetests
+
+.PHONY: coverage
+coverage: clean  ## Run python tests with coverage
+	nosetests --with-coverage
