@@ -16,7 +16,6 @@
 import copy
 import json
 import urllib
-from datetime import datetime
 from distutils.util import strtobool
 
 import boto3
@@ -105,9 +104,7 @@ def set_av_metadata(s3_object, result):
     content_type = s3_object.content_type
     metadata = s3_object.metadata
     metadata[AV_STATUS_METADATA] = result
-    metadata[AV_TIMESTAMP_METADATA] = datetime.utcnow().strftime(
-        "%Y/%m/%d %H:%M:%S UTC"
-    )
+    metadata[AV_TIMESTAMP_METADATA] = get_timestamp()
     s3_object.copy(
         {"Bucket": s3_object.bucket_name, "Key": s3_object.key},
         ExtraArgs={
@@ -131,7 +128,7 @@ def set_av_tags(s3_object, result):
     new_tags.append(
         {
             "Key": AV_TIMESTAMP_METADATA,
-            "Value": datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"),
+            "Value": get_timestamp(),
         }
     )
     s3_client.put_object_tagging(
@@ -139,25 +136,22 @@ def set_av_tags(s3_object, result):
     )
 
 
-def sns_start_scan(s3_object):
-    if AV_SCAN_START_SNS_ARN in [None, ""]:
-        return
+def sns_start_scan(sns_client, s3_object, start_scan_sns_arn, timestamp):
     message = {
         "bucket": s3_object.bucket_name,
         "key": s3_object.key,
-        "version": s3_object.version_id,
+        # "version": s3_object.version_id,  # TODO: This uses s3_client.head_object() and needs to be stubbed out
         AV_SCAN_START_METADATA: True,
-        AV_TIMESTAMP_METADATA: datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"),
+        AV_TIMESTAMP_METADATA: timestamp,
     }
-    sns_client = boto3.client("sns")
     sns_client.publish(
-        TargetArn=AV_SCAN_START_SNS_ARN,
+        TargetArn=start_scan_sns_arn,
         Message=json.dumps({"default": json.dumps(message)}),
         MessageStructure="json",
     )
 
 
-def sns_scan_results(s3_object, result):
+def sns_scan_results(sns_client, s3_object, result):
     # Don't publish if SNS ARN has not been supplied
     if AV_STATUS_SNS_ARN in [None, ""]:
         return
@@ -172,9 +166,8 @@ def sns_scan_results(s3_object, result):
         "key": s3_object.key,
         "version": s3_object.version_id,
         AV_STATUS_METADATA: result,
-        AV_TIMESTAMP_METADATA: datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"),
+        AV_TIMESTAMP_METADATA: get_timestamp(),
     }
-    sns_client = boto3.client("sns")
     sns_client.publish(
         TargetArn=AV_STATUS_SNS_ARN,
         Message=json.dumps({"default": json.dumps(message)}),
@@ -187,19 +180,25 @@ def sns_scan_results(s3_object, result):
 
 def lambda_handler(event, context):
     s3_client = boto3.client("s3")
+    sns_client = boto3.client("sns")
 
     # Get some environment variables
     ENV = os.getenv("ENV", "")
     EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
-    start_time = datetime.utcnow()
-    print("Script starting at %s\n" % (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
+    start_time = get_timestamp()
+    print("Script starting at %s\n" % (start_time))
     s3_object = event_object(event, event_source=EVENT_SOURCE)
 
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
         verify_s3_object_version(s3_client, s3_object)
 
-    sns_start_scan(s3_object)
+    # Publish the start time of the scan
+    start_scan_sns_arn = AV_SCAN_START_SNS_ARN
+    if start_scan_sns_arn not in [None, ""]:
+        start_scan_time = get_timestamp()
+        sns_start_scan(sns_client, s3_object, start_scan_sns_arn, start_scan_time)
+
     file_path = download_s3_object(s3_object, "/tmp")
     clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
     scan_result = clamav.scan_file(file_path)
@@ -210,7 +209,7 @@ def lambda_handler(event, context):
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result)
     set_av_tags(s3_object, scan_result)
-    sns_scan_results(s3_object, scan_result)
+    sns_scan_results(sns_client, s3_object, scan_result)
     metrics.send(
         env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result
     )
@@ -221,9 +220,8 @@ def lambda_handler(event, context):
         pass
     if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
         delete_s3_object(s3_object)
-    print(
-        "Script finished at %s\n" % datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")
-    )
+    stop_scan_time = get_timestamp()
+    print("Script finished at %s\n" % stop_scan_time)
 
 
 def str_to_bool(s):

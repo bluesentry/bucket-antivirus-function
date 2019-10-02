@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import errno
+import datetime
 import os
 
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
@@ -53,3 +54,7 @@ def create_dir(path):
         except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
+
+
+def get_timestamp():
+    return datetime.datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")

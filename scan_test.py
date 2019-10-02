@@ -21,7 +21,11 @@ import boto3
 import botocore.session
 from botocore.stub import Stubber
 
+from common import AV_SCAN_START_METADATA
+from common import AV_TIMESTAMP_METADATA
+from common import get_timestamp
 from scan import event_object
+from scan import sns_start_scan
 from scan import verify_s3_object_version
 
 
@@ -31,7 +35,7 @@ class TestScan(unittest.TestCase):
         self.s3 = boto3.resource("s3")
 
         self.s3_client = botocore.session.get_session().create_client("s3")
-        self.stubber = Stubber(self.s3_client)
+        self.sns_client = botocore.session.get_session().create_client("sns", region_name='us-west-2')
 
     def test_sns_event_object(self):
         key_name = "key"
@@ -101,6 +105,7 @@ class TestScan(unittest.TestCase):
         # Set up responses
         get_bucket_versioning_response = {"Status": "Enabled"}
         get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
+        self.stubber = Stubber(self.s3_client)
         self.stubber.add_response(
             "get_bucket_versioning",
             get_bucket_versioning_response,
@@ -143,6 +148,7 @@ class TestScan(unittest.TestCase):
         # Set up responses
         get_bucket_versioning_response = {"Status": "Disabled"}
         get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
+        self.stubber = Stubber(self.s3_client)
         self.stubber.add_response(
             "get_bucket_versioning",
             get_bucket_versioning_response,
@@ -163,6 +169,7 @@ class TestScan(unittest.TestCase):
         # Set up responses
         get_bucket_versioning_response = {"Status": "Enabled"}
         get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
+        self.stubber = Stubber(self.s3_client)
         self.stubber.add_response(
             "get_bucket_versioning",
             get_bucket_versioning_response,
@@ -212,7 +219,31 @@ class TestScan(unittest.TestCase):
         )
 
     def test_sns_start_scan(self):
-        pass
+        self.stubber = Stubber(self.sns_client)
+        sns_arn = "some_arn"
+        key_name = "key"
+        timestamp = get_timestamp()
+        message = {
+            "bucket": self.s3_bucket_name,
+            "key": key_name,
+            # "version": "version_id",
+            AV_SCAN_START_METADATA: True,
+            AV_TIMESTAMP_METADATA: timestamp,
+        }
+        publish_response = {
+            "MessageId": "message_id",
+        }
+        publish_expected_params = {
+            "TargetArn": sns_arn,
+            "Message": json.dumps({"default": json.dumps(message)}),
+            "MessageStructure": "json",
+        }
+        self.stubber.add_response(
+            "publish", publish_response, publish_expected_params
+        )
+        with self.stubber:
+            s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+            sns_start_scan(self.sns_client, s3_obj, sns_arn, timestamp)
 
     def test_download_s3_object(self):
         pass
