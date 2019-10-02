@@ -13,18 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import json
 import unittest
 
 import boto3
+import botocore.session
+from botocore.stub import Stubber
 
 from scan import event_object
+from scan import verify_s3_object_version
 
 
 class TestScan(unittest.TestCase):
     def setUp(self):
         self.s3_bucket_name = "test_bucket"
         self.s3 = boto3.resource("s3")
+
+        self.s3_client = botocore.session.get_session().create_client("s3")
+        self.stubber = Stubber(self.s3_client)
 
     def test_sns_event_object(self):
         key_name = "key"
@@ -88,7 +95,121 @@ class TestScan(unittest.TestCase):
         self.assertEquals(cm.exception.message, "No records found in event!")
 
     def test_verify_s3_object_version(self):
-        pass
+        key_name = "key"
+        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+
+        # Set up responses
+        get_bucket_versioning_response = {"Status": "Enabled"}
+        get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
+        self.stubber.add_response(
+            "get_bucket_versioning",
+            get_bucket_versioning_response,
+            get_bucket_versioning_expected_params,
+        )
+        list_object_versions_response = {
+            "Versions": [
+                {
+                    "ETag": "string",
+                    "Size": 123,
+                    "StorageClass": "STANDARD",
+                    "Key": "string",
+                    "VersionId": "string",
+                    "IsLatest": True,
+                    "LastModified": datetime.datetime(2015, 1, 1),
+                    "Owner": {"DisplayName": "string", "ID": "string"},
+                }
+            ]
+        }
+        list_object_versions_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Prefix": key_name,
+        }
+        self.stubber.add_response(
+            "list_object_versions",
+            list_object_versions_response,
+            list_object_versions_expected_params,
+        )
+        try:
+            with self.stubber:
+                verify_s3_object_version(self.s3_client, s3_obj)
+        except Exception as e:
+            self.fail("verify_s3_object_version() raised Exception unexpectedly!")
+            raise e
+
+    def test_verify_s3_object_versioning_not_enabled(self):
+        key_name = "key"
+        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+
+        # Set up responses
+        get_bucket_versioning_response = {"Status": "Disabled"}
+        get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
+        self.stubber.add_response(
+            "get_bucket_versioning",
+            get_bucket_versioning_response,
+            get_bucket_versioning_expected_params,
+        )
+        with self.assertRaises(Exception) as cm:
+            with self.stubber:
+                verify_s3_object_version(self.s3_client, s3_obj)
+        self.assertEquals(
+            cm.exception.message,
+            "Object versioning is not enabled in bucket {}".format(self.s3_bucket_name),
+        )
+
+    def test_verify_s3_object_version_multiple_versions(self):
+        key_name = "key"
+        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+
+        # Set up responses
+        get_bucket_versioning_response = {"Status": "Enabled"}
+        get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
+        self.stubber.add_response(
+            "get_bucket_versioning",
+            get_bucket_versioning_response,
+            get_bucket_versioning_expected_params,
+        )
+        list_object_versions_response = {
+            "Versions": [
+                {
+                    "ETag": "string",
+                    "Size": 123,
+                    "StorageClass": "STANDARD",
+                    "Key": "string",
+                    "VersionId": "string",
+                    "IsLatest": True,
+                    "LastModified": datetime.datetime(2015, 1, 1),
+                    "Owner": {"DisplayName": "string", "ID": "string"},
+                },
+                {
+                    "ETag": "string",
+                    "Size": 123,
+                    "StorageClass": "STANDARD",
+                    "Key": "string",
+                    "VersionId": "string",
+                    "IsLatest": True,
+                    "LastModified": datetime.datetime(2015, 1, 1),
+                    "Owner": {"DisplayName": "string", "ID": "string"},
+                },
+            ]
+        }
+        list_object_versions_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Prefix": key_name,
+        }
+        self.stubber.add_response(
+            "list_object_versions",
+            list_object_versions_response,
+            list_object_versions_expected_params,
+        )
+        with self.assertRaises(Exception) as cm:
+            with self.stubber:
+                verify_s3_object_version(self.s3_client, s3_obj)
+        self.assertEquals(
+            cm.exception.message,
+            "Detected multiple object versions in {}.{}, aborting processing".format(
+                self.s3_bucket_name, key_name
+            ),
+        )
 
     def test_sns_start_scan(self):
         pass
