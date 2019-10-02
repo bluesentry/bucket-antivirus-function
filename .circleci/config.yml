@@ -77,6 +77,7 @@ jobs:
       - restore_cache:
           keys:
             - pre-commit-dot-cache-{{ checksum ".pre-commit-config.yaml" }}
+      - run: sudo pip install -r requirements.txt
       - run: sudo pip install -r requirements-dev.txt
       - run: nosetests
 
