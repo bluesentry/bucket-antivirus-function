@@ -82,11 +82,8 @@ def verify_s3_object_version(s3, s3_object):
         )
 
 
-def download_s3_object(s3_object, local_prefix):
-    local_path = "%s/%s/%s" % (local_prefix, s3_object.bucket_name, s3_object.key)
-    create_dir(os.path.dirname(local_path))
-    s3_object.download_file(local_path)
-    return local_path
+def get_local_path(s3_object, local_prefix):
+    return os.path.join(local_prefix, s3_object.bucket_name, s3_object.key)
 
 
 def delete_s3_object(s3_object):
@@ -195,7 +192,9 @@ def lambda_handler(event, context):
         start_scan_time = get_timestamp()
         sns_start_scan(sns_client, s3_object, start_scan_sns_arn, start_scan_time)
 
-    file_path = download_s3_object(s3_object, "/tmp")
+    file_path = get_local_path(s3_object, "/tmp")
+    create_dir(os.path.dirname(local_path))
+    s3_object.download_file(file_path)
     clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
     scan_result = clamav.scan_file(file_path)
     print(

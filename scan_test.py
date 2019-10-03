@@ -24,6 +24,7 @@ from botocore.stub import Stubber
 from common import AV_SCAN_START_METADATA
 from common import AV_TIMESTAMP_METADATA
 from common import get_timestamp
+from scan import get_local_path
 from scan import event_object
 from scan import sns_start_scan
 from scan import verify_s3_object_version
@@ -252,8 +253,14 @@ class TestScan(unittest.TestCase):
             s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
             sns_start_scan(self.sns_client, s3_obj, sns_arn, timestamp)
 
-    def test_download_s3_object(self):
-        pass
+    def test_get_local_path(self):
+        key_name = "key"
+        local_prefix = "/tmp"
+
+        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+        file_path = get_local_path(s3_obj, local_prefix)
+        expected_file_path = "/tmp/test_bucket/key"
+        self.assertEquals(file_path, expected_file_path)
 
     def test_set_av_metadata(self):
         pass
