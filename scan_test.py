@@ -29,6 +29,7 @@ from scan import delete_s3_object
 from scan import event_object
 from scan import get_local_path
 from scan import set_av_metadata
+from scan import set_av_tags
 from scan import sns_start_scan
 from scan import verify_s3_object_version
 
@@ -267,6 +268,8 @@ class TestScan(unittest.TestCase):
 
     def test_set_av_metadata(self):
         key_name = "key"
+        result = "CLEAN"
+        timestamp = get_timestamp()
 
         s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
         stubber_resource = Stubber(self.s3.meta.client)
@@ -288,8 +291,6 @@ class TestScan(unittest.TestCase):
         stubber_resource.add_response(
             "head_object", head_object_response_2, head_object_expected_params_2
         )
-        result = "CLEAN"
-        timestamp = get_timestamp()
         copy_object_response = {"VersionId": "version_id"}
         copy_object_expected_params = {
             "Bucket": self.s3_bucket_name,
@@ -307,7 +308,42 @@ class TestScan(unittest.TestCase):
             set_av_metadata(s3_obj, result, timestamp)
 
     def test_set_av_tags(self):
-        pass
+        key_name = "key"
+        result = "CLEAN"
+        timestamp = get_timestamp()
+        tag_set = {
+            "TagSet": [
+                {"Key": AV_STATUS_METADATA, "Value": result},
+                {"Key": AV_TIMESTAMP_METADATA, "Value": timestamp},
+            ]
+        }
+
+        stubber = Stubber(self.s3_client)
+        get_object_tagging_response = tag_set
+        get_object_tagging_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": key_name,
+        }
+        stubber.add_response(
+            "get_object_tagging",
+            get_object_tagging_response,
+            get_object_tagging_expected_params,
+        )
+        put_object_tagging_response = {}
+        put_object_tagging_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": key_name,
+            "Tagging": tag_set,
+        }
+        stubber.add_response(
+            "put_object_tagging",
+            put_object_tagging_response,
+            put_object_tagging_expected_params,
+        )
+
+        with stubber:
+            s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+            set_av_tags(self.s3_client, s3_obj, result, timestamp)
 
     def test_sns_scan_results(self):
         pass

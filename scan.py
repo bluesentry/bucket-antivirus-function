@@ -113,8 +113,7 @@ def set_av_metadata(s3_object, result, timestamp):
     )
 
 
-def set_av_tags(s3_object, result, timestamp):
-    s3_client = boto3.client("s3")
+def set_av_tags(s3_client, s3_object, result, timestamp):
     curr_tags = s3_client.get_object_tagging(
         Bucket=s3_object.bucket_name, Key=s3_object.key
     )["TagSet"]
@@ -173,6 +172,7 @@ def sns_scan_results(sns_client, s3_object, result):
 
 def lambda_handler(event, context):
     s3 = boto.resource("s3")
+    s3_client = boto3.client("s3")
     sns_client = boto3.client("sns")
 
     # Get some environment variables
@@ -204,7 +204,7 @@ def lambda_handler(event, context):
     result_time = get_timestamp()
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result, result_time)
-    set_av_tags(s3_object, scan_result, result_time)
+    set_av_tags(s3_client, s3_object, scan_result, result_time)
     sns_scan_results(sns_client, s3_object, scan_result)
     metrics.send(
         env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result
