@@ -98,11 +98,11 @@ def delete_s3_object(s3_object):
         print("Infected file deleted: %s.%s" % (s3_object.bucket_name, s3_object.key))
 
 
-def set_av_metadata(s3_object, result):
+def set_av_metadata(s3_object, result, timestamp):
     content_type = s3_object.content_type
     metadata = s3_object.metadata
     metadata[AV_STATUS_METADATA] = result
-    metadata[AV_TIMESTAMP_METADATA] = get_timestamp()
+    metadata[AV_TIMESTAMP_METADATA] = timestamp
     s3_object.copy(
         {"Bucket": s3_object.bucket_name, "Key": s3_object.key},
         ExtraArgs={
@@ -113,7 +113,7 @@ def set_av_metadata(s3_object, result):
     )
 
 
-def set_av_tags(s3_object, result):
+def set_av_tags(s3_object, result, timestamp):
     s3_client = boto3.client("s3")
     curr_tags = s3_client.get_object_tagging(
         Bucket=s3_object.bucket_name, Key=s3_object.key
@@ -123,7 +123,7 @@ def set_av_tags(s3_object, result):
         if tag["Key"] in [AV_STATUS_METADATA, AV_TIMESTAMP_METADATA]:
             new_tags.remove(tag)
     new_tags.append({"Key": AV_STATUS_METADATA, "Value": result})
-    new_tags.append({"Key": AV_TIMESTAMP_METADATA, "Value": get_timestamp()})
+    new_tags.append({"Key": AV_TIMESTAMP_METADATA, "Value": timestamp})
     s3_client.put_object_tagging(
         Bucket=s3_object.bucket_name, Key=s3_object.key, Tagging={"TagSet": new_tags}
     )
@@ -201,9 +201,10 @@ def lambda_handler(event, context):
         "Scan of s3://%s resulted in %s\n"
         % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result)
     )
+    result_time = get_timestamp()
     if "AV_UPDATE_METADATA" in os.environ:
-        set_av_metadata(s3_object, scan_result)
-    set_av_tags(s3_object, scan_result)
+        set_av_metadata(s3_object, scan_result, result_time)
+    set_av_tags(s3_object, scan_result, result_time)
     sns_scan_results(sns_client, s3_object, scan_result)
     metrics.send(
         env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result

@@ -22,11 +22,13 @@ import botocore.session
 from botocore.stub import Stubber
 
 from common import AV_SCAN_START_METADATA
+from common import AV_STATUS_METADATA
 from common import AV_TIMESTAMP_METADATA
 from common import get_timestamp
 from scan import delete_s3_object
 from scan import event_object
 from scan import get_local_path
+from scan import set_av_metadata
 from scan import sns_start_scan
 from scan import verify_s3_object_version
 
@@ -264,7 +266,45 @@ class TestScan(unittest.TestCase):
         self.assertEquals(file_path, expected_file_path)
 
     def test_set_av_metadata(self):
-        pass
+        key_name = "key"
+
+        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+        stubber_resource = Stubber(self.s3.meta.client)
+
+        # First head call is done to get content type and meta data
+        head_object_response = {"ContentType": "content", "Metadata": {}}
+        head_object_expected_params = {"Bucket": self.s3_bucket_name, "Key": key_name}
+        stubber_resource.add_response(
+            "head_object", head_object_response, head_object_expected_params
+        )
+
+        # Next two calls are done when copy() is called
+        head_object_response_2 = {
+            "ContentType": "content",
+            "Metadata": {},
+            "ContentLength": 200,
+        }
+        head_object_expected_params_2 = {"Bucket": self.s3_bucket_name, "Key": key_name}
+        stubber_resource.add_response(
+            "head_object", head_object_response_2, head_object_expected_params_2
+        )
+        result = "CLEAN"
+        timestamp = get_timestamp()
+        copy_object_response = {"VersionId": "version_id"}
+        copy_object_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": key_name,
+            "ContentType": "content",
+            "CopySource": {"Bucket": self.s3_bucket_name, "Key": key_name},
+            "Metadata": {AV_STATUS_METADATA: result, AV_TIMESTAMP_METADATA: timestamp},
+            "MetadataDirective": "REPLACE",
+        }
+        stubber_resource.add_response(
+            "copy_object", copy_object_response, copy_object_expected_params
+        )
+
+        with stubber_resource:
+            set_av_metadata(s3_obj, result, timestamp)
 
     def test_set_av_tags(self):
         pass
