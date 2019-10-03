@@ -38,49 +38,47 @@ from scan import verify_s3_object_version
 class TestScan(unittest.TestCase):
     def setUp(self):
         self.s3_bucket_name = "test_bucket"
-        self.s3 = boto3.resource("s3")
+        self.s3_key_name = "test_key"
 
+        self.s3 = boto3.resource("s3")
         self.s3_client = botocore.session.get_session().create_client("s3")
         self.sns_client = botocore.session.get_session().create_client(
             "sns", region_name="us-west-2"
         )
 
     def test_sns_event_object(self):
-        key_name = "key"
         event = {
             "Records": [
                 {
                     "s3": {
                         "bucket": {"name": self.s3_bucket_name},
-                        "object": {"key": key_name},
+                        "object": {"key": self.s3_key_name},
                     }
                 }
             ]
         }
         sns_event = {"Records": [{"Sns": {"Message": json.dumps(event)}}]}
         s3_obj = event_object(sns_event, event_source="sns")
-        expected_s3_object = self.s3.Object(self.s3_bucket_name, key_name)
+        expected_s3_object = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
         self.assertEquals(s3_obj, expected_s3_object)
 
     def test_s3_event_object(self):
-        key_name = "key"
         event = {
             "Records": [
                 {
                     "s3": {
                         "bucket": {"name": self.s3_bucket_name},
-                        "object": {"key": key_name},
+                        "object": {"key": self.s3_key_name},
                     }
                 }
             ]
         }
         s3_obj = event_object(event)
-        expected_s3_object = self.s3.Object(self.s3_bucket_name, key_name)
+        expected_s3_object = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
         self.assertEquals(s3_obj, expected_s3_object)
 
     def test_s3_event_object_missing_bucket(self):
-        key_name = "key"
-        event = {"Records": [{"s3": {"object": {"key": key_name}}}]}
+        event = {"Records": [{"s3": {"object": {"key": self.s3_key_name}}}]}
         with self.assertRaises(Exception) as cm:
             event_object(event)
         self.assertEquals(cm.exception.message, "No bucket found in event!")
@@ -107,8 +105,7 @@ class TestScan(unittest.TestCase):
         self.assertEquals(cm.exception.message, "No records found in event!")
 
     def test_verify_s3_object_version(self):
-        key_name = "key"
-        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+        s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
 
         # Set up responses
         get_bucket_versioning_response = {"Status": "Enabled"}
@@ -135,7 +132,7 @@ class TestScan(unittest.TestCase):
         }
         list_object_versions_expected_params = {
             "Bucket": self.s3_bucket_name,
-            "Prefix": key_name,
+            "Prefix": self.s3_key_name,
         }
         self.stubber_resource.add_response(
             "list_object_versions",
@@ -150,8 +147,7 @@ class TestScan(unittest.TestCase):
             raise e
 
     def test_verify_s3_object_versioning_not_enabled(self):
-        key_name = "key"
-        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+        s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
 
         # Set up responses
         get_bucket_versioning_response = {"Status": "Disabled"}
@@ -171,8 +167,7 @@ class TestScan(unittest.TestCase):
         )
 
     def test_verify_s3_object_version_multiple_versions(self):
-        key_name = "key"
-        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+        s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
 
         # Set up responses
         get_bucket_versioning_response = {"Status": "Enabled"}
@@ -209,7 +204,7 @@ class TestScan(unittest.TestCase):
         }
         list_object_versions_expected_params = {
             "Bucket": self.s3_bucket_name,
-            "Prefix": key_name,
+            "Prefix": self.s3_key_name,
         }
         self.stubber_resource.add_response(
             "list_object_versions",
@@ -222,7 +217,7 @@ class TestScan(unittest.TestCase):
         self.assertEquals(
             cm.exception.message,
             "Detected multiple object versions in {}.{}, aborting processing".format(
-                self.s3_bucket_name, key_name
+                self.s3_bucket_name, self.s3_key_name
             ),
         )
 
@@ -231,12 +226,11 @@ class TestScan(unittest.TestCase):
         self.stubber_resource = Stubber(self.s3.meta.client)
 
         sns_arn = "some_arn"
-        key_name = "key"
         version_id = "version-id"
         timestamp = get_timestamp()
         message = {
             "bucket": self.s3_bucket_name,
-            "key": key_name,
+            "key": self.s3_key_name,
             "version": version_id,
             AV_SCAN_START_METADATA: True,
             AV_TIMESTAMP_METADATA: timestamp,
@@ -250,34 +244,38 @@ class TestScan(unittest.TestCase):
         self.stubber.add_response("publish", publish_response, publish_expected_params)
 
         head_object_response = {"VersionId": version_id}
-        head_object_expected_params = {"Bucket": self.s3_bucket_name, "Key": key_name}
+        head_object_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": self.s3_key_name,
+        }
         self.stubber_resource.add_response(
             "head_object", head_object_response, head_object_expected_params
         )
         with self.stubber, self.stubber_resource:
-            s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+            s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             sns_start_scan(self.sns_client, s3_obj, sns_arn, timestamp)
 
     def test_get_local_path(self):
-        key_name = "key"
         local_prefix = "/tmp"
 
-        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+        s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
         file_path = get_local_path(s3_obj, local_prefix)
-        expected_file_path = "/tmp/test_bucket/key"
+        expected_file_path = "/tmp/test_bucket/test_key"
         self.assertEquals(file_path, expected_file_path)
 
     def test_set_av_metadata(self):
-        key_name = "key"
         result = "CLEAN"
         timestamp = get_timestamp()
 
-        s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+        s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
         stubber_resource = Stubber(self.s3.meta.client)
 
         # First head call is done to get content type and meta data
         head_object_response = {"ContentType": "content", "Metadata": {}}
-        head_object_expected_params = {"Bucket": self.s3_bucket_name, "Key": key_name}
+        head_object_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": self.s3_key_name,
+        }
         stubber_resource.add_response(
             "head_object", head_object_response, head_object_expected_params
         )
@@ -288,16 +286,19 @@ class TestScan(unittest.TestCase):
             "Metadata": {},
             "ContentLength": 200,
         }
-        head_object_expected_params_2 = {"Bucket": self.s3_bucket_name, "Key": key_name}
+        head_object_expected_params_2 = {
+            "Bucket": self.s3_bucket_name,
+            "Key": self.s3_key_name,
+        }
         stubber_resource.add_response(
             "head_object", head_object_response_2, head_object_expected_params_2
         )
         copy_object_response = {"VersionId": "version_id"}
         copy_object_expected_params = {
             "Bucket": self.s3_bucket_name,
-            "Key": key_name,
+            "Key": self.s3_key_name,
             "ContentType": "content",
-            "CopySource": {"Bucket": self.s3_bucket_name, "Key": key_name},
+            "CopySource": {"Bucket": self.s3_bucket_name, "Key": self.s3_key_name},
             "Metadata": {AV_STATUS_METADATA: result, AV_TIMESTAMP_METADATA: timestamp},
             "MetadataDirective": "REPLACE",
         }
@@ -309,7 +310,6 @@ class TestScan(unittest.TestCase):
             set_av_metadata(s3_obj, result, timestamp)
 
     def test_set_av_tags(self):
-        key_name = "key"
         result = "CLEAN"
         timestamp = get_timestamp()
         tag_set = {
@@ -323,7 +323,7 @@ class TestScan(unittest.TestCase):
         get_object_tagging_response = tag_set
         get_object_tagging_expected_params = {
             "Bucket": self.s3_bucket_name,
-            "Key": key_name,
+            "Key": self.s3_key_name,
         }
         stubber.add_response(
             "get_object_tagging",
@@ -333,7 +333,7 @@ class TestScan(unittest.TestCase):
         put_object_tagging_response = {}
         put_object_tagging_expected_params = {
             "Bucket": self.s3_bucket_name,
-            "Key": key_name,
+            "Key": self.s3_key_name,
             "Tagging": tag_set,
         }
         stubber.add_response(
@@ -343,7 +343,7 @@ class TestScan(unittest.TestCase):
         )
 
         with stubber:
-            s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+            s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             set_av_tags(self.s3_client, s3_obj, result, timestamp)
 
     def test_sns_scan_results(self):
@@ -351,13 +351,12 @@ class TestScan(unittest.TestCase):
         self.stubber_resource = Stubber(self.s3.meta.client)
 
         sns_arn = "some_arn"
-        key_name = "key"
         version_id = "version-id"
         result = "CLEAN"
         timestamp = get_timestamp()
         message = {
             "bucket": self.s3_bucket_name,
-            "key": key_name,
+            "key": self.s3_key_name,
             "version": version_id,
             AV_STATUS_METADATA: result,
             AV_TIMESTAMP_METADATA: timestamp,
@@ -374,38 +373,42 @@ class TestScan(unittest.TestCase):
         self.stubber.add_response("publish", publish_response, publish_expected_params)
 
         head_object_response = {"VersionId": version_id}
-        head_object_expected_params = {"Bucket": self.s3_bucket_name, "Key": key_name}
+        head_object_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": self.s3_key_name,
+        }
         self.stubber_resource.add_response(
             "head_object", head_object_response, head_object_expected_params
         )
         with self.stubber, self.stubber_resource:
-            s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+            s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             sns_scan_results(self.sns_client, s3_obj, sns_arn, result, timestamp)
 
     def test_delete_s3_object(self):
-        key_name = "key"
         stubber = Stubber(self.s3.meta.client)
         delete_object_response = {}
-        delete_object_expected_params = {"Bucket": self.s3_bucket_name, "Key": key_name}
+        delete_object_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": self.s3_key_name,
+        }
         stubber.add_response(
             "delete_object", delete_object_response, delete_object_expected_params
         )
 
         with stubber:
-            s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+            s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             delete_s3_object(s3_obj)
 
     def test_delete_s3_object_exception(self):
-        key_name = "key"
         stubber = Stubber(self.s3.meta.client)
 
         with self.assertRaises(Exception) as cm:
             with stubber:
-                s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+                s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
                 delete_s3_object(s3_obj)
         self.assertEquals(
             cm.exception.message,
             "Failed to delete infected file: {}.{}".format(
-                self.s3_bucket_name, key_name
+                self.s3_bucket_name, self.s3_key_name
             ),
         )
