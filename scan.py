@@ -139,7 +139,7 @@ def sns_start_scan(sns_client, s3_object, start_scan_sns_arn, timestamp):
     message = {
         "bucket": s3_object.bucket_name,
         "key": s3_object.key,
-        # "version": s3_object.version_id,  # TODO: This uses s3_client.head_object() and needs to be stubbed out
+        "version": s3_object.version_id,
         AV_SCAN_START_METADATA: True,
         AV_TIMESTAMP_METADATA: timestamp,
     }

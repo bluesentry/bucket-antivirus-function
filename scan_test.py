@@ -222,13 +222,16 @@ class TestScan(unittest.TestCase):
 
     def test_sns_start_scan(self):
         self.stubber = Stubber(self.sns_client)
+        self.stubber_resource = Stubber(self.s3.meta.client)
+
         sns_arn = "some_arn"
         key_name = "key"
+        version_id = "version-id"
         timestamp = get_timestamp()
         message = {
             "bucket": self.s3_bucket_name,
             "key": key_name,
-            # "version": "version_id",
+            "version": version_id,
             AV_SCAN_START_METADATA: True,
             AV_TIMESTAMP_METADATA: timestamp,
         }
@@ -239,7 +242,16 @@ class TestScan(unittest.TestCase):
             "MessageStructure": "json",
         }
         self.stubber.add_response("publish", publish_response, publish_expected_params)
-        with self.stubber:
+
+        head_object_response = {
+            "VersionId": version_id,
+        }
+        head_object_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": key_name,
+        }
+        self.stubber_resource.add_response("head_object", head_object_response, head_object_expected_params)
+        with self.stubber, self.stubber_resource:
             s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
             sns_start_scan(self.sns_client, s3_obj, sns_arn, timestamp)
 
