@@ -15,6 +15,7 @@
 
 import copy
 import json
+import os
 import urllib
 from distutils.util import strtobool
 
@@ -22,7 +23,21 @@ import boto3
 
 import clamav
 import metrics
-from common import *  # noqa
+from common import AV_DEFINITION_S3_BUCKET
+from common import AV_DEFINITION_S3_PREFIX
+from common import AV_DELETE_INFECTED_FILES
+from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
+from common import AV_SCAN_START_METADATA
+from common import AV_SCAN_START_SNS_ARN
+from common import AV_STATUS_CLEAN
+from common import AV_STATUS_INFECTED
+from common import AV_STATUS_METADATA
+from common import AV_STATUS_SNS_ARN
+from common import AV_STATUS_SNS_PUBLISH_CLEAN
+from common import AV_STATUS_SNS_PUBLISH_INFECTED
+from common import AV_TIMESTAMP_METADATA
+from common import create_dir
+from common import get_timestamp
 
 
 def event_object(event, event_source="s3"):
@@ -168,7 +183,7 @@ def sns_scan_results(sns_client, s3_object, sns_arn, result, timestamp):
 
 
 def lambda_handler(event, context):
-    s3 = boto.resource("s3")
+    s3 = boto3.resource("s3")
     s3_client = boto3.client("s3")
     sns_client = boto3.client("sns")
 
@@ -189,7 +204,7 @@ def lambda_handler(event, context):
         sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
 
     file_path = get_local_path(s3_object, "/tmp")
-    create_dir(os.path.dirname(local_path))
+    create_dir(os.path.dirname(file_path))
     s3_object.download_file(file_path)
     clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
     scan_result = clamav.scan_file(file_path)

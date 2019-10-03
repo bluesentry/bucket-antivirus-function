@@ -22,7 +22,15 @@ from subprocess import check_output, Popen, PIPE, STDOUT
 import boto3
 import botocore
 
-from common import *  # noqa
+from common import AV_DEFINITION_S3_PREFIX
+from common import AV_DEFINITION_PATH
+from common import AV_DEFINITION_FILENAMES
+from common import AV_STATUS_CLEAN
+from common import AV_STATUS_INFECTED
+from common import CLAMAVLIB_PATH
+from common import CLAMSCAN_PATH
+from common import FRESHCLAM_PATH
+from common import create_dir
 
 
 RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"

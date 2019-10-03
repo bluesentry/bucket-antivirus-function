@@ -17,7 +17,10 @@ from datetime import datetime
 import os
 
 import clamav
-from common import *  # noqa
+from common import AV_DEFINITION_PATH
+from common import AV_DEFINITION_S3_BUCKET
+from common import AV_DEFINITION_S3_PREFIX
+from common import CLAMAVLIB_PATH
 
 
 def lambda_handler(event, context):
