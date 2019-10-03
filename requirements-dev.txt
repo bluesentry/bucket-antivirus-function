@@ -1,3 +1,7 @@
+# boto3 available by default in AWS but not locally
 boto3
-nose
+
+# Test requirements
 coverage
+nose
+mock
