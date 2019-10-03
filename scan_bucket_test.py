@@ -22,6 +22,7 @@ from botocore.stub import Stubber
 from common import AV_STATUS_INFECTED
 from common import AV_STATUS_METADATA
 from common import AV_TIMESTAMP_METADATA
+from common import get_timestamp
 from scan_bucket import get_objects
 from scan_bucket import format_s3_event
 
@@ -79,12 +80,7 @@ class TestDisplayInfected(unittest.TestCase):
 
         get_object_tagging_response = {
             "VersionId": "abc123",
-            "TagSet": [
-                {
-                    "Key": AV_TIMESTAMP_METADATA,
-                    "Value": datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
-                }
-            ],
+            "TagSet": [{"Key": AV_TIMESTAMP_METADATA, "Value": get_timestamp()}],
         }
         get_object_tagging_expected_params = {
             "Bucket": self.s3_bucket_name,
