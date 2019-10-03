@@ -17,7 +17,7 @@ import hashlib
 import os
 import pwd
 import re
-from subprocess import check_output, Popen, PIPE, STDOUT
+import subprocess
 
 import boto3
 import botocore
@@ -37,7 +37,7 @@ RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"
 
 
 def current_library_search_path():
-    ld_verbose = check_output(["ld", "--verbose"])
+    ld_verbose = subprocess.check_output(["ld", "--verbose"])
     rd_ld = re.compile(RE_SEARCH_DIR)
     return rd_ld.findall(ld_verbose)
 
@@ -96,15 +96,15 @@ def update_defs_from_freshclam(path, library_path=""):
             CLAMAVLIB_PATH,
         )
     print("Starting freshclam with defs in %s." % path)
-    fc_proc = Popen(
+    fc_proc = subprocess.Popen(
         [
             FRESHCLAM_PATH,
             "--config-file=./bin/freshclam.conf",
             "-u %s" % pwd.getpwuid(os.getuid())[0],
             "--datadir=%s" % path,
         ],
-        stderr=STDOUT,
-        stdout=PIPE,
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
         env=fc_env,
     )
     output = fc_proc.communicate()[0]
@@ -142,10 +142,10 @@ def scan_file(path):
     av_env = os.environ.copy()
     av_env["LD_LIBRARY_PATH"] = CLAMAVLIB_PATH
     print("Starting clamscan of %s." % path)
-    av_proc = Popen(
+    av_proc = subprocess.Popen(
         [CLAMSCAN_PATH, "-v", "-a", "--stdout", "-d", AV_DEFINITION_PATH, path],
-        stderr=STDOUT,
-        stdout=PIPE,
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
         env=av_env,
     )
     output = av_proc.communicate()[0]
