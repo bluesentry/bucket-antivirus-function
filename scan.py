@@ -61,18 +61,15 @@ def event_object(event, event_source="s3"):
     return s3.Object(bucket_name, key_name)
 
 
-def verify_s3_object_version(s3, s3_client, s3_object):
+def verify_s3_object_version(s3, s3_object):
     # validate that we only process the original version of a file, if asked to do so
     # security check to disallow processing of a new (possibly infected) object version
     # while a clean initial version is getting processed
     # downstream services may consume latest version by mistake and get the infected version instead
     bucket_versioning = s3.BucketVersioning(s3_object.bucket_name)
     if bucket_versioning.status == "Enabled":
-        versions = list(
-            s3_client.list_object_versions(
-                Bucket=s3_object.bucket_name, Prefix=s3_object.key
-            )["Versions"]
-        )
+        bucket = s3.Bucket(s3_object.bucket_name)
+        versions = list(bucket.object_versions.filter(Prefix=s3_object.key))
         if len(versions) > 1:
             raise Exception(
                 "Detected multiple object versions in %s.%s, aborting processing"
@@ -179,7 +176,6 @@ def sns_scan_results(sns_client, s3_object, result):
 
 def lambda_handler(event, context):
     s3 = boto.resource("s3")
-    s3_client = boto3.client("s3")
     sns_client = boto3.client("sns")
 
     # Get some environment variables
@@ -191,7 +187,7 @@ def lambda_handler(event, context):
     s3_object = event_object(event, event_source=EVENT_SOURCE)
 
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
-        verify_s3_object_version(s3, s3_client, s3_object)
+        verify_s3_object_version(s3, s3_object)
 
     # Publish the start time of the scan
     start_scan_sns_arn = AV_SCAN_START_SNS_ARN

@@ -107,7 +107,6 @@ class TestScan(unittest.TestCase):
         # Set up responses
         get_bucket_versioning_response = {"Status": "Enabled"}
         get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
-        self.stubber = Stubber(self.s3_client)
         self.stubber_resource = Stubber(self.s3.meta.client)
         self.stubber_resource.add_response(
             "get_bucket_versioning",
@@ -132,14 +131,14 @@ class TestScan(unittest.TestCase):
             "Bucket": self.s3_bucket_name,
             "Prefix": key_name,
         }
-        self.stubber.add_response(
+        self.stubber_resource.add_response(
             "list_object_versions",
             list_object_versions_response,
             list_object_versions_expected_params,
         )
         try:
-            with self.stubber, self.stubber_resource:
-                verify_s3_object_version(self.s3, self.s3_client, s3_obj)
+            with self.stubber_resource:
+                verify_s3_object_version(self.s3, s3_obj)
         except Exception as e:
             self.fail("verify_s3_object_version() raised Exception unexpectedly!")
             raise e
@@ -151,7 +150,6 @@ class TestScan(unittest.TestCase):
         # Set up responses
         get_bucket_versioning_response = {"Status": "Disabled"}
         get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
-        self.stubber = Stubber(self.s3_client)
         self.stubber_resource = Stubber(self.s3.meta.client)
         self.stubber_resource.add_response(
             "get_bucket_versioning",
@@ -159,8 +157,8 @@ class TestScan(unittest.TestCase):
             get_bucket_versioning_expected_params,
         )
         with self.assertRaises(Exception) as cm:
-            with self.stubber, self.stubber_resource:
-                verify_s3_object_version(self.s3, self.s3_client, s3_obj)
+            with self.stubber_resource:
+                verify_s3_object_version(self.s3, s3_obj)
         self.assertEquals(
             cm.exception.message,
             "Object versioning is not enabled in bucket {}".format(self.s3_bucket_name),
@@ -173,7 +171,6 @@ class TestScan(unittest.TestCase):
         # Set up responses
         get_bucket_versioning_response = {"Status": "Enabled"}
         get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
-        self.stubber = Stubber(self.s3_client)
         self.stubber_resource = Stubber(self.s3.meta.client)
         self.stubber_resource.add_response(
             "get_bucket_versioning",
@@ -208,14 +205,14 @@ class TestScan(unittest.TestCase):
             "Bucket": self.s3_bucket_name,
             "Prefix": key_name,
         }
-        self.stubber.add_response(
+        self.stubber_resource.add_response(
             "list_object_versions",
             list_object_versions_response,
             list_object_versions_expected_params,
         )
         with self.assertRaises(Exception) as cm:
-            with self.stubber, self.stubber_resource:
-                verify_s3_object_version(self.s3, self.s3_client, s3_obj)
+            with self.stubber_resource:
+                verify_s3_object_version(self.s3, s3_obj)
         self.assertEquals(
             cm.exception.message,
             "Detected multiple object versions in {}.{}, aborting processing".format(
