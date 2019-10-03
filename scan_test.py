@@ -24,8 +24,9 @@ from botocore.stub import Stubber
 from common import AV_SCAN_START_METADATA
 from common import AV_TIMESTAMP_METADATA
 from common import get_timestamp
-from scan import get_local_path
+from scan import delete_s3_object
 from scan import event_object
+from scan import get_local_path
 from scan import sns_start_scan
 from scan import verify_s3_object_version
 
@@ -272,4 +273,29 @@ class TestScan(unittest.TestCase):
         pass
 
     def test_delete_s3_object(self):
-        pass
+        key_name = "key"
+        stubber = Stubber(self.s3.meta.client)
+        delete_object_response = {}
+        delete_object_expected_params = {"Bucket": self.s3_bucket_name, "Key": key_name}
+        stubber.add_response(
+            "delete_object", delete_object_response, delete_object_expected_params
+        )
+
+        with stubber:
+            s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+            delete_s3_object(s3_obj)
+
+    def test_delete_s3_object_exception(self):
+        key_name = "key"
+        stubber = Stubber(self.s3.meta.client)
+
+        with self.assertRaises(Exception) as cm:
+            with stubber:
+                s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+                delete_s3_object(s3_obj)
+        self.assertEquals(
+            cm.exception.message,
+            "Failed to delete infected file: {}.{}".format(
+                self.s3_bucket_name, key_name
+            ),
+        )

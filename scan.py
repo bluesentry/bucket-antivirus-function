@@ -90,7 +90,7 @@ def delete_s3_object(s3_object):
     try:
         s3_object.delete()
     except Exception:
-        print(
+        raise Exception(
             "Failed to delete infected file: %s.%s"
             % (s3_object.bucket_name, s3_object.key)
         )
