@@ -4,4 +4,3 @@ boto3
 # Test requirements
 coverage
 nose
-mock
