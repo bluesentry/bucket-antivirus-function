@@ -37,9 +37,11 @@ from scan import verify_s3_object_version
 
 class TestScan(unittest.TestCase):
     def setUp(self):
+        # Common data
         self.s3_bucket_name = "test_bucket"
         self.s3_key_name = "test_key"
 
+        # Clients and Resources
         self.s3 = boto3.resource("s3")
         self.s3_client = botocore.session.get_session().create_client("s3")
         self.sns_client = botocore.session.get_session().create_client(
@@ -110,8 +112,8 @@ class TestScan(unittest.TestCase):
         # Set up responses
         get_bucket_versioning_response = {"Status": "Enabled"}
         get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
-        self.stubber_resource = Stubber(self.s3.meta.client)
-        self.stubber_resource.add_response(
+        s3_stubber_resource = Stubber(self.s3.meta.client)
+        s3_stubber_resource.add_response(
             "get_bucket_versioning",
             get_bucket_versioning_response,
             get_bucket_versioning_expected_params,
@@ -134,13 +136,13 @@ class TestScan(unittest.TestCase):
             "Bucket": self.s3_bucket_name,
             "Prefix": self.s3_key_name,
         }
-        self.stubber_resource.add_response(
+        s3_stubber_resource.add_response(
             "list_object_versions",
             list_object_versions_response,
             list_object_versions_expected_params,
         )
         try:
-            with self.stubber_resource:
+            with s3_stubber_resource:
                 verify_s3_object_version(self.s3, s3_obj)
         except Exception as e:
             self.fail("verify_s3_object_version() raised Exception unexpectedly!")
@@ -152,14 +154,14 @@ class TestScan(unittest.TestCase):
         # Set up responses
         get_bucket_versioning_response = {"Status": "Disabled"}
         get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
-        self.stubber_resource = Stubber(self.s3.meta.client)
-        self.stubber_resource.add_response(
+        s3_stubber_resource = Stubber(self.s3.meta.client)
+        s3_stubber_resource.add_response(
             "get_bucket_versioning",
             get_bucket_versioning_response,
             get_bucket_versioning_expected_params,
         )
         with self.assertRaises(Exception) as cm:
-            with self.stubber_resource:
+            with s3_stubber_resource:
                 verify_s3_object_version(self.s3, s3_obj)
         self.assertEquals(
             cm.exception.message,
@@ -172,8 +174,8 @@ class TestScan(unittest.TestCase):
         # Set up responses
         get_bucket_versioning_response = {"Status": "Enabled"}
         get_bucket_versioning_expected_params = {"Bucket": self.s3_bucket_name}
-        self.stubber_resource = Stubber(self.s3.meta.client)
-        self.stubber_resource.add_response(
+        s3_stubber_resource = Stubber(self.s3.meta.client)
+        s3_stubber_resource.add_response(
             "get_bucket_versioning",
             get_bucket_versioning_response,
             get_bucket_versioning_expected_params,
@@ -206,13 +208,13 @@ class TestScan(unittest.TestCase):
             "Bucket": self.s3_bucket_name,
             "Prefix": self.s3_key_name,
         }
-        self.stubber_resource.add_response(
+        s3_stubber_resource.add_response(
             "list_object_versions",
             list_object_versions_response,
             list_object_versions_expected_params,
         )
         with self.assertRaises(Exception) as cm:
-            with self.stubber_resource:
+            with s3_stubber_resource:
                 verify_s3_object_version(self.s3, s3_obj)
         self.assertEquals(
             cm.exception.message,
@@ -222,8 +224,8 @@ class TestScan(unittest.TestCase):
         )
 
     def test_sns_start_scan(self):
-        self.stubber = Stubber(self.sns_client)
-        self.stubber_resource = Stubber(self.s3.meta.client)
+        sns_stubber = Stubber(self.sns_client)
+        s3_stubber_resource = Stubber(self.s3.meta.client)
 
         sns_arn = "some_arn"
         version_id = "version-id"
@@ -241,17 +243,17 @@ class TestScan(unittest.TestCase):
             "Message": json.dumps({"default": json.dumps(message)}),
             "MessageStructure": "json",
         }
-        self.stubber.add_response("publish", publish_response, publish_expected_params)
+        sns_stubber.add_response("publish", publish_response, publish_expected_params)
 
         head_object_response = {"VersionId": version_id}
         head_object_expected_params = {
             "Bucket": self.s3_bucket_name,
             "Key": self.s3_key_name,
         }
-        self.stubber_resource.add_response(
+        s3_stubber_resource.add_response(
             "head_object", head_object_response, head_object_expected_params
         )
-        with self.stubber, self.stubber_resource:
+        with sns_stubber, s3_stubber_resource:
             s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             sns_start_scan(self.sns_client, s3_obj, sns_arn, timestamp)
 
@@ -268,7 +270,7 @@ class TestScan(unittest.TestCase):
         timestamp = get_timestamp()
 
         s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
-        stubber_resource = Stubber(self.s3.meta.client)
+        s3_stubber_resource = Stubber(self.s3.meta.client)
 
         # First head call is done to get content type and meta data
         head_object_response = {"ContentType": "content", "Metadata": {}}
@@ -276,7 +278,7 @@ class TestScan(unittest.TestCase):
             "Bucket": self.s3_bucket_name,
             "Key": self.s3_key_name,
         }
-        stubber_resource.add_response(
+        s3_stubber_resource.add_response(
             "head_object", head_object_response, head_object_expected_params
         )
 
@@ -290,7 +292,7 @@ class TestScan(unittest.TestCase):
             "Bucket": self.s3_bucket_name,
             "Key": self.s3_key_name,
         }
-        stubber_resource.add_response(
+        s3_stubber_resource.add_response(
             "head_object", head_object_response_2, head_object_expected_params_2
         )
         copy_object_response = {"VersionId": "version_id"}
@@ -302,11 +304,11 @@ class TestScan(unittest.TestCase):
             "Metadata": {AV_STATUS_METADATA: result, AV_TIMESTAMP_METADATA: timestamp},
             "MetadataDirective": "REPLACE",
         }
-        stubber_resource.add_response(
+        s3_stubber_resource.add_response(
             "copy_object", copy_object_response, copy_object_expected_params
         )
 
-        with stubber_resource:
+        with s3_stubber_resource:
             set_av_metadata(s3_obj, result, timestamp)
 
     def test_set_av_tags(self):
@@ -319,13 +321,13 @@ class TestScan(unittest.TestCase):
             ]
         }
 
-        stubber = Stubber(self.s3_client)
+        s3_stubber = Stubber(self.s3_client)
         get_object_tagging_response = tag_set
         get_object_tagging_expected_params = {
             "Bucket": self.s3_bucket_name,
             "Key": self.s3_key_name,
         }
-        stubber.add_response(
+        s3_stubber.add_response(
             "get_object_tagging",
             get_object_tagging_response,
             get_object_tagging_expected_params,
@@ -336,19 +338,19 @@ class TestScan(unittest.TestCase):
             "Key": self.s3_key_name,
             "Tagging": tag_set,
         }
-        stubber.add_response(
+        s3_stubber.add_response(
             "put_object_tagging",
             put_object_tagging_response,
             put_object_tagging_expected_params,
         )
 
-        with stubber:
+        with s3_stubber:
             s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             set_av_tags(self.s3_client, s3_obj, result, timestamp)
 
     def test_sns_scan_results(self):
-        self.stubber = Stubber(self.sns_client)
-        self.stubber_resource = Stubber(self.s3.meta.client)
+        sns_stubber = Stubber(self.sns_client)
+        s3_stubber_resource = Stubber(self.s3.meta.client)
 
         sns_arn = "some_arn"
         version_id = "version-id"
@@ -370,40 +372,40 @@ class TestScan(unittest.TestCase):
             },
             "MessageStructure": "json",
         }
-        self.stubber.add_response("publish", publish_response, publish_expected_params)
+        sns_stubber.add_response("publish", publish_response, publish_expected_params)
 
         head_object_response = {"VersionId": version_id}
         head_object_expected_params = {
             "Bucket": self.s3_bucket_name,
             "Key": self.s3_key_name,
         }
-        self.stubber_resource.add_response(
+        s3_stubber_resource.add_response(
             "head_object", head_object_response, head_object_expected_params
         )
-        with self.stubber, self.stubber_resource:
+        with sns_stubber, s3_stubber_resource:
             s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             sns_scan_results(self.sns_client, s3_obj, sns_arn, result, timestamp)
 
     def test_delete_s3_object(self):
-        stubber = Stubber(self.s3.meta.client)
+        s3_stubber = Stubber(self.s3.meta.client)
         delete_object_response = {}
         delete_object_expected_params = {
             "Bucket": self.s3_bucket_name,
             "Key": self.s3_key_name,
         }
-        stubber.add_response(
+        s3_stubber.add_response(
             "delete_object", delete_object_response, delete_object_expected_params
         )
 
-        with stubber:
+        with s3_stubber:
             s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             delete_s3_object(s3_obj)
 
     def test_delete_s3_object_exception(self):
-        stubber = Stubber(self.s3.meta.client)
+        s3_stubber = Stubber(self.s3.meta.client)
 
         with self.assertRaises(Exception) as cm:
-            with stubber:
+            with s3_stubber:
                 s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
                 delete_s3_object(s3_obj)
         self.assertEquals(
