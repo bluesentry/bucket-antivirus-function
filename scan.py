@@ -128,7 +128,7 @@ def set_av_tags(s3_client, s3_object, result, timestamp):
     )
 
 
-def sns_start_scan(sns_client, s3_object, start_scan_sns_arn, timestamp):
+def sns_start_scan(sns_client, s3_object, scan_start_sns_arn, timestamp):
     message = {
         "bucket": s3_object.bucket_name,
         "key": s3_object.key,
@@ -137,16 +137,13 @@ def sns_start_scan(sns_client, s3_object, start_scan_sns_arn, timestamp):
         AV_TIMESTAMP_METADATA: timestamp,
     }
     sns_client.publish(
-        TargetArn=start_scan_sns_arn,
+        TargetArn=scan_start_sns_arn,
         Message=json.dumps({"default": json.dumps(message)}),
         MessageStructure="json",
     )
 
 
-def sns_scan_results(sns_client, s3_object, result):
-    # Don't publish if SNS ARN has not been supplied
-    if AV_STATUS_SNS_ARN in [None, ""]:
-        return
+def sns_scan_results(sns_client, s3_object, sns_arn, result, timestamp):
     # Don't publish if result is CLEAN and CLEAN results should not be published
     if result == AV_STATUS_CLEAN and not str_to_bool(AV_STATUS_SNS_PUBLISH_CLEAN):
         return
@@ -161,7 +158,7 @@ def sns_scan_results(sns_client, s3_object, result):
         AV_TIMESTAMP_METADATA: get_timestamp(),
     }
     sns_client.publish(
-        TargetArn=AV_STATUS_SNS_ARN,
+        TargetArn=sns_arn,
         Message=json.dumps({"default": json.dumps(message)}),
         MessageStructure="json",
         MessageAttributes={
@@ -187,10 +184,9 @@ def lambda_handler(event, context):
         verify_s3_object_version(s3, s3_object)
 
     # Publish the start time of the scan
-    start_scan_sns_arn = AV_SCAN_START_SNS_ARN
-    if start_scan_sns_arn not in [None, ""]:
+    if AV_SCAN_START_SNS_ARN not in [None, ""]:
         start_scan_time = get_timestamp()
-        sns_start_scan(sns_client, s3_object, start_scan_sns_arn, start_scan_time)
+        sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
 
     file_path = get_local_path(s3_object, "/tmp")
     create_dir(os.path.dirname(local_path))
@@ -201,11 +197,19 @@ def lambda_handler(event, context):
         "Scan of s3://%s resulted in %s\n"
         % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result)
     )
+
     result_time = get_timestamp()
+    # Set the properties on the object with the scan results
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result, result_time)
     set_av_tags(s3_client, s3_object, scan_result, result_time)
-    sns_scan_results(sns_client, s3_object, scan_result)
+
+    # Publish the scan results
+    if AV_STATUS_SNS_ARN not in [None, ""]:
+        sns_scan_results(
+            sns_client, s3_object, AV_STATUS_SNS_ARN, scan_result, result_time
+        )
+
     metrics.send(
         env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result
     )

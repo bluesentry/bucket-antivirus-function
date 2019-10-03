@@ -31,6 +31,7 @@ from scan import get_local_path
 from scan import set_av_metadata
 from scan import set_av_tags
 from scan import sns_start_scan
+from scan import sns_scan_results
 from scan import verify_s3_object_version
 
 
@@ -346,7 +347,40 @@ class TestScan(unittest.TestCase):
             set_av_tags(self.s3_client, s3_obj, result, timestamp)
 
     def test_sns_scan_results(self):
-        pass
+        self.stubber = Stubber(self.sns_client)
+        self.stubber_resource = Stubber(self.s3.meta.client)
+
+        sns_arn = "some_arn"
+        key_name = "key"
+        version_id = "version-id"
+        result = "CLEAN"
+        timestamp = get_timestamp()
+        message = {
+            "bucket": self.s3_bucket_name,
+            "key": key_name,
+            "version": version_id,
+            AV_STATUS_METADATA: result,
+            AV_TIMESTAMP_METADATA: timestamp,
+        }
+        publish_response = {"MessageId": "message_id"}
+        publish_expected_params = {
+            "TargetArn": sns_arn,
+            "Message": json.dumps({"default": json.dumps(message)}),
+            "MessageAttributes": {
+                "av-status": {"DataType": "String", "StringValue": result}
+            },
+            "MessageStructure": "json",
+        }
+        self.stubber.add_response("publish", publish_response, publish_expected_params)
+
+        head_object_response = {"VersionId": version_id}
+        head_object_expected_params = {"Bucket": self.s3_bucket_name, "Key": key_name}
+        self.stubber_resource.add_response(
+            "head_object", head_object_response, head_object_expected_params
+        )
+        with self.stubber, self.stubber_resource:
+            s3_obj = self.s3.Object(self.s3_bucket_name, key_name)
+            sns_scan_results(self.sns_client, s3_obj, sns_arn, result, timestamp)
 
     def test_delete_s3_object(self):
         key_name = "key"
