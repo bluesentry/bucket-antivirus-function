@@ -63,7 +63,6 @@ def object_infected(s3_client, s3_bucket_name, key_name):
     for tag in s3_object_tags["TagSet"]:
         tags[tag["Key"]] = tag["Value"]
 
-    print(tags)
     if tags.get(AV_STATUS_METADATA, "") == AV_STATUS_CLEAN:
         return False, None
 
@@ -87,7 +86,7 @@ def main(s3_bucket_name):
         sys.exit(1)
 
     # Scan the objects in the bucket
-    s3_object_and_sigs_list = get_objects_and_sigs(s3_bucket_name)
+    s3_object_and_sigs_list = get_objects_and_sigs(s3_client, s3_bucket_name)
     for (key_name, av_signature) in s3_object_and_sigs_list:
         print("Infected: {}/{}, {}".format(s3_bucket_name, key_name, av_signature))
 
