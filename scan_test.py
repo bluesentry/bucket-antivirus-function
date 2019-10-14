@@ -22,6 +22,8 @@ import botocore.session
 from botocore.stub import Stubber
 
 from common import AV_SCAN_START_METADATA
+from common import AV_SIGNATURE_METADATA
+from common import AV_SIGNATURE_OK
 from common import AV_STATUS_METADATA
 from common import AV_TIMESTAMP_METADATA
 from common import get_timestamp
@@ -266,7 +268,8 @@ class TestScan(unittest.TestCase):
         self.assertEquals(file_path, expected_file_path)
 
     def test_set_av_metadata(self):
-        result = "CLEAN"
+        scan_result = "CLEAN"
+        scan_signature = AV_SIGNATURE_OK
         timestamp = get_timestamp()
 
         s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
@@ -301,7 +304,11 @@ class TestScan(unittest.TestCase):
             "Key": self.s3_key_name,
             "ContentType": "content",
             "CopySource": {"Bucket": self.s3_bucket_name, "Key": self.s3_key_name},
-            "Metadata": {AV_STATUS_METADATA: result, AV_TIMESTAMP_METADATA: timestamp},
+            "Metadata": {
+                AV_SIGNATURE_METADATA: scan_signature,
+                AV_STATUS_METADATA: scan_result,
+                AV_TIMESTAMP_METADATA: timestamp,
+            },
             "MetadataDirective": "REPLACE",
         }
         s3_stubber_resource.add_response(
@@ -309,14 +316,16 @@ class TestScan(unittest.TestCase):
         )
 
         with s3_stubber_resource:
-            set_av_metadata(s3_obj, result, timestamp)
+            set_av_metadata(s3_obj, scan_result, scan_signature, timestamp)
 
     def test_set_av_tags(self):
-        result = "CLEAN"
+        scan_result = "CLEAN"
+        scan_signature = AV_SIGNATURE_OK
         timestamp = get_timestamp()
         tag_set = {
             "TagSet": [
-                {"Key": AV_STATUS_METADATA, "Value": result},
+                {"Key": AV_SIGNATURE_METADATA, "Value": scan_signature},
+                {"Key": AV_STATUS_METADATA, "Value": scan_result},
                 {"Key": AV_TIMESTAMP_METADATA, "Value": timestamp},
             ]
         }
@@ -346,7 +355,7 @@ class TestScan(unittest.TestCase):
 
         with s3_stubber:
             s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
-            set_av_tags(self.s3_client, s3_obj, result, timestamp)
+            set_av_tags(self.s3_client, s3_obj, scan_result, scan_signature, timestamp)
 
     def test_sns_scan_results(self):
         sns_stubber = Stubber(self.sns_client)
@@ -354,13 +363,15 @@ class TestScan(unittest.TestCase):
 
         sns_arn = "some_arn"
         version_id = "version-id"
-        result = "CLEAN"
+        scan_result = "CLEAN"
+        scan_signature = AV_SIGNATURE_OK
         timestamp = get_timestamp()
         message = {
             "bucket": self.s3_bucket_name,
             "key": self.s3_key_name,
             "version": version_id,
-            AV_STATUS_METADATA: result,
+            AV_SIGNATURE_METADATA: scan_signature,
+            AV_STATUS_METADATA: scan_result,
             AV_TIMESTAMP_METADATA: timestamp,
         }
         publish_response = {"MessageId": "message_id"}
@@ -368,7 +379,8 @@ class TestScan(unittest.TestCase):
             "TargetArn": sns_arn,
             "Message": json.dumps({"default": json.dumps(message)}),
             "MessageAttributes": {
-                "av-status": {"DataType": "String", "StringValue": result}
+                "av-status": {"DataType": "String", "StringValue": scan_result},
+                "av-signature": {"DataType": "String", "StringValue": scan_signature},
             },
             "MessageStructure": "json",
         }
@@ -384,7 +396,9 @@ class TestScan(unittest.TestCase):
         )
         with sns_stubber, s3_stubber_resource:
             s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
-            sns_scan_results(self.sns_client, s3_obj, sns_arn, result, timestamp)
+            sns_scan_results(
+                self.sns_client, s3_obj, sns_arn, scan_result, scan_signature, timestamp
+            )
 
     def test_delete_s3_object(self):
         s3_stubber = Stubber(self.s3.meta.client)

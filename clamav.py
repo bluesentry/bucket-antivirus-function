@@ -138,6 +138,16 @@ def md5_from_s3_tags(bucket, key):
     return ""
 
 
+# Turn ClamAV Scan output into a JSON formatted data object
+def scan_output_to_json(output):
+    summary = {}
+    for line in output.split("\n"):
+        if ":" in line:
+            key, value = line.split(":", 1)
+            summary[key] = value.strip()
+    return summary
+
+
 def scan_file(path):
     av_env = os.environ.copy()
     av_env["LD_LIBRARY_PATH"] = CLAMAVLIB_PATH
@@ -150,10 +160,14 @@ def scan_file(path):
     )
     output = av_proc.communicate()[0]
     print("clamscan output:\n%s" % output)
+
+    # Turn the output into a data source we can read
+    summary = scan_output_to_json(output)
+    signature = summary[path]
     if av_proc.returncode == 0:
-        return AV_STATUS_CLEAN
+        return AV_STATUS_CLEAN, signature
     elif av_proc.returncode == 1:
-        return AV_STATUS_INFECTED
+        return AV_STATUS_INFECTED, signature
     else:
         msg = "Unexpected exit code from clamscan: %s.\n" % av_proc.returncode
         print(msg)

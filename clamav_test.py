@@ -14,9 +14,12 @@
 # limitations under the License.
 
 import re
+import textwrap
 import unittest
 
 from clamav import RE_SEARCH_DIR
+from clamav import scan_output_to_json
+from common import AV_SIGNATURE_OK
 
 
 class TestClamAV(unittest.TestCase):
@@ -36,3 +39,52 @@ class TestClamAV(unittest.TestCase):
             "/usr/lib",
         ]
         self.assertEqual(all_search_paths, expected_search_paths)
+
+    def test_scan_output_to_json_clean(self):
+        file_path = "/tmp/test.txt"
+        signature = AV_SIGNATURE_OK
+        output = textwrap.dedent(
+            """\
+        Scanning {0}
+        {0}: {1}
+        ----------- SCAN SUMMARY -----------
+        Known viruses: 6305127
+        Engine version: 0.101.4
+        Scanned directories: 0
+        Scanned files: 1
+        Infected files: 0
+        Data scanned: 0.00 MB
+        Data read: 0.00 MB (ratio 0.00:1)
+        Time: 80.299 sec (1 m 20 s)
+        """.format(
+                file_path, signature
+            )
+        )
+        summary = scan_output_to_json(output)
+        self.assertEqual(summary[file_path], signature)
+        self.assertEqual(summary["Infected files"], "0")
+
+    def test_scan_output_to_json_infected(self):
+        file_path = "/tmp/eicar.com.txt"
+        signature = "Eicar-Test-Signature FOUND"
+        output = textwrap.dedent(
+            """\
+        Scanning {0}
+        {0}: {1}
+        {0}!(0): {1}
+        ----------- SCAN SUMMARY -----------
+        Known viruses: 6305127
+        Engine version: 0.101.4
+        Scanned directories: 0
+        Scanned files: 1
+        Infected files: 1
+        Data scanned: 0.00 MB
+        Data read: 0.00 MB (ratio 0.00:1)
+        Time: 80.299 sec (1 m 20 s)
+        """.format(
+                file_path, signature
+            )
+        )
+        summary = scan_output_to_json(output)
+        self.assertEqual(summary[file_path], signature)
+        self.assertEqual(summary["Infected files"], "1")
