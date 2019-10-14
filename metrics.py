@@ -16,7 +16,8 @@
 import os
 
 import datadog
-from common import *  # noqa
+from common import AV_STATUS_CLEAN
+from common import AV_STATUS_INFECTED
 
 
 def send(env, bucket, key, status):

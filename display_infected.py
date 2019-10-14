@@ -20,7 +20,8 @@ import sys
 
 import boto3
 
-from common import *  # noqa
+from common import AV_STATUS_METADATA
+from common import AV_STATUS_INFECTED
 
 
 # Get all objects in an S3 bucket that are infected

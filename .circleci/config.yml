@@ -13,7 +13,10 @@ executors:
   primary:
     docker:
       - image: docker:17.05.0-ce
-  primary_test:
+  python_test:
+    docker:
+      - image: circleci/python:2.7-stretch
+  pre_commit_test:
     docker:
       - image: circleci/python:3.7-stretch
 
@@ -37,7 +40,7 @@ jobs:
 
   # `pre_commit_deps` is used for cache pre-commit sources
   pre_commit_deps:
-    executor: primary_test
+    executor: pre_commit_test
     steps:
       - checkout
 
@@ -54,7 +57,7 @@ jobs:
 
   # `pre_commit_test` is used to run pre-commit hooks on all files
   pre_commit_test:
-    executor: primary_test
+    executor: pre_commit_test
     steps:
       - checkout
       - setup_remote_docker:
@@ -69,7 +72,7 @@ jobs:
 
   # `test` is used to run python tests
   test:
-    executor: primary_test
+    executor: python_test
     steps:
       - checkout
       - setup_remote_docker:
@@ -77,6 +80,7 @@ jobs:
       - restore_cache:
           keys:
             - pre-commit-dot-cache-{{ checksum ".pre-commit-config.yaml" }}
+      - run: sudo pip install -r requirements.txt
       - run: sudo pip install -r requirements-dev.txt
       - run: nosetests
 

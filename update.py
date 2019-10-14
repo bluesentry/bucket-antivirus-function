@@ -13,16 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
 import os
 
 import clamav
-from common import *  # noqa
+from common import AV_DEFINITION_PATH
+from common import AV_DEFINITION_S3_BUCKET
+from common import AV_DEFINITION_S3_PREFIX
+from common import CLAMAVLIB_PATH
+from common import get_timestamp
 
 
 def lambda_handler(event, context):
-    start_time = datetime.utcnow()
-    print("Script starting at %s\n" % (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
+    print("Script starting at %s\n" % (get_timestamp()))
     clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
     clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
     # If main.cvd gets updated (very rare), we will need to force freshclam
@@ -36,6 +38,4 @@ def lambda_handler(event, context):
     clamav.upload_defs_to_s3(
         AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX, AV_DEFINITION_PATH
     )
-    print(
-        "Script finished at %s\n" % datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")
-    )
+    print("Script finished at %s\n" % get_timestamp())
