@@ -29,6 +29,7 @@ from common import AV_DELETE_INFECTED_FILES
 from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
 from common import AV_SCAN_START_METADATA
 from common import AV_SCAN_START_SNS_ARN
+from common import AV_SIGNATURE_METADATA
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
 from common import AV_STATUS_METADATA
@@ -113,10 +114,11 @@ def delete_s3_object(s3_object):
         print("Infected file deleted: %s.%s" % (s3_object.bucket_name, s3_object.key))
 
 
-def set_av_metadata(s3_object, result, timestamp):
+def set_av_metadata(s3_object, scan_result, scan_signature, timestamp):
     content_type = s3_object.content_type
     metadata = s3_object.metadata
-    metadata[AV_STATUS_METADATA] = result
+    metadata[AV_SIGNATURE_METADATA] = scan_signature
+    metadata[AV_STATUS_METADATA] = scan_result
     metadata[AV_TIMESTAMP_METADATA] = timestamp
     s3_object.copy(
         {"Bucket": s3_object.bucket_name, "Key": s3_object.key},
@@ -128,15 +130,20 @@ def set_av_metadata(s3_object, result, timestamp):
     )
 
 
-def set_av_tags(s3_client, s3_object, result, timestamp):
+def set_av_tags(s3_client, s3_object, scan_result, scan_signature, timestamp):
     curr_tags = s3_client.get_object_tagging(
         Bucket=s3_object.bucket_name, Key=s3_object.key
     )["TagSet"]
     new_tags = copy.copy(curr_tags)
     for tag in curr_tags:
-        if tag["Key"] in [AV_STATUS_METADATA, AV_TIMESTAMP_METADATA]:
+        if tag["Key"] in [
+            AV_SIGNATURE_METADATA,
+            AV_STATUS_METADATA,
+            AV_TIMESTAMP_METADATA,
+        ]:
             new_tags.remove(tag)
-    new_tags.append({"Key": AV_STATUS_METADATA, "Value": result})
+    new_tags.append({"Key": AV_SIGNATURE_METADATA, "Value": scan_signature})
+    new_tags.append({"Key": AV_STATUS_METADATA, "Value": scan_result})
     new_tags.append({"Key": AV_TIMESTAMP_METADATA, "Value": timestamp})
     s3_client.put_object_tagging(
         Bucket=s3_object.bucket_name, Key=s3_object.key, Tagging={"TagSet": new_tags}
@@ -158,18 +165,23 @@ def sns_start_scan(sns_client, s3_object, scan_start_sns_arn, timestamp):
     )
 
 
-def sns_scan_results(sns_client, s3_object, sns_arn, result, timestamp):
-    # Don't publish if result is CLEAN and CLEAN results should not be published
-    if result == AV_STATUS_CLEAN and not str_to_bool(AV_STATUS_SNS_PUBLISH_CLEAN):
+def sns_scan_results(
+    sns_client, s3_object, sns_arn, scan_result, scan_signature, timestamp
+):
+    # Don't publish if scan_result is CLEAN and CLEAN results should not be published
+    if scan_result == AV_STATUS_CLEAN and not str_to_bool(AV_STATUS_SNS_PUBLISH_CLEAN):
         return
-    # Don't publish if result is INFECTED and INFECTED results should not be published
-    if result == AV_STATUS_INFECTED and not str_to_bool(AV_STATUS_SNS_PUBLISH_INFECTED):
+    # Don't publish if scan_result is INFECTED and INFECTED results should not be published
+    if scan_result == AV_STATUS_INFECTED and not str_to_bool(
+        AV_STATUS_SNS_PUBLISH_INFECTED
+    ):
         return
     message = {
         "bucket": s3_object.bucket_name,
         "key": s3_object.key,
         "version": s3_object.version_id,
-        AV_STATUS_METADATA: result,
+        AV_SIGNATURE_METADATA: scan_signature,
+        AV_STATUS_METADATA: scan_result,
         AV_TIMESTAMP_METADATA: get_timestamp(),
     }
     sns_client.publish(
@@ -177,7 +189,11 @@ def sns_scan_results(sns_client, s3_object, sns_arn, result, timestamp):
         Message=json.dumps({"default": json.dumps(message)}),
         MessageStructure="json",
         MessageAttributes={
-            AV_STATUS_METADATA: {"DataType": "String", "StringValue": result}
+            AV_STATUS_METADATA: {"DataType": "String", "StringValue": scan_result},
+            AV_SIGNATURE_METADATA: {
+                "DataType": "String",
+                "StringValue": scan_signature,
+            },
         },
     )
 
@@ -207,7 +223,7 @@ def lambda_handler(event, context):
     create_dir(os.path.dirname(file_path))
     s3_object.download_file(file_path)
     clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
-    scan_result = clamav.scan_file(file_path)
+    scan_result, scan_signature = clamav.scan_file(file_path)
     print(
         "Scan of s3://%s resulted in %s\n"
         % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result)
@@ -216,13 +232,18 @@ def lambda_handler(event, context):
     result_time = get_timestamp()
     # Set the properties on the object with the scan results
     if "AV_UPDATE_METADATA" in os.environ:
-        set_av_metadata(s3_object, scan_result, result_time)
-    set_av_tags(s3_client, s3_object, scan_result, result_time)
+        set_av_metadata(s3_object, scan_result, scan_signature, result_time)
+    set_av_tags(s3_client, s3_object, scan_result, scan_signature, result_time)
 
     # Publish the scan results
     if AV_STATUS_SNS_ARN not in [None, ""]:
         sns_scan_results(
-            sns_client, s3_object, AV_STATUS_SNS_ARN, scan_result, result_time
+            sns_client,
+            s3_object,
+            AV_STATUS_SNS_ARN,
+            scan_result,
+            scan_signature,
+            result_time,
         )
 
     metrics.send(

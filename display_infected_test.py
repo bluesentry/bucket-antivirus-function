@@ -19,10 +19,13 @@ import unittest
 import botocore.session
 from botocore.stub import Stubber
 
+from common import AV_SIGNATURE_METADATA
+from common import AV_SIGNATURE_OK
+from common import AV_SIGNATURE_UNKNOWN
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_METADATA
 from common import AV_STATUS_INFECTED
-from display_infected import get_objects
+from display_infected import get_objects_and_sigs
 
 
 class TestDisplayInfected(unittest.TestCase):
@@ -53,7 +56,8 @@ class TestDisplayInfected(unittest.TestCase):
             "list_objects_v2", list_objects_v2_response, list_objects_v2_expected_params
         )
 
-    def test_get_objects_infected(self):
+    def test_get_objects_and_sigs_infected_with_sig_unknown(self):
+        signature = AV_SIGNATURE_UNKNOWN
 
         get_object_tagging_response = {
             "VersionId": "abc123",
@@ -70,11 +74,61 @@ class TestDisplayInfected(unittest.TestCase):
         )
 
         with self.stubber:
-            s3_object_list = get_objects(self.s3_client, self.s3_bucket_name)
-            expected_object_list = ["test.txt"]
+            s3_object_list = get_objects_and_sigs(self.s3_client, self.s3_bucket_name)
+            expected_object_list = [("test.txt", signature)]
             self.assertEqual(s3_object_list, expected_object_list)
 
-    def test_get_objects_clean(self):
+    def test_get_objects_and_sigs_infected_with_sig(self):
+        signature = "Eicar-Test-Signature FOUND"
+
+        get_object_tagging_response = {
+            "VersionId": "abc123",
+            "TagSet": [
+                {"Key": AV_STATUS_METADATA, "Value": AV_STATUS_INFECTED},
+                {"Key": AV_SIGNATURE_METADATA, "Value": signature},
+            ],
+        }
+        get_object_tagging_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": "test.txt",
+        }
+        self.stubber.add_response(
+            "get_object_tagging",
+            get_object_tagging_response,
+            get_object_tagging_expected_params,
+        )
+
+        with self.stubber:
+            s3_object_list = get_objects_and_sigs(self.s3_client, self.s3_bucket_name)
+            expected_object_list = [("test.txt", signature)]
+            self.assertEqual(s3_object_list, expected_object_list)
+
+    def test_get_objects_and_sigs_infected_with_sig_ok(self):
+        signature = AV_SIGNATURE_OK
+
+        get_object_tagging_response = {
+            "VersionId": "abc123",
+            "TagSet": [
+                {"Key": AV_STATUS_METADATA, "Value": AV_STATUS_CLEAN},
+                {"Key": AV_SIGNATURE_METADATA, "Value": signature},
+            ],
+        }
+        get_object_tagging_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": "test.txt",
+        }
+        self.stubber.add_response(
+            "get_object_tagging",
+            get_object_tagging_response,
+            get_object_tagging_expected_params,
+        )
+
+        with self.stubber:
+            s3_object_list = get_objects_and_sigs(self.s3_client, self.s3_bucket_name)
+            expected_object_list = []
+            self.assertEqual(s3_object_list, expected_object_list)
+
+    def test_get_objects_and_sigs_clean(self):
 
         get_object_tagging_response = {
             "VersionId": "abc123",
@@ -91,11 +145,11 @@ class TestDisplayInfected(unittest.TestCase):
         )
 
         with self.stubber:
-            s3_object_list = get_objects(self.s3_client, self.s3_bucket_name)
+            s3_object_list = get_objects_and_sigs(self.s3_client, self.s3_bucket_name)
             expected_object_list = []
             self.assertEqual(s3_object_list, expected_object_list)
 
-    def test_get_objects_unscanned(self):
+    def test_get_objects_and_sigs_unscanned(self):
 
         get_object_tagging_response = {"VersionId": "abc123", "TagSet": []}
         get_object_tagging_expected_params = {
@@ -109,6 +163,6 @@ class TestDisplayInfected(unittest.TestCase):
         )
 
         with self.stubber:
-            s3_object_list = get_objects(self.s3_client, self.s3_bucket_name)
+            s3_object_list = get_objects_and_sigs(self.s3_client, self.s3_bucket_name)
             expected_object_list = []
             self.assertEqual(s3_object_list, expected_object_list)
