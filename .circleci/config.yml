@@ -24,8 +24,9 @@ jobs:
 
   # `build` is used for building the archive
   build:
-    executor: primary
     working_directory: ~/src
+    docker:
+      - image: circleci/node:7.10
     steps:
       - add_ssh_keys:
           fingerprints:
