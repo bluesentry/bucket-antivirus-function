@@ -27,6 +27,7 @@ virtualenv env
 pip install --no-cache-dir -r requirements.txt
 
 pushd /tmp
+yum --disablerepo=epel -y update  ca-certificates
 yumdownloader -x \*i686 --archlist=x86_64 clamav clamav-lib clamav-update pcre2 json-c
 rpm2cpio clamav-0*.rpm | cpio -idmv
 rpm2cpio clamav-lib*.rpm | cpio -idmv
