@@ -1,0 +1,30 @@
+repos:
+
+  - repo: https://github.com/ambv/black
+    rev: stable
+    hooks:
+      - id: black
+        language_version: python3.7
+        exclude: >
+          (?x)^(
+            scripts/gen-docs-index|
+          )$
+
+  - repo: git://github.com/pre-commit/pre-commit-hooks
+    rev: v2.2.3
+    hooks:
+      - id: check-ast
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: debug-statements
+      - id: detect-private-key
+      - id: fix-encoding-pragma
+      - id: flake8
+      - id: trailing-whitespace
+
+  - repo: git://github.com/igorshubovych/markdownlint-cli
+    rev: v0.17.0
+    hooks:
+      - id: markdownlint
+        entry: markdownlint --ignore .github/*.md
