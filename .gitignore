@@ -106,4 +106,7 @@ ENV/
 # mypy
 .mypy_cache/
 
+# coverage
+.coverage
+
 .DS_Store
