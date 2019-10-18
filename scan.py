@@ -222,7 +222,9 @@ def lambda_handler(event, context):
     file_path = get_local_path(s3_object, "/tmp")
     create_dir(os.path.dirname(file_path))
     s3_object.download_file(file_path)
-    clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
+    clamav.update_defs_from_s3(
+        s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
+    )
     scan_result, scan_signature = clamav.scan_file(file_path)
     print(
         "Scan of s3://%s resulted in %s\n"

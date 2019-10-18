@@ -15,6 +15,8 @@
 
 import os
 
+import boto3
+
 import clamav
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_S3_BUCKET
@@ -24,8 +26,19 @@ from common import get_timestamp
 
 
 def lambda_handler(event, context):
+    s3 = boto3.resource("s3")
+    s3_client = boto3.client("s3")
+
     print("Script starting at %s\n" % (get_timestamp()))
-    clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
+    to_download = clamav.update_defs_from_s3(
+        s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
+    )
+
+    for download in to_download.values():
+        s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(
+            download["s3_path"], download["local_path"]
+        )
+
     clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
     # If main.cvd gets updated (very rare), we will need to force freshclam
     # to download the compressed version to keep file sizes down.
@@ -36,6 +49,6 @@ def lambda_handler(event, context):
             os.remove(os.path.join(AV_DEFINITION_PATH, "main.cvd"))
         clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
     clamav.upload_defs_to_s3(
-        AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX, AV_DEFINITION_PATH
+        s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX, AV_DEFINITION_PATH
     )
     print("Script finished at %s\n" % get_timestamp())

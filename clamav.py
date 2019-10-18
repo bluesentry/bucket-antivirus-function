@@ -45,7 +45,7 @@ def current_library_search_path():
     return rd_ld.findall(ld_verbose)
 
 
-def update_defs_from_s3(bucket, prefix):
+def update_defs_from_s3(s3_client, bucket, prefix):
     create_dir(AV_DEFINITION_PATH)
     to_download = {}
     for file_prefix in AV_DEFINITION_FILE_PREFIXES:
@@ -54,8 +54,8 @@ def update_defs_from_s3(bucket, prefix):
             filename = file_prefix + "." + file_suffix
             s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
             local_path = os.path.join(AV_DEFINITION_PATH, filename)
-            s3_md5 = md5_from_s3_tags(bucket, s3_path)
-            s3_time = time_from_s3(bucket, s3_path)
+            s3_md5 = md5_from_s3_tags(s3_client, bucket, s3_path)
+            s3_time = time_from_s3(s3_client, bucket, s3_path)
 
             if s3_best_time is not None and s3_time < s3_best_time:
                 print("Not downloading older file in series: %s" % filename)
@@ -75,14 +75,10 @@ def update_defs_from_s3(bucket, prefix):
                     "s3_path": s3_path,
                     "local_path": local_path,
                 }
-
-    s3 = boto3.resource("s3")
-    for file in to_download.values():
-        s3.Bucket(bucket).download_file(file["s3_path"], file["local_path"])
+    return to_download
 
 
-def upload_defs_to_s3(bucket, prefix, local_path):
-    s3_client = boto3.client("s3")
+def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
     for file_prefix in AV_DEFINITION_FILE_PREFIXES:
         for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
             filename = file_prefix + "." + file_suffix
@@ -90,7 +86,7 @@ def upload_defs_to_s3(bucket, prefix, local_path):
             if os.path.exists(local_file_path):
                 local_file_md5 = md5_from_file(local_file_path)
                 if local_file_md5 != md5_from_s3_tags(
-                    bucket, os.path.join(prefix, filename)
+                    s3_client, bucket, os.path.join(prefix, filename)
                 ):
                     print(
                         "Uploading %s to s3://%s"
@@ -148,8 +144,7 @@ def md5_from_file(filename):
     return hash_md5.hexdigest()
 
 
-def md5_from_s3_tags(bucket, key):
-    s3_client = boto3.client("s3")
+def md5_from_s3_tags(s3_client, bucket, key):
     try:
         tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["TagSet"]
     except botocore.exceptions.ClientError as e:
@@ -164,8 +159,7 @@ def md5_from_s3_tags(bucket, key):
     return ""
 
 
-def time_from_s3(bucket, key):
-    s3_client = boto3.client("s3")
+def time_from_s3(s3_client, bucket, key):
     try:
         time = s3_client.head_object(Bucket=bucket, Key=key)["LastModified"]
     except botocore.exceptions.ClientError as e:
