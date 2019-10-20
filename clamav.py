@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import datetime
 import hashlib
 import os
 import pwd
@@ -21,10 +22,12 @@ import subprocess
 
 import boto3
 import botocore
+from pytz import utc
 
 from common import AV_DEFINITION_S3_PREFIX
 from common import AV_DEFINITION_PATH
-from common import AV_DEFINITION_FILENAMES
+from common import AV_DEFINITION_FILE_PREFIXES
+from common import AV_DEFINITION_FILE_SUFFIXES
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
 from common import CLAMAVLIB_PATH
@@ -42,49 +45,68 @@ def current_library_search_path():
     return rd_ld.findall(ld_verbose)
 
 
-def update_defs_from_s3(bucket, prefix):
+def update_defs_from_s3(s3_client, bucket, prefix):
     create_dir(AV_DEFINITION_PATH)
-    for filename in AV_DEFINITION_FILENAMES:
-        s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
-        local_path = os.path.join(AV_DEFINITION_PATH, filename)
-        s3_md5 = md5_from_s3_tags(bucket, s3_path)
-        if os.path.exists(local_path) and md5_from_file(local_path) == s3_md5:
-            print("Not downloading %s because local md5 matches s3." % filename)
-            continue
-        if s3_md5:
-            print(
-                "Downloading definition file %s from s3://%s"
-                % (filename, os.path.join(bucket, prefix))
-            )
-            s3 = boto3.resource("s3")
-            s3.Bucket(bucket).download_file(s3_path, local_path)
+    to_download = {}
+    for file_prefix in AV_DEFINITION_FILE_PREFIXES:
+        s3_best_time = None
+        for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
+            filename = file_prefix + "." + file_suffix
+            s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
+            local_path = os.path.join(AV_DEFINITION_PATH, filename)
+            s3_md5 = md5_from_s3_tags(s3_client, bucket, s3_path)
+            s3_time = time_from_s3(s3_client, bucket, s3_path)
 
-
-def upload_defs_to_s3(bucket, prefix, local_path):
-    s3_client = boto3.client("s3")
-    for filename in AV_DEFINITION_FILENAMES:
-        local_file_path = os.path.join(local_path, filename)
-        if os.path.exists(local_file_path):
-            local_file_md5 = md5_from_file(local_file_path)
-            if local_file_md5 != md5_from_s3_tags(
-                bucket, os.path.join(prefix, filename)
-            ):
-                print(
-                    "Uploading %s to s3://%s"
-                    % (local_file_path, os.path.join(bucket, prefix, filename))
-                )
-                s3 = boto3.resource("s3")
-                s3_object = s3.Object(bucket, os.path.join(prefix, filename))
-                s3_object.upload_file(os.path.join(local_path, filename))
-                s3_client.put_object_tagging(
-                    Bucket=s3_object.bucket_name,
-                    Key=s3_object.key,
-                    Tagging={"TagSet": [{"Key": "md5", "Value": local_file_md5}]},
-                )
+            if s3_best_time is not None and s3_time < s3_best_time:
+                print("Not downloading older file in series: %s" % filename)
+                continue
             else:
+                s3_best_time = s3_time
+
+            if os.path.exists(local_path) and md5_from_file(local_path) == s3_md5:
+                print("Not downloading %s because local md5 matches s3." % filename)
+                continue
+            if s3_md5:
                 print(
-                    "Not uploading %s because md5 on remote matches local." % filename
+                    "Downloading definition file %s from s3://%s"
+                    % (filename, os.path.join(bucket, prefix))
                 )
+                to_download[file_prefix] = {
+                    "s3_path": s3_path,
+                    "local_path": local_path,
+                }
+    return to_download
+
+
+def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
+    for file_prefix in AV_DEFINITION_FILE_PREFIXES:
+        for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
+            filename = file_prefix + "." + file_suffix
+            local_file_path = os.path.join(local_path, filename)
+            if os.path.exists(local_file_path):
+                local_file_md5 = md5_from_file(local_file_path)
+                if local_file_md5 != md5_from_s3_tags(
+                    s3_client, bucket, os.path.join(prefix, filename)
+                ):
+                    print(
+                        "Uploading %s to s3://%s"
+                        % (local_file_path, os.path.join(bucket, prefix, filename))
+                    )
+                    s3 = boto3.resource("s3")
+                    s3_object = s3.Object(bucket, os.path.join(prefix, filename))
+                    s3_object.upload_file(os.path.join(local_path, filename))
+                    s3_client.put_object_tagging(
+                        Bucket=s3_object.bucket_name,
+                        Key=s3_object.key,
+                        Tagging={"TagSet": [{"Key": "md5", "Value": local_file_md5}]},
+                    )
+                else:
+                    print(
+                        "Not uploading %s because md5 on remote matches local."
+                        % filename
+                    )
+            else:
+                print("File does not exist: %s" % filename)
 
 
 def update_defs_from_freshclam(path, library_path=""):
@@ -122,8 +144,7 @@ def md5_from_file(filename):
     return hash_md5.hexdigest()
 
 
-def md5_from_s3_tags(bucket, key):
-    s3_client = boto3.client("s3")
+def md5_from_s3_tags(s3_client, bucket, key):
     try:
         tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["TagSet"]
     except botocore.exceptions.ClientError as e:
@@ -136,6 +157,18 @@ def md5_from_s3_tags(bucket, key):
         if tag["Key"] == "md5":
             return tag["Value"]
     return ""
+
+
+def time_from_s3(s3_client, bucket, key):
+    try:
+        time = s3_client.head_object(Bucket=bucket, Key=key)["LastModified"]
+    except botocore.exceptions.ClientError as e:
+        expected_errors = {"404", "AccessDenied", "NoSuchKey"}
+        if e.response["Error"]["Code"] in expected_errors:
+            return datetime.fromtimestamp(0, utc)
+        else:
+            raise
+    return time
 
 
 # Turn ClamAV Scan output into a JSON formatted data object
