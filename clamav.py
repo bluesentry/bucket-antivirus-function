@@ -165,7 +165,7 @@ def time_from_s3(s3_client, bucket, key):
     except botocore.exceptions.ClientError as e:
         expected_errors = {"404", "AccessDenied", "NoSuchKey"}
         if e.response["Error"]["Code"] in expected_errors:
-            return datetime.fromtimestamp(0, utc)
+            return datetime.datetime.fromtimestamp(0, utc)
         else:
             raise
     return time

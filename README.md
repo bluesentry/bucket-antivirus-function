@@ -101,10 +101,14 @@ following policy document
                 "s3:GetObjectTagging",
                 "s3:PutObject",
                 "s3:PutObjectTagging",
-                "s3:PutObjectVersionTagging"
+                "s3:PutObjectVersionTagging",
+                "s3:ListBucket"
              ],
              "Effect":"Allow",
-             "Resource":"arn:aws:s3:::<bucket-name>/*"
+             "Resource":[
+                "arn:aws:s3:::<bucket-name>",
+                "arn:aws:s3:::<bucket-name>/*"
+             ]
           }
        ]
     }
