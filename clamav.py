@@ -28,6 +28,8 @@ from common import AV_DEFINITION_S3_PREFIX
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_FILE_PREFIXES
 from common import AV_DEFINITION_FILE_SUFFIXES
+from common import AV_SIGNATURE_OK
+from common import AV_SIGNATURE_UNKNOWN
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
 from common import CLAMAVLIB_PATH
@@ -196,10 +198,10 @@ def scan_file(path):
 
     # Turn the output into a data source we can read
     summary = scan_output_to_json(output)
-    signature = summary[path]
     if av_proc.returncode == 0:
-        return AV_STATUS_CLEAN, signature
+        return AV_STATUS_CLEAN, AV_SIGNATURE_OK
     elif av_proc.returncode == 1:
+        signature = summary.get(path, AV_SIGNATURE_UNKNOWN)
         return AV_STATUS_INFECTED, signature
     else:
         msg = "Unexpected exit code from clamscan: %s.\n" % av_proc.returncode
