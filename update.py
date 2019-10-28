@@ -35,9 +35,11 @@ def lambda_handler(event, context):
     )
 
     for download in to_download.values():
-        s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(
-            download["s3_path"], download["local_path"]
-        )
+        s3_path = download["s3_path"]
+        local_path = download["local_path"]
+        print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
+        s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
+        print("Downloading definition file %s complete!" % (local_path))
 
     clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
     # If main.cvd gets updated (very rare), we will need to force freshclam

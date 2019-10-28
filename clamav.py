@@ -69,10 +69,6 @@ def update_defs_from_s3(s3_client, bucket, prefix):
                 print("Not downloading %s because local md5 matches s3." % filename)
                 continue
             if s3_md5:
-                print(
-                    "Downloading definition file %s from s3://%s"
-                    % (filename, os.path.join(bucket, prefix))
-                )
                 to_download[file_prefix] = {
                     "s3_path": s3_path,
                     "local_path": local_path,
