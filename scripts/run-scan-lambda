@@ -22,6 +22,8 @@ aws s3 ls "s3://${BUCKET}/${KEY}"
 rm -rf tmp/
 unzip -qq -d ./tmp build/lambda.zip
 
+NAME="antivirus-scan"
+
 docker run --rm \
   -v "$(pwd)/tmp/:/var/task" \
   -e AV_DEFINITION_S3_BUCKET \
@@ -46,4 +48,5 @@ docker run --rm \
   --memory="${MEM}" \
   --memory-swap="${MEM}" \
   --cpus="${CPUS}" \
+  --name="${NAME}" \
   lambci/lambda:python2.7 scan.lambda_handler "${EVENT}"

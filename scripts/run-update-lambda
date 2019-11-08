@@ -9,6 +9,8 @@ set -eu -o pipefail
 rm -rf tmp/
 unzip -qq -d ./tmp build/lambda.zip
 
+NAME="antivirus-update"
+
 docker run --rm \
   -v "$(pwd)/tmp/:/var/task" \
   -e AV_DEFINITION_PATH \
@@ -23,4 +25,5 @@ docker run --rm \
   --memory="${MEM}" \
   --memory-swap="${MEM}" \
   --cpus="${CPUS}" \
+  --name="${NAME}" \
   lambci/lambda:python2.7 update.lambda_handler
