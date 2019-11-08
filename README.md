@@ -367,6 +367,31 @@ pip install -r requirements-dev.txt
 make test
 ```
 
+### Local lambdas
+
+You can run the lambdas locally to test out what they are doing without deploying to AWS. This is accomplished
+by using docker containers that act similarly to lambda. You will need to have set up some local variables in your
+`.envrc.local` file and modify them appropriately first before running `direnv allow`. If you do not have `direnv`
+it can be installed with `brew install direnv`.
+
+For the Scan lambda you will need a test file uploaded to S3 and the variables `TEST_BUCKET` and `TEST_KEY`
+set in your `.envrc.local` file. Then you can run:
+
+```sh
+direnv allow
+make archive scan
+```
+
+If you want a file that will be recognized as a virus you can download a test file from the [EICAR](https://www.eicar.org/?page_id=3950)
+website and uploaded to your bucket.
+
+For the Update lambda you can run:
+
+```sh
+direnv allow
+make archive update
+```
+
 ## License
 
 ```text
