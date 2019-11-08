@@ -14,7 +14,7 @@
 
 # Lamdba resource constraints you can override here
 # https://docs.docker.com/config/containers/resource_constraints/
-# export MEM=512m
+# export MEM=1024m
 # export CPUS=1.0
 
 # Required for both scan and update lambdas scripts
