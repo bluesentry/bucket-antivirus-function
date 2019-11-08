@@ -20,4 +20,7 @@ docker run --rm \
   -e AWS_SECRET_ACCESS_KEY \
   -e AWS_SESSION_TOKEN \
   -e CLAMAVLIB_PATH \
+  --memory="${MEM}" \
+  --memory-swap="${MEM}" \
+  --cpus="${CPUS}" \
   lambci/lambda:python2.7 update.lambda_handler
