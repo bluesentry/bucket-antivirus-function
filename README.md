@@ -133,7 +133,7 @@ and set its value to the name of the bucket created to store your AV
 definitions.
 11. Set *Lambda handler* to `update.lambda_handler`
 12. Under *Basic Settings*, set *Timeout* to **5 minutes** and *Memory* to
-**512**
+**2048**
 13. Save and test your function.  If prompted for test data, just use
 the default provided.
 
