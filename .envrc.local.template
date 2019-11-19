@@ -1,0 +1,48 @@
+#! /usr/bin/env bash
+
+#
+# Copy this file `cp .envrc.local.template .envrc.local` and modify the variables below for testing
+#
+
+# Optional AWS Parameters
+# WARNING: It's not recommended to keep credentials in this file!
+# export AWS_ACCESS_KEY_ID
+# export AWS_DEFAULT_REGION
+# export AWS_REGION
+# export AWS_SECRET_ACCESS_KEY
+# export AWS_SESSION_TOKEN
+
+# Lamdba resource constraints you can override here
+# https://docs.docker.com/config/containers/resource_constraints/
+# export MEM=1024m
+# export CPUS=1.0
+
+# Required for both scan and update lambdas scripts
+export AV_DEFINITION_S3_BUCKET=""
+export AV_DEFINITION_S3_PREFIX=""
+
+# Required for scan lambda script
+export TEST_BUCKET=""
+export TEST_KEY=""
+
+# Uncomment and change as needed for lambda scripts
+# export AV_DEFINITION_FILE_PREFIXES
+# export AV_DEFINITION_FILE_SUFFIXES
+# export AV_DEFINITION_PATH
+# export AV_DELETE_INFECTED_FILES
+# export AV_PROCESS_ORIGINAL_VERSION_ONLY
+# export AV_SCAN_START_METADATA
+# export AV_SCAN_START_SNS_ARN
+# export AV_SIGNATURE_METADATA
+# export AV_SIGNATURE_OK
+# export AV_SIGNATURE_UNKNOWN
+# export AV_STATUS_CLEAN
+# export AV_STATUS_INFECTED
+# export AV_STATUS_METADATA
+# export AV_STATUS_SNS_ARN
+# export AV_STATUS_SNS_PUBLISH_CLEAN
+# export AV_STATUS_SNS_PUBLISH_INFECTED
+# export AV_TIMESTAMP_METADATA
+# export CLAMAVLIB_PATH
+# export CLAMSCAN_PATH
+# export FRESHCLAM_PATH
