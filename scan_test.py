@@ -85,13 +85,13 @@ class TestScan(unittest.TestCase):
         event = {"Records": [{"s3": {"object": {"key": self.s3_key_name}}}]}
         with self.assertRaises(Exception) as cm:
             event_object(event)
-        self.assertEquals(cm.exception.message, "No bucket found in event!")
+            self.assertEquals(cm.exception.message, "No bucket found in event!")
 
     def test_s3_event_object_missing_key(self):
         event = {"Records": [{"s3": {"bucket": {"name": self.s3_bucket_name}}}]}
         with self.assertRaises(Exception) as cm:
             event_object(event)
-        self.assertEquals(cm.exception.message, "No key found in event!")
+            self.assertEquals(cm.exception.message, "No key found in event!")
 
     def test_s3_event_object_bucket_key_missing(self):
         event = {"Records": [{"s3": {"bucket": {}, "object": {}}}]}
@@ -106,7 +106,7 @@ class TestScan(unittest.TestCase):
         event = {"Records": []}
         with self.assertRaises(Exception) as cm:
             event_object(event)
-        self.assertEquals(cm.exception.message, "No records found in event!")
+            self.assertEquals(cm.exception.message, "No records found in event!")
 
     def test_verify_s3_object_version(self):
         s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
