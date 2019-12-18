@@ -97,10 +97,10 @@ class TestScan(unittest.TestCase):
         event = {"Records": [{"s3": {"bucket": {}, "object": {}}}]}
         with self.assertRaises(Exception) as cm:
             event_object(event)
-        self.assertEquals(
-            cm.exception.message,
-            "Unable to retrieve object from event.\n{}".format(event),
-        )
+            self.assertEquals(
+                cm.exception.message,
+                "Unable to retrieve object from event.\n{}".format(event),
+            )
 
     def test_s3_event_object_no_records(self):
         event = {"Records": []}
@@ -165,10 +165,10 @@ class TestScan(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             with s3_stubber_resource:
                 verify_s3_object_version(self.s3, s3_obj)
-        self.assertEquals(
-            cm.exception.message,
-            "Object versioning is not enabled in bucket {}".format(self.s3_bucket_name),
-        )
+            self.assertEquals(
+                cm.exception.message,
+                "Object versioning is not enabled in bucket {}".format(self.s3_bucket_name),
+            )
 
     def test_verify_s3_object_version_multiple_versions(self):
         s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
@@ -218,12 +218,12 @@ class TestScan(unittest.TestCase):
         with self.assertRaises(Exception) as cm:
             with s3_stubber_resource:
                 verify_s3_object_version(self.s3, s3_obj)
-        self.assertEquals(
-            cm.exception.message,
-            "Detected multiple object versions in {}.{}, aborting processing".format(
-                self.s3_bucket_name, self.s3_key_name
-            ),
-        )
+            self.assertEquals(
+                cm.exception.message,
+                "Detected multiple object versions in {}.{}, aborting processing".format(
+                    self.s3_bucket_name, self.s3_key_name
+                ),
+            )
 
     def test_sns_start_scan(self):
         sns_stubber = Stubber(self.sns_client)
@@ -422,9 +422,9 @@ class TestScan(unittest.TestCase):
             with s3_stubber:
                 s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
                 delete_s3_object(s3_obj)
-        self.assertEquals(
-            cm.exception.message,
-            "Failed to delete infected file: {}.{}".format(
-                self.s3_bucket_name, self.s3_key_name
-            ),
-        )
+            self.assertEquals(
+                cm.exception.message,
+                "Failed to delete infected file: {}.{}".format(
+                    self.s3_bucket_name, self.s3_key_name
+                ),
+            )
