@@ -39,7 +39,7 @@ def send(env, bucket, key, status, signature):
             result_metric_name = "infected"
             datadog.api.Event.create(
                 title="Infected S3 Object Found",
-                text="Virus found in s3://%s/%s. signature is %s"
+                text="Virus found in s3://%s/%s. The signature is '%s'"
                 % (bucket, key, signature),
                 tags=metric_tags,
             )
