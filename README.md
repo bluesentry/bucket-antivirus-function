@@ -144,7 +144,7 @@ the default provided.
 2. From the AWS Lambda Dashboard, click **Create function**
 3. Choose **Author from scratch** on the *Create function* page
 4. Name your function `bucket-antivirus-function`
-5. Set *Runtime* to `Python 2.7`
+5. Set *Runtime* to `Python 3.7`
 6. Create a new role name `bucket-antivirus-function` that uses the
 following policy document
 
