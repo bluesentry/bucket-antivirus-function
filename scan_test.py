@@ -167,7 +167,9 @@ class TestScan(unittest.TestCase):
                 verify_s3_object_version(self.s3, s3_obj)
             self.assertEquals(
                 cm.exception.message,
-                "Object versioning is not enabled in bucket {}".format(self.s3_bucket_name),
+                "Object versioning is not enabled in bucket {}".format(
+                    self.s3_bucket_name
+                ),
             )
 
     def test_verify_s3_object_version_multiple_versions(self):
