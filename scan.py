@@ -16,7 +16,7 @@
 import copy
 import json
 import os
-import urllib
+from urllib.parse import unquote_plus
 from distutils.util import strtobool
 
 import boto3
@@ -66,7 +66,7 @@ def event_object(event, event_source="s3"):
     key_name = s3_obj["object"].get("key", None)
 
     if key_name:
-        key_name = urllib.unquote_plus(key_name.encode("utf8"))
+        key_name = unquote_plus(key_name)
 
     # Ensure both bucket and key exist
     if (not bucket_name) or (not key_name):
