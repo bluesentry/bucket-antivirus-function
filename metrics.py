@@ -14,12 +14,33 @@
 
 import datadog
 import os
+import boto3
 from common import *
+from botocore.exceptions import ClientError
 
+def get_datadog_api_key():
+    secret_name = os.environ.get("DATADOG_API_KEY_SECRET_NAME")
+    region_name = os.environ.get("AWS_REGION", "")
+
+    if not region_name:
+        raise Exception('Empty AWS Region, AWS_REGION variable must be set')
+
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    get_secret_value_response = client.get_secret_value(SecretId=secret_name)
+    return get_secret_value_response['SecretString']
 
 def send(env, bucket, key, status):
-    if "DATADOG_API_KEY" in os.environ:
-        datadog.initialize()  # by default uses DATADOG_API_KEY
+    av_datadog_integration_enabled = os.environ.get("AV_DATADOG_INTEGRATION_ENABLED", "false") == "true"
+
+    if av_datadog_integration_enabled:
+        print("Datadog is enabled")
+        datadog_api_key = get_datadog_api_key()
+        datadog.initialize(api_key=datadog_api_key)  # by default uses DATADOG_API_KEY
 
         result_metric_name = "unknown"
 
@@ -33,6 +54,8 @@ def send(env, bucket, key, status):
             result_metric_name = "clean"
         elif status == AV_STATUS_INFECTED:
             result_metric_name = "infected"
+            print("Sending Infected event")
+
             datadog.api.Event.create(
                     title = "Infected S3 Object Found",
                     text = "Virus found in s3://%s/%s." % (bucket, key),
