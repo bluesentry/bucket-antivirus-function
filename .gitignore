@@ -117,3 +117,8 @@ tmp/
 
 # EICAR Files
 *eicar*
+
+# aws-sam
+.aws-sam
+samconfig.toml
+.sam-env
