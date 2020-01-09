@@ -20,7 +20,7 @@ from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
 
 
-def send(env, bucket, key, status, signature):
+def send(env, bucket, key, status, signature, logurl):
     if "DATADOG_API_KEY" in os.environ:
         datadog.initialize()  # by default uses DATADOG_API_KEY
 
@@ -39,8 +39,8 @@ def send(env, bucket, key, status, signature):
             result_metric_name = "infected"
             datadog.api.Event.create(
                 title="Infected S3 Object Found",
-                text="Virus found in s3://%s/%s. The signature is '%s'"
-                % (bucket, key, signature),
+                text="Virus found in s3://%s/%s. The signature is '%s'. Cloudwatch Logs : %s"
+                % (bucket, key, signature, logurl),
                 tags=metric_tags,
             )
 
