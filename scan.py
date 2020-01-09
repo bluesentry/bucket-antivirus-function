@@ -48,7 +48,7 @@ def event_object(event, event_source="s3"):
         event = json.loads(event["Records"][0]["Sns"]["Message"])
 
     # S3 Batch
-    if not "Records" in event:
+    if "Records" not in event:
         s3Key = urllib.unquote(event["tasks"][0]["s3Key"]).decode("utf8")
         s3BucketArn = event["tasks"][0]["s3BucketArn"]
         s3Bucket = s3BucketArn.split(":::")[-1]
@@ -217,7 +217,6 @@ def lambda_handler(event, context):
     EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
     region = context.invoked_function_arn.split(":")[3]
-    request_id = context.aws_request_id
     log_group_name = context.log_group_name
     log_stream_name = context.log_stream_name
     log_url = (
