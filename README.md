@@ -143,20 +143,20 @@ need to include the following policy in the role created in Step 6.
 
    ```json
       {
-             "Sid":"s3CleanBucketCopy",
-             "Action":[
-                "s3:PutObject",
-                "s3:PutObjectTagging",
-                "s3:PutObjectVersion",
-                "s3:GetObject",
-                "s3:GetObjectTagging",
-                "s3:GetObjectVersionTagging"
-             ],
-             "Effect":"Allow",
-             "Resource": [
+         "Sid":"s3CleanBucketCopy",
+            "Action":[
+               "s3:PutObject",
+               "s3:PutObjectTagging",
+               "s3:PutObjectVersion",
+               "s3:GetObject",
+               "s3:GetObjectTagging",
+               "s3:GetObjectVersionTagging"
+            ],
+            "Effect":"Allow",
+            "Resource": [
                "arn:aws:s3:::<clean-bucket-name>/*"
-             ]
-          }
+            ]
+      }
    ```
 
 ### AV Scanner Lambda
