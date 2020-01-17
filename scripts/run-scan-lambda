@@ -27,6 +27,7 @@ NAME="antivirus-scan"
 docker run --rm \
   -v "$(pwd)/tmp/:/var/task" \
   -e AV_DEFINITION_S3_BUCKET \
+  -e AV_DEFINITION_S3_CLEAN_BUCKET \
   -e AV_DEFINITION_S3_PREFIX \
   -e AV_DELETE_INFECTED_FILES \
   -e AV_PROCESS_ORIGINAL_VERSION_ONLY \
