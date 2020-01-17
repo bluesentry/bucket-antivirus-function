@@ -24,6 +24,7 @@ import boto3
 import clamav
 import metrics
 from common import AV_DEFINITION_S3_BUCKET
+from common import AV_DEFINITION_S3_CLEAN_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
 from common import AV_DELETE_INFECTED_FILES
 from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
@@ -149,6 +150,16 @@ def set_av_tags(s3_client, s3_object, scan_result, scan_signature, timestamp):
         Bucket=s3_object.bucket_name, Key=s3_object.key, Tagging={"TagSet": new_tags}
     )
 
+def move_clean_file(s3, s3_object):
+    copy_source = {
+        "Bucket": s3_object.bucket_name,
+        "Key": s3_object.key
+    }
+
+    bucket = s3.Bucket(AV_DEFINITION_S3_CLEAN_BUCKET)
+    obj = bucket.Object(s3_object.key)
+    obj.copy(copy_source)
+
 
 def sns_start_scan(sns_client, s3_object, scan_start_sns_arn, timestamp):
     message = {
@@ -244,6 +255,11 @@ def lambda_handler(event, context):
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result, scan_signature, result_time)
     set_av_tags(s3_client, s3_object, scan_result, scan_signature, result_time)
+
+    # Move clean files to a new bucket specified by an enviornment variable if specified
+    if AV_DEFINITION_S3_CLEAN_BUCKET not in [None, ""] and scan_result == AV_STATUS_CLEAN:
+        move_clean_file(s3, s3_object)
+        print("Moved %s to clean bucket location." %s3_object.key)
 
     # Publish the scan results
     if AV_STATUS_SNS_ARN not in [None, ""]:
