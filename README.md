@@ -137,28 +137,6 @@ definitions.
 13. Save and test your function.  If prompted for test data, just use
 the default provided.
 
-**NOTE**
-If you wish the have the files tagged as CLEAN copied to a new bucket you will
-need to include the following policy in the role created in Step 6.
-
-   ```json
-      {
-         "Sid":"s3CleanBucketCopy",
-            "Action":[
-               "s3:PutObject",
-               "s3:PutObjectTagging",
-               "s3:PutObjectVersion",
-               "s3:GetObject",
-               "s3:GetObjectTagging",
-               "s3:GetObjectVersionTagging"
-            ],
-            "Effect":"Allow",
-            "Resource": [
-               "arn:aws:s3:::<clean-bucket-name>/*"
-            ]
-      }
-   ```
-
 ### AV Scanner Lambda
 
 1. Create the archive using the method in the
@@ -257,6 +235,28 @@ definitions. If your bucket is `s3://my-bucket`, the value should be `my-bucket`
 **1024**
 13. Save the function.  Testing is easiest performed by uploading a
 file to the bucket configured as the trigger in step 4.
+
+**NOTE**
+If you wish the have the files tagged as CLEAN copied to a new bucket you will
+need to include the following policy in the role created in Step 6.
+
+   ```json
+      {
+         "Sid":"s3CleanBucketCopy",
+            "Action":[
+               "s3:PutObject",
+               "s3:PutObjectTagging",
+               "s3:PutObjectVersion",
+               "s3:GetObject",
+               "s3:GetObjectTagging",
+               "s3:GetObjectVersionTagging"
+            ],
+            "Effect":"Allow",
+            "Resource": [
+               "arn:aws:s3:::<clean-bucket-name>/*"
+            ]
+      }
+   ```
 
 ### S3 Events
 
