@@ -150,7 +150,7 @@ def set_av_tags(s3_client, s3_object, scan_result, scan_signature, timestamp):
         Bucket=s3_object.bucket_name, Key=s3_object.key, Tagging={"TagSet": new_tags}
     )
 
-def move_clean_file(s3, s3_object):
+def copy_clean_file(s3, s3_object):
     copy_source = {
         "Bucket": s3_object.bucket_name,
         "Key": s3_object.key
@@ -258,7 +258,7 @@ def lambda_handler(event, context):
 
     # Move clean files to a new bucket specified by an enviornment variable if specified
     if AV_DEFINITION_S3_CLEAN_BUCKET not in [None, ""] and scan_result == AV_STATUS_CLEAN:
-        move_clean_file(s3, s3_object)
+        copy_clean_file(s3, s3_object)
         print("Moved %s to clean bucket location." %s3_object.key)
 
     # Publish the scan results
