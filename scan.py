@@ -259,7 +259,7 @@ def lambda_handler(event, context):
     # Move clean files to a new bucket specified by an enviornment variable if specified
     if AV_DEFINITION_S3_CLEAN_BUCKET not in [None, ""] and scan_result == AV_STATUS_CLEAN:
         copy_clean_file(s3, s3_object)
-        print("Moved %s to clean bucket location." %s3_object.key)
+        print("Copied %s to clean bucket location." %s3_object.key)
 
     # Publish the scan results
     if AV_STATUS_SNS_ARN not in [None, ""]:
