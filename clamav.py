@@ -19,11 +19,14 @@ import os
 import pwd
 import re
 import subprocess
+import socket
+import errno
 
 import boto3
 import botocore
 from pytz import utc
 
+from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_FILE_PREFIXES
@@ -33,9 +36,11 @@ from common import AV_SIGNATURE_UNKNOWN
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
 from common import CLAMAVLIB_PATH
-from common import CLAMSCAN_PATH
+from common import CLAMDSCAN_PATH
 from common import FRESHCLAM_PATH
+from common import CLAMDSCAN_TIMEOUT
 from common import create_dir
+from common import CLAMD_SOCKET
 
 
 RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"
@@ -119,7 +124,7 @@ def update_defs_from_freshclam(path, library_path=""):
     fc_proc = subprocess.Popen(
         [
             FRESHCLAM_PATH,
-            "--config-file=./bin/freshclam.conf",
+            "--config-file=%s/freshclam.conf" % CLAMAVLIB_PATH,
             "-u %s" % pwd.getpwuid(os.getuid())[0],
             "--datadir=%s" % path,
         ],
@@ -187,24 +192,95 @@ def scan_output_to_json(output):
 def scan_file(path):
     av_env = os.environ.copy()
     av_env["LD_LIBRARY_PATH"] = CLAMAVLIB_PATH
-    print("Starting clamscan of %s." % path)
+    print("Starting clamdscan of %s." % path)
     av_proc = subprocess.Popen(
-        [CLAMSCAN_PATH, "-v", "-a", "--stdout", "-d", AV_DEFINITION_PATH, path],
+        [CLAMDSCAN_PATH, "-v", "--stdout", "--config-file", "%s/scan.conf" % CLAMAVLIB_PATH, path],
         stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
         env=av_env,
     )
-    output = av_proc.communicate()[0].decode()
-    print("clamscan output:\n%s" % output)
 
-    # Turn the output into a data source we can read
-    summary = scan_output_to_json(output)
+    try:
+        output, errors = av_proc.communicate(timeout=CLAMDSCAN_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        av_proc.kill()
+        output, errors = av_proc.communicate()
+
+    decoded_output = output.decode()
+    print("clamdscan output:\n%s" % decoded_output)
+
     if av_proc.returncode == 0:
         return AV_STATUS_CLEAN, AV_SIGNATURE_OK
     elif av_proc.returncode == 1:
+        # Turn the output into a data source we can read
+        summary = scan_output_to_json(decoded_output)
         signature = summary.get(path, AV_SIGNATURE_UNKNOWN)
         return AV_STATUS_INFECTED, signature
     else:
-        msg = "Unexpected exit code from clamscan: %s.\n" % av_proc.returncode
+        msg = "Unexpected exit code from clamdscan: %s.\n" % av_proc.returncode
+
+        if errors:
+            msg += "Errors: %s\n" % errors.decode()
+
         print(msg)
         raise Exception(msg)
+
+def is_clamd_running():
+    print("Checking if clamd is running on %s" % CLAMD_SOCKET)
+
+    if os.path.exists(CLAMD_SOCKET):
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+            s.settimeout(10)
+            s.connect(CLAMD_SOCKET)
+            s.send(b'PING')
+            try:
+                data = s.recv(32)
+            except (socket.timeout, socket.error) as e:
+                print("Failed to read from socket: %s\n" % e)
+                return False
+
+        print("Received %s in response to PING" % repr(data))
+        return data == b'PONG\n'
+
+    print("Clamd is not running on %s" % CLAMD_SOCKET)
+    return False
+
+def start_clamd_daemon():
+    s3 = boto3.resource("s3")
+    s3_client = boto3.client("s3")
+
+    to_download = update_defs_from_s3(
+        s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
+    )
+
+    for download in to_download.values():
+        s3_path = download["s3_path"]
+        local_path = download["local_path"]
+        print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
+        s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
+        print("Downloading definition file %s complete!" % (local_path))
+
+    av_env = os.environ.copy()
+    av_env["LD_LIBRARY_PATH"] = CLAMAVLIB_PATH
+
+    print("Starting clamd")
+
+    if os.path.exists(CLAMD_SOCKET):
+        try:
+            os.unlink(CLAMD_SOCKET)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                print("Could not unlink clamd socket %s" % CLAMD_SOCKET)
+                raise
+
+    clamd_proc = subprocess.Popen(
+        ["%s/clamd" % CLAMAVLIB_PATH, "-c", "%s/scan.conf" % CLAMAVLIB_PATH],
+        env=av_env,
+    )
+
+    clamd_proc.wait()
+
+    clamd_log_file = open("/tmp/clamd.log")
+    print(clamd_log_file.read())
+
+    return clamd_proc.pid

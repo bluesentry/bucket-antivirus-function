@@ -34,8 +34,10 @@ AV_STATUS_SNS_PUBLISH_CLEAN = os.getenv("AV_STATUS_SNS_PUBLISH_CLEAN", "True")
 AV_STATUS_SNS_PUBLISH_INFECTED = os.getenv("AV_STATUS_SNS_PUBLISH_INFECTED", "True")
 AV_TIMESTAMP_METADATA = os.getenv("AV_TIMESTAMP_METADATA", "av-timestamp")
 CLAMAVLIB_PATH = os.getenv("CLAMAVLIB_PATH", "./bin")
-CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
+CLAMDSCAN_PATH = os.getenv("CLAMDSCAN_PATH", "./bin/clamdscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
+CLAMDSCAN_TIMEOUT = os.getenv("CLAMDSCAN_TIMEOUT", 240)
+CLAMD_SOCKET = os.getenv("CLAMD_SOCKET", "/tmp/clamd.sock")
 AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv(
     "AV_PROCESS_ORIGINAL_VERSION_ONLY", "False"
 )

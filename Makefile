@@ -14,7 +14,7 @@
 
 AMZ_LINUX_VERSION:=2
 current_dir := $(shell pwd)
-container_dir := /opt/app
+container_dir := /opt/app/clamav
 circleci := ${CIRCLECI}
 
 .PHONY: help
@@ -26,7 +26,6 @@ all: archive  ## Build the entire project
 .PHONY: clean
 clean:  ## Clean build artifacts
 	rm -rf bin/
-	rm -rf build/
 	rm -rf tmp/
 	rm -f .coverage
 	find ./ -type d -name '__pycache__' -delete
@@ -35,8 +34,9 @@ clean:  ## Clean build artifacts
 .PHONY: archive
 archive: clean  ## Create the archive for AWS lambda
 	docker build -t bucket-antivirus-function:latest .
-	mkdir -p ./build/
-	docker run -v $(current_dir)/build:/opt/mount --rm --entrypoint cp bucket-antivirus-function:latest /opt/app/build/lambda.zip /opt/mount/lambda.zip
+	mkdir -p ./bin
+	docker run -v $(current_dir)/bin:/opt/mount --rm bucket-antivirus-function:latest  bash -c "cp -r ${container_dir}/* /opt/mount/"
+	sam build --use-container
 
 .PHONY: pre_commit_install  ## Ensure that pre-commit hook is installed and kept up to date
 pre_commit_install: .git/hooks/pre-commit ## Ensure pre-commit is installed
@@ -58,9 +58,12 @@ coverage: clean  ## Run python tests with coverage
 	nosetests --with-coverage
 
 .PHONY: scan
-scan: ./build/lambda.zip ## Run scan function locally
-	scripts/run-scan-lambda $(TEST_BUCKET) $(TEST_KEY)
+scan:
+	sam local generate-event s3 put \
+		--bucket $(TEST_BUCKET) \
+		--key $(TEST_KEY) \
+	| sam local invoke ScanFunction --env-vars .sam-env -e -
 
 .PHONY: update
-update: ./build/lambda.zip ## Run update function locally
-	scripts/run-update-lambda
+update:
+	sam local invoke UpdateFunction --env-vars .sam-env --no-event
