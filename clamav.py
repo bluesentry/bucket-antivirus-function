@@ -32,6 +32,7 @@ from common import AV_SIGNATURE_OK
 from common import AV_SIGNATURE_UNKNOWN
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
+from common import AV_STATUS_FAILED
 from common import CLAMAVLIB_PATH
 from common import CLAMSCAN_PATH
 from common import FRESHCLAM_PATH
@@ -207,4 +208,4 @@ def scan_file(path):
     else:
         msg = "Unexpected exit code from clamscan: %s.\n" % av_proc.returncode
         print(msg)
-        raise Exception(msg)
+        return AV_STATUS_FAILED, AV_SIGNATURE_UNKNOWN

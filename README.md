@@ -264,6 +264,7 @@ the table below for reference.
 | AV_SIGNATURE_METADATA | The tag/metadata name representing file's AV type | av-signature | No |
 | AV_STATUS_CLEAN | The value assigned to clean items inside of tags/metadata | CLEAN | No |
 | AV_STATUS_INFECTED | The value assigned to clean items inside of tags/metadata | INFECTED | No |
+| AV_STATUS_FAILED | The value assigned to items when scanning fails to complete | SCAN_FAILED | No |
 | AV_STATUS_METADATA | The tag/metadata name representing file's AV status | av-status | No |
 | AV_STATUS_SNS_ARN | SNS topic ARN to publish scan results (optional) | | No |
 | AV_STATUS_SNS_PUBLISH_CLEAN | Publish AV_STATUS_CLEAN results to AV_STATUS_SNS_ARN | True | No |
