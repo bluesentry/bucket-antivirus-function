@@ -199,8 +199,10 @@ def sns_scan_results(
         },
     )
 
+
 def download_clamav_databases():
     s3_client = boto3.client("s3")
+    s3 = boto3.resource("s3")
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
     )
@@ -212,11 +214,13 @@ def download_clamav_databases():
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % (local_path))
 
+
 def remove_file(file_path):
     try:
         os.remove(file_path)
     except OSError:
         pass
+
 
 def publish_results(s3_object, scan_result, scan_signature):
     result_time = get_timestamp()
@@ -241,6 +245,7 @@ def publish_results(s3_object, scan_result, scan_signature):
     metrics.send(
         env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result
     )
+
 
 def lambda_handler(event, context):
     s3 = boto3.resource("s3")
@@ -290,6 +295,7 @@ def lambda_handler(event, context):
         delete_s3_object(s3_object)
     stop_scan_time = get_timestamp()
     print("Script finished at %s\n" % stop_scan_time)
+
 
 def str_to_bool(s):
     return bool(strtobool(str(s)))
