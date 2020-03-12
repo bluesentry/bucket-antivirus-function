@@ -29,13 +29,15 @@ from common import AV_STATUS_INFECTED
 
 
 # Get all objects in an S3 bucket that are infected
-def get_objects_and_sigs(s3_client, s3_bucket_name):
+def get_objects_and_sigs(s3_client, s3_bucket_name, prefix=None):
 
     s3_object_list = []
 
     s3_list_objects_result = {"IsTruncated": True}
     while s3_list_objects_result["IsTruncated"]:
         s3_list_objects_config = {"Bucket": s3_bucket_name}
+        if prefix is not None:
+            s3_list_objects_config["Prefix"] = prefix
         continuation_token = s3_list_objects_result.get("NextContinuationToken")
         if continuation_token:
             s3_list_objects_config["ContinuationToken"] = continuation_token
@@ -75,7 +77,7 @@ def object_infected(s3_client, s3_bucket_name, key_name):
     return False, None
 
 
-def main(s3_bucket_name):
+def main(s3_bucket_name, prefix):
 
     # Verify the S3 bucket exists
     s3_client = boto3.client("s3")
@@ -86,7 +88,7 @@ def main(s3_bucket_name):
         sys.exit(1)
 
     # Scan the objects in the bucket
-    s3_object_and_sigs_list = get_objects_and_sigs(s3_client, s3_bucket_name)
+    s3_object_and_sigs_list = get_objects_and_sigs(s3_client, s3_bucket_name, prefix)
     for (key_name, av_signature) in s3_object_and_sigs_list:
         print("Infected: {}/{}, {}".format(s3_bucket_name, key_name, av_signature))
 
@@ -98,6 +100,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--s3-bucket-name", required=True, help="The name of the S3 bucket to scan"
     )
+    parser.add_argument("--prefix", help="The prefix to filter the bucket objects by")
     args = parser.parse_args()
 
-    main(args.s3_bucket_name)
+    main(args.s3_bucket_name, args.prefix)
