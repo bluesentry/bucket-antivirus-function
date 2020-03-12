@@ -131,8 +131,7 @@ def set_av_metadata(s3_object, scan_result, scan_signature, timestamp):
     )
 
 
-def set_av_tags(s3_object, scan_result, scan_signature, timestamp):
-    s3_client = boto3.client("s3")
+def set_av_tags(s3_client, s3_object, scan_result, scan_signature, timestamp):
     curr_tags = s3_client.get_object_tagging(
         Bucket=s3_object.bucket_name, Key=s3_object.key
     )["TagSet"]
@@ -225,11 +224,12 @@ def remove_file(file_path):
 def publish_results(s3_object, scan_result, scan_signature):
     result_time = get_timestamp()
     sns_client = boto3.client("sns")
+    s3_client = boto3.client("s3")
     ENV = os.getenv("ENV", "")
     # Set the properties on the object with the scan results
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result, scan_signature, result_time)
-    set_av_tags(s3_object, scan_result, scan_signature, result_time)
+    set_av_tags(s3_client, s3_object, scan_result, scan_signature, result_time)
 
     # Publish the scan results
     if AV_STATUS_SNS_ARN not in [None, ""]:
