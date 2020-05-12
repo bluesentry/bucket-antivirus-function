@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  ScanBuckets:
+    Description: A comma separated list of bucket ARNs the function is allowed to scan
+    Type: CommaDelimitedList
+
+Globals:
+  Function:
+    Timeout: 300
+    Runtime: python3.7
+    Environment:
+      Variables:
+        AV_DEFINITION_S3_BUCKET: !Ref S3BucketClamavVirusDatabase
+
+Resources:
+  UpdateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Events:
+        UpdateAntivirusDatabase:
+          Type: Schedule
+          Properties:
+            Schedule: rate(3 hours)
+      Handler: update.lambda_handler
+      MemorySize: 1152
+      Policies:
+        - Statement:
+          - Sid: s3GetAndPutWithTagging
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectTagging
+              - s3:PutObject
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+            Resource: !Join ['', ['arn:aws:s3:::', !Ref S3BucketClamavVirusDatabase, '/*']]
+          - Sid: s3HeadObject
+            Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource: !GetAtt S3BucketClamavVirusDatabase.Arn
+
+  ScanFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Environment:
+        Variables:
+          AV_STATUS_SNS_ARN: !Ref SNSTopicAntivirusScanStatus
+      Handler: scan.lambda_handler
+      MemorySize: 2048
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt SNSTopicAntivirusScanStart.TopicName
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt SNSTopicAntivirusScanStatus.TopicName
+        - Statement:
+          - Sid: s3AntiVirusScan
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectTagging
+              - s3:GetObjectVersion
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+            Resource: !Ref ScanBuckets
+          - Sid: kmsDecrypt
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+            Resource: !Ref ScanBuckets
+          - Sid: s3AntiVirusDefinitions
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectTagging
+            Resource: !Join ['', ['arn:aws:s3:::', !Ref S3BucketClamavVirusDatabase, '/*']]
+          - Sid: s3HeadObject
+            Effect: Allow
+            Action:
+              - s3:ListBucket
+            Resource: !GetAtt S3BucketClamavVirusDatabase.Arn
+
+  S3BucketClamavVirusDatabase:
+    Type: AWS::S3::Bucket
+
+  SNSTopicAntivirusScanStart:
+    Type: AWS::SNS::Topic
+
+  SNSTopicAntivirusScanStatus:
+    Type: AWS::SNS::Topic
+
+  AntivirusScanStatusSNSTopicSSMParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description : "Antivirus Scan Status SNS Topic"
+      Name: !Sub "/bucket-antivirus-function/ANTIVIRUS_SCAN_STATUS_SNS_TOPIC"
+      Type: String
+      Value: !Ref SNSTopicAntivirusScanStatus

@@ -1,0 +1,9 @@
+{
+  "ScanFunction": {
+    "AV_DEFINITION_S3_BUCKET": "",
+    "AV_STATUS_SNS_ARN": ""
+  },
+  "UpdateFunction": {
+    "AV_DEFINITION_S3_BUCKET": ""
+  }
+}
