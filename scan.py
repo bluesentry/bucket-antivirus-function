@@ -162,6 +162,12 @@ def sns_start_scan(sns_client, s3_object, scan_start_sns_arn, timestamp):
         TargetArn=scan_start_sns_arn,
         Message=json.dumps({"default": json.dumps(message)}),
         MessageStructure="json",
+        MessageAttributes={
+            "bucket": {
+                "DataType": "String",
+                "StringValue": s3_object.bucket_name,
+            },
+        },
     )
 
 
@@ -193,6 +199,10 @@ def sns_scan_results(
             AV_SIGNATURE_METADATA: {
                 "DataType": "String",
                 "StringValue": scan_signature,
+            },
+            "bucket": {
+                "DataType": "String",
+                "StringValue": s3_object.bucket_name,
             },
         },
     )
