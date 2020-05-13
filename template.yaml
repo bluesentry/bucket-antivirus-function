@@ -1,6 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: serverless-s3-scanner
+    Description: Scan new objects added to any s3 bucket using AWS Lambda.
+    Author: Tyler Technologies
+    SpdxLicenseId: Apache-2.0
+    LicenseUrl: LICENSE
+    ReadmeUrl: README.md
+    HomePageUrl: https://github.com/tyler-technologies/bucket-antivirus-function
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://github.com/tyler-technologies/bucket-antivirus-function
+
 Parameters:
   ScanBuckets:
     Description: A comma separated list of bucket ARNs the function is allowed to scan
@@ -36,6 +48,7 @@ Resources:
               - s3:PutObject
               - s3:PutObjectTagging
               - s3:PutObjectVersionTagging
+              - s3:DeleteObject
             Resource: !Join ['', ['arn:aws:s3:::', !Ref S3BucketClamavVirusDatabase, '/*']]
           - Sid: s3HeadObject
             Effect: Allow
