@@ -107,7 +107,7 @@ It should be in the format provided below:
     "NotPrincipal": {
         "AWS": [
             "arn:aws:iam::<<aws-account-number>>:role/<<bucket-antivirus-role>>",
-            "arn:aws:sts::<<aws-account-number>>:assumed-role/<<bucket-antivirus-role>>/<<bucket-antivirus-role>>",
+            "arn:aws:sts::<<aws-account-number>>:assumed-role/<<bucket-antivirus-role>>/<<bucket-antivirus-function>>",
             "arn:aws:iam::<<aws-account-number>>:root"
         ]
     },
