@@ -18,7 +18,7 @@
 set -e
 
 yum update -y
-yum install -y cpio python27-pip zip git
+yum install -y cpio python27-pip zip git json-c
 pip install --no-cache-dir virtualenv
 virtualenv env
 . env/bin/activate
@@ -27,10 +27,11 @@ pip install --no-cache-dir -r requirements.txt
 lambda_output_file=/opt/app/build/lambda_$(git rev-parse --short HEAD).zip
 
 pushd /tmp
-yumdownloader -x \*i686 --archlist=x86_64 clamav clamav-lib clamav-update
+yumdownloader -x \*i686 --archlist=x86_64 clamav clamav-lib clamav-update json-c
 rpm2cpio clamav-0*.rpm | cpio -idmv
 rpm2cpio clamav-lib*.rpm | cpio -idmv
 rpm2cpio clamav-update*.rpm | cpio -idmv
+rpm2cpio json*.rpm | cpio -idmv
 popd
 mkdir -p bin
 cp /tmp/usr/bin/clamscan /tmp/usr/bin/freshclam /tmp/usr/lib64/* bin/.
