@@ -27,6 +27,7 @@ from common import AV_TIMESTAMP_METADATA
 
 # Get all objects in an S3 bucket that have not been previously scanned
 def get_objects(s3_client, s3_bucket_name):
+    print('getting object')
 
     s3_object_list = []
 
@@ -86,6 +87,7 @@ def format_s3_event(s3_bucket_name, key_name):
 
 
 def main(lambda_function_name, s3_bucket_name, limit):
+    print('starting')
     # Verify the lambda exists
     lambda_client = boto3.client("lambda")
     try:

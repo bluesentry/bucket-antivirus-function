@@ -221,6 +221,7 @@ def lambda_handler(event, context):
 
     file_path = get_local_path(s3_object, "/tmp")
     create_dir(os.path.dirname(file_path))
+    print("Trying to download %s" % file_path)
     s3_object.download_file(file_path)
 
     to_download = clamav.update_defs_from_s3(
