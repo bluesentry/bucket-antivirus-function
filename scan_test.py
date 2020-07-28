@@ -36,6 +36,10 @@ from scan import sns_start_scan
 from scan import sns_scan_results
 from scan import verify_s3_object_version
 
+import pathlib, os
+from scan import is_content_type_match_file_content
+from scan import is_content_type_in_static_valid_mime_list
+
 
 class TestScan(unittest.TestCase):
     def setUp(self):
@@ -49,6 +53,10 @@ class TestScan(unittest.TestCase):
         self.sns_client = botocore.session.get_session().create_client(
             "sns", region_name="us-west-2"
         )
+
+        # Upgrade: specify environment and application that generate the upload url
+        self.environment = "unit-test"
+        self.application = "doc-mgt.srvc"
 
     def test_sns_event_object(self):
         event = {
@@ -246,10 +254,20 @@ class TestScan(unittest.TestCase):
             "TargetArn": sns_arn,
             "Message": json.dumps({"default": json.dumps(message)}),
             "MessageStructure": "json",
+            "MessageAttributes": {
+                "application": {"DataType": "String", "StringValue": 'doc-mgt-srvc'},
+                "environment": {"DataType": "String", "StringValue": 'unit-test'}
+            },
         }
         sns_stubber.add_response("publish", publish_response, publish_expected_params)
 
-        head_object_response = {"VersionId": version_id}
+        head_object_response = {
+            "VersionId": version_id,
+            "Metadata": {
+                'sns-msg-attr-application': 'doc-mgt-srvc',
+                'sns-msg-attr-environment': 'unit-test'
+            }
+        }
         head_object_expected_params = {
             "Bucket": self.s3_bucket_name,
             "Key": self.s3_key_name,
@@ -383,12 +401,20 @@ class TestScan(unittest.TestCase):
             "MessageAttributes": {
                 "av-status": {"DataType": "String", "StringValue": scan_result},
                 "av-signature": {"DataType": "String", "StringValue": scan_signature},
+                "application": {"DataType": "String", "StringValue": 'doc-mgt-srvc'},
+                "environment": {"DataType": "String", "StringValue": 'unit-test'},
             },
             "MessageStructure": "json",
         }
         sns_stubber.add_response("publish", publish_response, publish_expected_params)
 
-        head_object_response = {"VersionId": version_id}
+        head_object_response = {
+            "VersionId": version_id,
+            "Metadata": {
+                'sns-msg-attr-application': 'doc-mgt-srvc',
+                'sns-msg-attr-environment': 'unit-test'
+            }
+        }
         head_object_expected_params = {
             "Bucket": self.s3_bucket_name,
             "Key": self.s3_key_name,
@@ -430,3 +456,47 @@ class TestScan(unittest.TestCase):
                     self.s3_bucket_name, self.s3_key_name
                 ),
             )
+
+    def test_is_mime_valid_list_match(self):
+        png_file = os.path.join(pathlib.Path(__file__).parent, "images", "bucket-antivirus-function.png")
+        self.assertTrue(is_content_type_in_static_valid_mime_list(png_file))
+
+    def test_is_mime_valid_list_match_invalid(self):
+        python_file = os.path.join(pathlib.Path(__file__).parent, "scan.py")
+        self.assertFalse(is_content_type_in_static_valid_mime_list(python_file))
+
+    def test_is_mime_valid_content_match(self):
+        s3_stubber_resource = Stubber(self.s3.meta.client)
+
+        # First head call is done to get content type and meta data
+        head_object_response = {"ContentType": "image/png", "Metadata": {}}
+        head_object_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": self.s3_key_name,
+        }
+        s3_stubber_resource.add_response("head_object", head_object_response, head_object_expected_params)
+
+        with s3_stubber_resource:
+            s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
+            import pathlib
+            import os
+            png_file = os.path.join(pathlib.Path(__file__).parent, "images", "bucket-antivirus-function.png")
+            self.assertTrue(is_content_type_match_file_content(s3_obj, png_file))
+
+    def test_is_mime_valid_content_match_invalid(self):
+        s3_stubber_resource = Stubber(self.s3.meta.client)
+
+        # First head call is done to get content type and meta data
+        head_object_response = {"ContentType": "application/json", "Metadata": {}}
+        head_object_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": self.s3_key_name,
+        }
+        s3_stubber_resource.add_response("head_object", head_object_response, head_object_expected_params)
+
+        with s3_stubber_resource:
+            s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
+            import pathlib
+            import os
+            png_file = os.path.join(pathlib.Path(__file__).parent, "images", "bucket-antivirus-function.png")
+            self.assertFalse(is_content_type_match_file_content(s3_obj, png_file))
