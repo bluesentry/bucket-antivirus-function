@@ -18,10 +18,6 @@ import datetime
 import os
 import os.path
 
-MIME_VALIDATION_NONE = "no-validation"
-MIME_VALIDATION_STATIC = "static"
-MIME_VALIDATION_S3_CONTENT_TYPE = "s3-content-type"
-
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
 AV_DEFINITION_PATH = os.getenv("AV_DEFINITION_PATH", "/tmp/clamav_defs")
@@ -45,13 +41,15 @@ AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv(
 )
 AV_DELETE_INFECTED_FILES = os.getenv("AV_DELETE_INFECTED_FILES", "False")
 
-IS_AV_ENABLED = os.getenv("IS_AV_ENABLED", "True")
-MIME_VALIDATION = os.getenv("MIME_VALIDATION", MIME_VALIDATION_STATIC)
-MIME_VALIDATION_STATIC_VALID_LIST = os.getenv("VALID_MIMES", "image/gif,image/png,image/jpeg,image/jpg,application/pdf")
-
 AV_DEFINITION_FILE_PREFIXES = ["main", "daily", "bytecode"]
 AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 
+IS_AV_ENABLED = os.getenv("IS_AV_ENABLED", "True")
+MIME_VALIDATION_NONE = "no-validation"
+MIME_VALIDATION_STATIC = "static"
+MIME_VALIDATION_S3_CONTENT_TYPE = "s3-content-type"
+MIME_VALIDATION = os.getenv("MIME_VALIDATION", MIME_VALIDATION_STATIC)
+MIME_VALIDATION_STATIC_VALID_LIST = os.getenv("VALID_MIMES", "image/gif,image/png,image/jpeg,image/jpg,application/pdf")
 
 def create_dir(path):
     if not os.path.exists(path):

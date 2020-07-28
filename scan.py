@@ -40,9 +40,12 @@ from common import AV_TIMESTAMP_METADATA
 from common import create_dir
 from common import get_timestamp
 
-from datetime import datetime
+from common import IS_AV_ENABLED
+from common import MIME_VALIDATION
+from common import MIME_VALIDATION_STATIC_VALID_LIST
+from common import MIME_VALIDATION_S3_CONTENT_TYPE
+from common import MIME_VALIDATION_STATIC
 import magic
-
 
 def event_object(event, event_source="s3"):
 
@@ -95,7 +98,7 @@ def verify_s3_object_version(s3, s3_object):
                 "Detected multiple object versions in %s.%s, aborting processing"
                 % (s3_object.bucket_name, s3_object.key)
             )
-            return False
+           return False
         else:
             print("Detected only 1 object version in %s.%s, proceeding with processing" % (s3_object.bucket_name, s3_object.key))
             return True
@@ -164,27 +167,29 @@ def sns_message_attributes(s3_object, scan_result = None, scan_signature = None)
     if 'sns-msg-attr-application' in s3_object.metadata:
         message_attributes['application'] = {"DataType": "String",
                                              "StringValue": s3_object.metadata['sns-msg-attr-application']}
+    else:
+        print("Missing attribute 'sns-msg-attr-application' from metadata")
     if 'sns-msg-attr-environment' in s3_object.metadata:
         message_attributes['environment'] = {"DataType": "String",
                                              "StringValue": s3_object.metadata['sns-msg-attr-environment']}
+    else:
+        print("Missing attribute 'sns-msg-attr-environment' from metadata")
     if scan_result is not None:
         message_attributes[AV_STATUS_METADATA] = {"DataType": "String",
                                                   "StringValue": scan_result}
-                    ,
+
     if scan_signature is not None:
         message_attributes[AV_SIGNATURE_METADATA] = {"DataType": "String",
                                                      "StringValue": scan_signature}
-
     return message_attributes
 
-
-def sns_start_scan(sns_client, s3_object, scan_start_sns_arn, start_scan_time):
+def sns_start_scan(sns_client, s3_object, scan_start_sns_arn, timestamp):
     message = {
         "bucket": s3_object.bucket_name,
         "key": s3_object.key,
         "version": s3_object.version_id,
         AV_SCAN_START_METADATA: True,
-        AV_TIMESTAMP_METADATA: start_scan_time.strftime("%Y/%m/%d %H:%M:%S UTC"),
+        AV_TIMESTAMP_METADATA: timestamp,
     }
     sns_client.publish(
         TargetArn=scan_start_sns_arn,
@@ -259,8 +264,8 @@ def lambda_handler(event, context):
     ENV = os.getenv("ENV", "")
     EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
-    start_time = datetime.utcnow()
-    print("Script starting at %s\n" %(start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
+    start_time = get_timestamp()
+    print("Script starting at %s\n" % (start_time))
     s3_object = event_object(event, event_source=EVENT_SOURCE)
 
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
@@ -269,7 +274,7 @@ def lambda_handler(event, context):
 
     # Publish the start time of the scan
     if AV_SCAN_START_SNS_ARN not in [None, ""]:
-        start_scan_time = datetime.utcnow()
+        start_scan_time = get_timestamp()
         sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
 
     if str_to_bool(IS_AV_ENABLED):
@@ -324,8 +329,8 @@ def lambda_handler(event, context):
         pass
     if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
         delete_s3_object(s3_object)
-    print("Script finished at %s\n" %
-              datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC"))
+    stop_scan_time = get_timestamp()
+    print("Script finished at %s\n" % stop_scan_time)
 
 
 def str_to_bool(s):
