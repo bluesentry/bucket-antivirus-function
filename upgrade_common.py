@@ -1,4 +1,4 @@
-import os.path
+import os
 
 IS_AV_ENABLED = os.getenv("IS_AV_ENABLED", "True")
 MIME_VALIDATION_NONE = "no-validation"

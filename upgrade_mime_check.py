@@ -1,6 +1,8 @@
-from common import AV_STATUS_INFECTED
-from upgrade_common import MIME_VALIDATION, MIME_VALIDATION_S3_CONTENT_TYPE, MIME_VALIDATION_STATIC, MIME_VALIDATION_STATIC_VALID_LIST
 import magic
+
+from upgrade_common import MIME_VALIDATION, MIME_VALIDATION_S3_CONTENT_TYPE, MIME_VALIDATION_STATIC, \
+    MIME_VALIDATION_STATIC_VALID_LIST
+
 
 def is_content_type_match_file_content(s3_object, file_path):
     content_type = magic.from_file(file_path, mime=True)
