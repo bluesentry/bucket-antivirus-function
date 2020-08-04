@@ -40,12 +40,9 @@ from common import AV_TIMESTAMP_METADATA
 from common import create_dir
 from common import get_timestamp
 
-from common import IS_AV_ENABLED
-from common import MIME_VALIDATION
-from common import MIME_VALIDATION_STATIC_VALID_LIST
-from common import MIME_VALIDATION_S3_CONTENT_TYPE
-from common import MIME_VALIDATION_STATIC
-import magic
+from upgrade_common import IS_AV_ENABLED
+from upgrade_mime_check import is_mime_valid
+from upgrade_sns import sns_message_attributes
 
 def event_object(event, event_source="s3"):
 
@@ -162,26 +159,6 @@ def set_av_tags(s3_client, s3_object, scan_result, scan_signature, timestamp):
         Bucket=s3_object.bucket_name, Key=s3_object.key, Tagging={"TagSet": new_tags}
     )
 
-def sns_message_attributes(s3_object, scan_result = None, scan_signature = None):
-    message_attributes = {}
-    if 'sns-msg-attr-application' in s3_object.metadata:
-        message_attributes['application'] = {"DataType": "String",
-                                             "StringValue": s3_object.metadata['sns-msg-attr-application']}
-    else:
-        print("Missing attribute 'sns-msg-attr-application' from metadata")
-    if 'sns-msg-attr-environment' in s3_object.metadata:
-        message_attributes['environment'] = {"DataType": "String",
-                                             "StringValue": s3_object.metadata['sns-msg-attr-environment']}
-    else:
-        print("Missing attribute 'sns-msg-attr-environment' from metadata")
-    if scan_result is not None:
-        message_attributes[AV_STATUS_METADATA] = {"DataType": "String",
-                                                  "StringValue": scan_result}
-
-    if scan_signature is not None:
-        message_attributes[AV_SIGNATURE_METADATA] = {"DataType": "String",
-                                                     "StringValue": scan_signature}
-    return message_attributes
 
 def sns_start_scan(sns_client, s3_object, scan_start_sns_arn, timestamp):
     message = {
@@ -224,28 +201,6 @@ def sns_scan_results(
         MessageStructure="json",
         MessageAttributes=sns_message_attributes(s3_object, scan_result, scan_signature),
     )
-
-
-def is_content_type_match_file_content(s3_object, file_path):
-    content_type = magic.from_file(file_path, mime=True)
-    print("comparing s3_content_type=[%s] vs magic_content_type=[%s]" % (s3_object.content_type, content_type))
-    return content_type is not None and content_type == s3_object.content_type
-
-
-def is_content_type_in_static_valid_mime_list(file_path):
-    content_type = magic.from_file(file_path, mime=True)
-    print("Verifying content_type=[%s] against static list of [%s]" % (content_type, MIME_VALIDATION_STATIC_VALID_LIST))
-    return content_type is not None and content_type in MIME_VALIDATION_STATIC_VALID_LIST.split(",")
-
-
-def is_mime_valid(s3_object, file_path):
-    if MIME_VALIDATION == MIME_VALIDATION_S3_CONTENT_TYPE:
-        return is_content_type_match_file_content(s3_object, file_path)
-    if MIME_VALIDATION == MIME_VALIDATION_STATIC:
-        return is_content_type_in_static_valid_mime_list(file_path)
-
-    print("MIME Validation is not enabled returning True")
-    return True
 
 
 def scan_file(s3_object, file_path):
@@ -292,7 +247,7 @@ def lambda_handler(event, context):
             print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
             s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
             print("Downloading definition file %s complete!" % (local_path))
-        scan_result, scan_signature = clamav.scan_file(file_path)
+        scan_result, scan_signature = scan_file(s3_object, file_path)
     else:
         print("NOOP - returning AV_STATUS_CLEAN")
         scan_result = AV_STATUS_CLEAN
