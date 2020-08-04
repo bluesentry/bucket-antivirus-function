@@ -90,12 +90,12 @@ def verify_s3_object_version(s3, s3_object):
         bucket = s3.Bucket(s3_object.bucket_name)
         versions = list(bucket.object_versions.filter(Prefix=s3_object.key))
         if len(versions) > 1:
-           #raise Exception(
-           print(
-                "Detected multiple object versions in %s.%s, aborting processing"
-                % (s3_object.bucket_name, s3_object.key)
-            )
-           return False
+            #raise Exception(
+            print(
+                 "Detected multiple object versions in %s.%s, aborting processing"
+                 % (s3_object.bucket_name, s3_object.key)
+             )
+            return False
         else:
             print("Detected only 1 object version in %s.%s, proceeding with processing" % (s3_object.bucket_name, s3_object.key))
             return True
