@@ -205,7 +205,7 @@ def sns_scan_results(
 
 def scan_file(s3_object, file_path):
     if not is_mime_valid(s3_object, file_path):
-        return AV_STATUS_INFECTED
+        return AV_STATUS_INFECTED, "Invalid Mime type"
 
     return clamav.scan_file(file_path)
 
