@@ -18,6 +18,7 @@ import json
 import os
 from urllib.parse import unquote_plus
 from distutils.util import strtobool
+import sys
 
 import boto3
 
@@ -131,24 +132,30 @@ def set_av_metadata(s3_object, scan_result, scan_signature, timestamp):
 
 
 def set_av_tags(s3_client, s3_object, scan_result, scan_signature, timestamp):
-    curr_tags = s3_client.get_object_tagging(
-        Bucket=s3_object.bucket_name, Key=s3_object.key
-    )["TagSet"]
-    new_tags = copy.copy(curr_tags)
-    for tag in curr_tags:
-        if tag["Key"] in [
-            AV_SIGNATURE_METADATA,
-            AV_STATUS_METADATA,
-            AV_TIMESTAMP_METADATA,
-        ]:
-            new_tags.remove(tag)
-    new_tags.append({"Key": AV_SIGNATURE_METADATA, "Value": scan_signature})
-    new_tags.append({"Key": AV_STATUS_METADATA, "Value": scan_result})
-    new_tags.append({"Key": AV_TIMESTAMP_METADATA, "Value": timestamp})
-    s3_client.put_object_tagging(
-        Bucket=s3_object.bucket_name, Key=s3_object.key, Tagging={"TagSet": new_tags}
-    )
-
+    try:
+        curr_tags = s3_client.get_object_tagging(
+            Bucket=s3_object.bucket_name, Key=s3_object.key
+        )["TagSet"]
+        new_tags = copy.copy(curr_tags)
+        for tag in curr_tags:
+            if tag["Key"] in [
+                AV_SIGNATURE_METADATA,
+                AV_STATUS_METADATA,
+                AV_TIMESTAMP_METADATA,
+            ]:
+                new_tags.remove(tag)
+        new_tags.append({"Key": AV_SIGNATURE_METADATA, "Value": scan_signature})
+        new_tags.append({"Key": AV_STATUS_METADATA, "Value": scan_result})
+        new_tags.append({"Key": AV_TIMESTAMP_METADATA, "Value": timestamp})
+        s3_client.put_object_tagging(
+            Bucket=s3_object.bucket_name, Key=s3_object.key, Tagging={"TagSet": new_tags}
+        )
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'NoSuchKey':
+          print("Exiting early, the object has been deleted.")
+          sys.exit()
+        else:
+            raise error
 
 def sns_start_scan(sns_client, s3_object, scan_start_sns_arn, timestamp):
     message = {
@@ -221,8 +228,13 @@ def lambda_handler(event, context):
 
     file_path = get_local_path(s3_object, "/tmp")
     create_dir(os.path.dirname(file_path))
-    print("Trying to download %s" % file_path)
-    s3_object.download_file(file_path)
+    try:
+        print("Trying to download %s" % file_path)
+        s3_object.download_file(file_path)
+    except botocore.exceptions.ClientError as error:
+        if error.response['Error']['Code'] == 'NoSuchKey':
+            print("Exiting early, the object has been deleted.")
+            sys.exit()
 
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
