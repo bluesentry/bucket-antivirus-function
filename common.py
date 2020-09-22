@@ -41,6 +41,8 @@ AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv(
 )
 AV_DELETE_INFECTED_FILES = os.getenv("AV_DELETE_INFECTED_FILES", "False")
 
+AV_UPDATE_METADATA = os.getenv("AV_UPDATE_METADATA", "False")
+
 AV_DEFINITION_FILE_PREFIXES = ["main", "daily", "bytecode"]
 AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 
@@ -48,7 +50,7 @@ AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 def create_dir(path):
     if not os.path.exists(path):
         try:
-            print("Attempting to create directory %s.\n" % path)
+            print("Attempting to create directory: %s\n" % path)
             os.makedirs(path)
         except OSError as exc:
             if exc.errno != errno.EEXIST:
