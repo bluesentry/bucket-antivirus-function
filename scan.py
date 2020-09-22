@@ -27,6 +27,7 @@ from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
 from common import AV_DELETE_INFECTED_FILES
 from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
+from common import AV_UPDATE_METADATA
 from common import AV_SCAN_START_METADATA
 from common import AV_SCAN_START_SNS_ARN
 from common import AV_SIGNATURE_METADATA
@@ -199,6 +200,7 @@ def sns_scan_results(
 
 
 def lambda_handler(event, context):
+    print("Received event: " + json.dumps(event, indent=2))
     s3 = boto3.resource("s3")
     s3_client = boto3.client("s3")
     sns_client = boto3.client("sns")
@@ -240,10 +242,11 @@ def lambda_handler(event, context):
     )
 
     result_time = get_timestamp()
-    # Set the properties on the object with the scan results
-    if "AV_UPDATE_METADATA" in os.environ:
-        set_av_metadata(s3_object, scan_result, scan_signature, result_time)
+    # Set tag
     set_av_tags(s3_client, s3_object, scan_result, scan_signature, result_time)
+    # Set metadata
+    if str_to_bool(AV_UPDATE_METADATA) and scan_result == AV_STATUS_CLEAN:
+        set_av_metadata(s3_object, scan_result, scan_signature, result_time)
 
     # Publish the scan results
     if AV_STATUS_SNS_ARN not in [None, ""]:
