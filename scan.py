@@ -200,7 +200,7 @@ def sns_scan_results(
 
 
 def lambda_handler(event, context):
-    print("Received event: " + json.dumps(event, indent=2))
+    print("Received event: " + json.dumps(event))
     s3 = boto3.resource("s3")
     s3_client = boto3.client("s3")
     sns_client = boto3.client("sns")
