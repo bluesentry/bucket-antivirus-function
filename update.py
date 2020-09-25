@@ -24,6 +24,7 @@ from common import AV_DEFINITION_S3_PREFIX
 from common import CLAMAVLIB_PATH
 from common import get_timestamp
 from datetime import datetime
+import shutil
 
 
 def lambda_handler(event, context):
@@ -31,18 +32,22 @@ def lambda_handler(event, context):
     s3_client = boto3.client("s3")
 
     start_time = datetime.utcnow()
-    print("Script starting at %s\n" %
-              (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
+    print("Script starting at %s\n" % (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
+
+    shutil.rmtree(AV_DEFINITION_PATH)
+    os.mkdir(AV_DEFINITION_PATH)
+
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
     )
 
-    for download in to_download.values():
-        s3_path = download["s3_path"]
-        local_path = download["local_path"]
-        print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
-        s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
-        print("Downloading definition file %s complete!" % (local_path))
+    print("Skipping clamav definition download %s\n" % (get_timestamp()))
+    # for download in to_download.values():
+    #    s3_path = download["s3_path"]
+    #    local_path = download["local_path"]
+    #    print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
+    #    s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
+    #    print("Downloading definition file %s complete!" % (local_path))
 
     retVal = clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
     if retVal != 0:
