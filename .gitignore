@@ -117,3 +117,6 @@ tmp/
 
 # EICAR Files
 *eicar*
+
+# Rebase from upstream fork
+rebase-upstream.sh
