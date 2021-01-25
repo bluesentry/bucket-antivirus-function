@@ -13,13 +13,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@master
 
+      - name: Test git
+        run: git status
+
       - name: Build lambda function
-        run: |
-          ls
-          make archive
+        run: make archive
 
       - name: Deploy to lambda
-        run: |
-          ls
-          ls build
-        # aws lambda update-function-code --function-name bucket-antivirus-function --zip-file build/lambda.zip
+        run: ls 
+        #aws lambda update-function-code --function-name bucket-antivirus-function-staging --zip-file fileb://build/lambda.zip
