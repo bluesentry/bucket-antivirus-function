@@ -2,17 +2,17 @@ on:
   schedule:
     - cron: '0 0 1 * *'
   
-  jobs:
-    # This workflow contains a single job called "build"
-    deploy:
-      # The type of runner that the job will run on
-      runs-on: amazonlinux:2
+jobs:
+  # This workflow contains a single job called "build"
+  deploy:
+    # The type of runner that the job will run on
+    runs-on: amazonlinux:2
 
-      uses: actions/checkout@master
+    uses: actions/checkout@master
 
-      steps:
-        - name: Build lambda function
-          run: make archive
+    steps:
+      - name: Build lambda function
+        run: make archive
 
-        - name: Deploy to lambda
-          run: aws lambda update-function-code --function-name bucket-antivirus-function --zip-file build/lambda.zip
+      - name: Deploy to lambda
+        run: aws lambda update-function-code --function-name bucket-antivirus-function --zip-file build/lambda.zip
