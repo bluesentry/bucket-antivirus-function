@@ -9,11 +9,14 @@ jobs:
     # The type of runner that the job will run on
     runs-on: amazonlinux:2
 
-    uses: actions/checkout@master
-
     steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
       - name: Build lambda function
-        run: make archive
+        run: |
+          ls
+          make archive
 
       - name: Deploy to lambda
         run: aws lambda update-function-code --function-name bucket-antivirus-function --zip-file build/lambda.zip
