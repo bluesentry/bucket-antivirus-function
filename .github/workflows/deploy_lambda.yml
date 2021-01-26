@@ -1,0 +1,31 @@
+on:
+  schedule:
+    - cron: '0 0 1 * *'
+  
+jobs:
+  # This workflow contains a single job called "build"
+  deploy:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Build lambda function
+        run: make archive
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Deploy to lambda
+        run: |
+          aws lambda update-function-code --function-name bucket-antivirus-update --zip-file fileb://build/lambda.zip
+          aws lambda update-function-code --function-name bucket-antivirus-function --zip-file fileb://build/lambda.zip
+        
+      - name: Notify of update
+        run: aws sns publish --topic-arn arn:aws:sns:eu-west-1:224019267248:TechnicalAlerts-Group --message "bucket-antivirus-function/update has been updated" --subject "eu-west-1 Antivirus Update"

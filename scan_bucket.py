@@ -26,12 +26,13 @@ from common import AV_TIMESTAMP_METADATA
 
 
 # Get all objects in an S3 bucket that have not been previously scanned
-def get_objects(s3_client, s3_bucket_name):
+def get_objects(s3_client, s3_bucket_name, limit):
 
     s3_object_list = []
 
     s3_list_objects_result = {"IsTruncated": True}
     while s3_list_objects_result["IsTruncated"]:
+        print(f"Update: Objects to be scanned = {len(s3_object_list)}")
         s3_list_objects_config = {"Bucket": s3_bucket_name}
         continuation_token = s3_list_objects_result.get("NextContinuationToken")
         if continuation_token:
@@ -39,6 +40,9 @@ def get_objects(s3_client, s3_bucket_name):
         s3_list_objects_result = s3_client.list_objects_v2(**s3_list_objects_config)
         if "Contents" not in s3_list_objects_result:
             break
+        if limit:
+            if len(s3_object_list) >= limit:
+                break
         for key in s3_list_objects_result["Contents"]:
             key_name = key["Key"]
             # Don't include objects that have been scanned
@@ -85,9 +89,10 @@ def format_s3_event(s3_bucket_name, key_name):
     return s3_event
 
 
-def main(lambda_function_name, s3_bucket_name, limit):
+def main(lambda_function_name, s3_bucket_name, profile, limit):
     # Verify the lambda exists
-    lambda_client = boto3.client("lambda")
+    sess = boto3.session.Session(profile_name=profile)
+    lambda_client = sess.client("lambda")
     try:
         lambda_client.get_function(FunctionName=lambda_function_name)
     except Exception:
@@ -95,7 +100,7 @@ def main(lambda_function_name, s3_bucket_name, limit):
         sys.exit(1)
 
     # Verify the S3 bucket exists
-    s3_client = boto3.client("s3")
+    s3_client = sess.client("s3")
     try:
         s3_client.head_bucket(Bucket=s3_bucket_name)
     except Exception:
@@ -103,9 +108,10 @@ def main(lambda_function_name, s3_bucket_name, limit):
         sys.exit(1)
 
     # Scan the objects in the bucket
-    s3_object_list = get_objects(s3_client, s3_bucket_name)
+    s3_object_list = get_objects(s3_client, s3_bucket_name, limit)
     if limit:
         s3_object_list = s3_object_list[: min(limit, len(s3_object_list))]
+        print(f"Final: Objects to be scanned: {len(s3_object_list)}")
     for key_name in s3_object_list:
         scan_object(lambda_client, lambda_function_name, s3_bucket_name, key_name)
 
@@ -120,7 +126,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--s3-bucket-name", required=True, help="The name of the S3 bucket to scan"
     )
+    parser.add_argument(
+        "--profile", help="AWS profile to use", default="default"
+    )
     parser.add_argument("--limit", type=int, help="The number of records to limit to")
     args = parser.parse_args()
 
-    main(args.lambda_function_name, args.s3_bucket_name, args.limit)
+    main(args.lambda_function_name, args.s3_bucket_name, args.profile, args.limit)
