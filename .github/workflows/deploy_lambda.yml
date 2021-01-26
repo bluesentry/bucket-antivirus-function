@@ -26,3 +26,6 @@ jobs:
         run: |
           aws lambda update-function-code --function-name bucket-antivirus-update --zip-file fileb://build/lambda.zip
           aws lambda update-function-code --function-name bucket-antivirus-function --zip-file fileb://build/lambda.zip
+        
+      - name: Notify of update
+        run: aws sns publish --topic-arn arn:aws:sns:eu-west-1:224019267248:TechnicalAlerts-Group --message "bucket-antivirus-function/update has been updated" --subject "eu-west-1 Antivirus Update"
