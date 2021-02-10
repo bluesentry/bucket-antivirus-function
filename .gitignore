@@ -110,3 +110,10 @@ ENV/
 .coverage
 
 .DS_Store
+tmp/
+
+# direnv
+.envrc.local
+
+# EICAR Files
+*eicar*

@@ -42,7 +42,7 @@ RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"
 
 
 def current_library_search_path():
-    ld_verbose = subprocess.check_output(["ld", "--verbose"])
+    ld_verbose = subprocess.check_output(["ld", "--verbose"]).decode("utf-8")
     rd_ld = re.compile(RE_SEARCH_DIR)
     return rd_ld.findall(ld_verbose)
 
@@ -146,7 +146,12 @@ def md5_from_s3_tags(s3_client, bucket, key):
     try:
         tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["TagSet"]
     except botocore.exceptions.ClientError as e:
-        expected_errors = {"404", "AccessDenied", "NoSuchKey"}
+        expected_errors = {
+            "404",  # Object does not exist
+            "AccessDenied",  # Object cannot be accessed
+            "NoSuchKey",  # Object does not exist
+            "MethodNotAllowed",  # Object deleted in bucket with versioning
+        }
         if e.response["Error"]["Code"] in expected_errors:
             return ""
         else:
@@ -189,7 +194,7 @@ def scan_file(path):
         stdout=subprocess.PIPE,
         env=av_env,
     )
-    output = av_proc.communicate()[0]
+    output = av_proc.communicate()[0].decode()
     print("clamscan output:\n%s" % output)
 
     # Turn the output into a data source we can read
