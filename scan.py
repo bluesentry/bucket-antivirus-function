@@ -29,6 +29,7 @@ from common import AV_DELETE_INFECTED_FILES
 from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
 from common import AV_SCAN_START_METADATA
 from common import AV_SCAN_START_SNS_ARN
+from common import AV_SCAN_NO_RESCAN
 from common import AV_SIGNATURE_METADATA
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
@@ -214,6 +215,11 @@ def lambda_handler(event, context):
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
         verify_s3_object_version(s3, s3_object)
 
+    if str_to_bool(AV_SCAN_NO_RESCAN):
+        if verify_s3_object_scanned_and_clean(s3_client, s3_object):
+            print("Object already has av-status tag with value CLEAN")
+            return
+
     # Publish the start time of the scan
     if AV_SCAN_START_SNS_ARN not in [None, ""]:
         start_scan_time = get_timestamp()
@@ -272,3 +278,13 @@ def lambda_handler(event, context):
 
 def str_to_bool(s):
     return bool(strtobool(str(s)))
+
+def verify_s3_object_scanned_and_clean(s3_client, s3_object):
+    curr_tags = s3_client.get_object_tagging(
+        Bucket=s3_object.bucket_name, Key=s3_object.key
+    )["TagSet"]
+    for tag in curr_tags:
+        if tag["Key"] == AV_STATUS_METADATA and tag["Value"] == AV_STATUS_CLEAN:
+            return True
+    
+    return False
