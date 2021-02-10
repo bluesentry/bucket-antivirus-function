@@ -261,6 +261,7 @@ the table below for reference.
 | AV_DEFINITION_PATH | Path containing files at runtime | /tmp/clamav_defs | No |
 | AV_SCAN_START_SNS_ARN | SNS topic ARN to publish notification about start of scan | | No |
 | AV_SCAN_START_METADATA | The tag/metadata indicating the start of the scan | av-scan-start | No |
+| AV_SCAN_NO_RESCAN | Controls if an object should be rescanned if it already has AV status of CLEAN | False | No |
 | AV_SIGNATURE_METADATA | The tag/metadata name representing file's AV type | av-signature | No |
 | AV_STATUS_CLEAN | The value assigned to clean items inside of tags/metadata | CLEAN | No |
 | AV_STATUS_INFECTED | The value assigned to clean items inside of tags/metadata | INFECTED | No |
