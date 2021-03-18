@@ -13,6 +13,13 @@ fi
 
 BUCKET=$1
 KEY=$2
+
+# Sample Event For SQS
+# EVENT="$(cat <<EOM
+# {"Records":[{"body":"{\"Records\":[{\"s3\":{\"bucket\":{\"name\":\"${BUCKET}\"},\"object\":{\"key\":\"${KEY}\"}}}]}"}]}
+# EOM
+# )"
+
 EVENT="{\"Records\": [{\"s3\": {\"bucket\": {\"name\": \"${BUCKET}\"}, \"object\": {\"key\": \"${KEY}\"}}}]}"
 echo "Sending S3 event: ${EVENT}"
 
@@ -45,6 +52,7 @@ docker run --rm \
   -e AWS_REGION \
   -e AWS_SECRET_ACCESS_KEY \
   -e AWS_SESSION_TOKEN \
+  -e EVENT_SOURCE \
   --memory="${MEM}" \
   --memory-swap="${MEM}" \
   --cpus="${CPUS}" \

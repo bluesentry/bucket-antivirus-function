@@ -47,6 +47,10 @@ def event_object(event, event_source="s3"):
     if event_source.upper() == "SNS":
         event = json.loads(event["Records"][0]["Sns"]["Message"])
 
+    # SQS events are slightly different
+    if event_source.upper() == "SQS":
+        event = json.loads(event["Records"][0]["body"])
+
     # Break down the record
     records = event["Records"]
     if len(records) == 0:
