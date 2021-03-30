@@ -8,3 +8,4 @@ simplejson==3.16
 urllib3==1.24.2
 pytz==2019.3
 python-magic==0.4.15
+peepdf==0.4.2

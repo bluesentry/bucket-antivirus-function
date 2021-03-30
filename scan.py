@@ -22,6 +22,7 @@ from distutils.util import strtobool
 import boto3
 
 import clamav
+import peepdf_wrapper
 import metrics
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
@@ -206,6 +207,9 @@ def sns_scan_results(
 def scan_file(s3_object, file_path):
     if not is_mime_valid(s3_object, file_path):
         return AV_STATUS_INFECTED, "Invalid Mime type"
+
+    if peepdf_wrapper.is_javascript_found(file_path):
+        return AV_STATUS_INFECTED, "Javascript was found in the file"
 
     return clamav.scan_file(file_path)
 
