@@ -212,7 +212,6 @@ def lambda_handler(event, context):
     EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
     start_time = get_timestamp()
-    print("Script starting at %s\n" % (start_time))
     s3_object = event_object(event, event_source=EVENT_SOURCE)
 
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
@@ -221,9 +220,10 @@ def lambda_handler(event, context):
     # Publish the start time of the scan
     if AV_SCAN_START_SNS_ARN not in [None, ""]:
         start_scan_time = get_timestamp()
+        print("##############- Script Started at %s -############## \n" % start_scan_time)
         sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
 
-    file_path = get_local_path(s3_object, "/tmp")
+    file_path = get_local_path(s3_object, os.getenv("AV_DEFINITION_PATH", "/tmp"))
     create_dir(os.path.dirname(file_path))
     s3_object.download_file(file_path)
 
@@ -271,7 +271,7 @@ def lambda_handler(event, context):
     if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
         delete_s3_object(s3_object)
     stop_scan_time = get_timestamp()
-    print("Script finished at %s\n" % stop_scan_time)
+    print("##############- Script finished at %s -############## \n" % stop_scan_time)
 
 
 def str_to_bool(s):
