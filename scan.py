@@ -213,7 +213,11 @@ def lambda_handler(event, context):
     EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
     start_time = get_timestamp()
+<<<<<<< HEAD
     logging.debug("Script starting at %s\n" % (start_time))
+=======
+    logging.info("Script starting at %s\n" % (start_time))
+>>>>>>> 0f81ab2 (Use logging instead of printing to be able to use different log levels)
     s3_object = event_object(event, event_source=EVENT_SOURCE)
 
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
@@ -272,6 +276,7 @@ def lambda_handler(event, context):
     if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
         delete_s3_object(s3_object)
     stop_scan_time = get_timestamp()
+
     logging.debug("Script finished at %s\n" % stop_scan_time)
 
 

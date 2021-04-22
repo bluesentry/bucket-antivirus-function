@@ -33,6 +33,7 @@ def lambda_handler(event, context):
     s3_client = boto3.client("s3", endpoint_url=S3_ENDPOINT)
 
     logging.debug("Script starting at %s\n" % (get_timestamp()))
+>>>>>>> 0f81ab2 (Use logging instead of printing to be able to use different log levels)
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
     )
