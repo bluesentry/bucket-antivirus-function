@@ -39,13 +39,8 @@ from common import create_dir
 
 logging.getLogger().setLevel(level=os.getenv("LOG_LEVEL", logging.INFO))
 
-RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"
-
-
 def current_library_search_path():
-    ld_verbose = subprocess.check_output(["ld", "--verbose"]).decode("utf-8")
-    rd_ld = re.compile(RE_SEARCH_DIR)
-    return rd_ld.findall(ld_verbose)
+    return ['/usr/x86_64-redhat-linux/lib64', '/usr/lib64', '/usr/local/lib64', '/lib64', '/usr/x86_64-redhat-linux/lib', '/usr/local/lib', '/lib', '/usr/lib']
 
 def update_defs_from_s3(s3_client, bucket, prefix):
     create_dir(AV_DEFINITION_PATH)
