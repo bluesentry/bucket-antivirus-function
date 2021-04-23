@@ -13,8 +13,9 @@
 # limitations under the License.
 
 AMZ_LINUX_VERSION:=2
+.DEFAULT_GOAL := all
 current_dir := $(shell pwd)
-container_dir := /opt/app
+container_dir := /var/task
 circleci := ${CIRCLECI}
 
 .PHONY: help
@@ -36,7 +37,7 @@ clean:  ## Clean build artifacts
 archive: clean  ## Create the archive for AWS lambda
 	docker build -t bucket-antivirus-function:latest .
 	mkdir -p ./build/
-	docker run -v $(current_dir):/opt/mount --rm --entrypoint cp bucket-antivirus-function:latest /opt/app/lambda.zip /opt/mount/lambda.zip
+	docker run -v $(current_dir):/opt/mount --rm --entrypoint cp bucket-antivirus-function:latest /var/task/lambda.zip /opt/mount/lambda.zip
 
 .PHONY: pre_commit_install  ## Ensure that pre-commit hook is installed and kept up to date
 pre_commit_install: .git/hooks/pre-commit ## Ensure pre-commit is installed
