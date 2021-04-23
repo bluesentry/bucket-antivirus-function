@@ -18,7 +18,6 @@ import hashlib
 import os
 import logging
 import pwd
-import re
 import subprocess
 
 import boto3
@@ -39,10 +38,6 @@ from common import FRESHCLAM_PATH
 from common import create_dir
 
 logging.getLogger().setLevel(level=os.getenv("LOG_LEVEL", logging.INFO))
-
-def current_library_search_path():
-    return ['/usr/x86_64-redhat-linux/lib64', '/usr/lib64', '/usr/local/lib64', '/lib64', '/usr/x86_64-redhat-linux/lib', '/usr/local/lib', '/lib', '/usr/lib']
-
 
 def update_defs_from_s3(s3_client, bucket, prefix):
     create_dir(AV_DEFINITION_PATH)
@@ -104,25 +99,19 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
                 logging.info("File does not exist: %s" % filename)
 
 
-def update_defs_from_freshclam(path, library_path=""):
+def update_defs_from_freshclam(path):
     create_dir(path)
-    fc_env = os.environ.copy()
-    if library_path:
-        fc_env["LD_LIBRARY_PATH"] = "%s:%s" % (
-            ":".join(current_library_search_path()),
-            CLAMAVLIB_PATH,
-        )
     logging.info("Starting freshclam with defs in %s." % path)
     fc_proc = subprocess.Popen(
         [
             FRESHCLAM_PATH,
             "--config-file=./bin/freshclam.conf",
             "-u %s" % pwd.getpwuid(os.getuid())[0],
+            "--verbose",
             "--datadir=%s" % path,
         ],
         stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
-        env=fc_env,
     )
     output = fc_proc.communicate()[0]
     logging.info("freshclam output:\n%s" % output)
