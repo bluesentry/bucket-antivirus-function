@@ -18,6 +18,7 @@ import datetime
 import os
 import os.path
 import logging
+import shutil
 
 
 logging.getLogger().setLevel(level=os.getenv("LOG_LEVEL", logging.INFO))
@@ -54,13 +55,9 @@ LAMBDA_ENDPOINT = os.getenv("LAMBDA_ENDPOINT", None)
 
 
 def create_dir(path):
-    if not os.path.exists(path):
-        try:
-            logging.info("Attempting to create directory %s.\n" % path)
-            os.makedirs(path)
-        except OSError as exc:
-            if exc.errno != errno.EEXIST:
-                raise
+    logging.info("Attempting to create directory %s.\n" % path)
+    shutil.rmtree(path, ignore_errors=True)
+    os.makedirs(path)
 
 
 def get_timestamp():

@@ -39,9 +39,6 @@ from common import create_dir
 
 logging.getLogger().setLevel(level=os.getenv("LOG_LEVEL", logging.INFO))
 
-def current_library_search_path():
-    return ['/usr/x86_64-redhat-linux/lib64', '/usr/lib64', '/usr/local/lib64', '/lib64', '/usr/x86_64-redhat-linux/lib', '/usr/local/lib', '/lib', '/usr/lib']
-
 def update_defs_from_s3(s3_client, bucket, prefix):
     create_dir(AV_DEFINITION_PATH)
     to_download = {}
@@ -104,13 +101,6 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
 
 def update_defs_from_freshclam(path):
     create_dir(path)
-    fc_env = os.environ.copy()
-    if library_path:
-        fc_env["LD_LIBRARY_PATH"] = "%s:%s" % (
-            ":".join(current_library_search_path()),
-            CLAMAVLIB_PATH,
-        )
-
     logging.info("Starting freshclam with defs in %s." % path)
     fc_proc = subprocess.Popen(
         [
