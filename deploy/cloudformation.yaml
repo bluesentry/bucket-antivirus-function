@@ -285,5 +285,3 @@
     IamRoleAVScanner:
       Value: !Ref IamRoleAVScanner
       Description: IAM Role used by the Lambda Scanner function. Edit its policy to add/change source S3 buckets, and also to enable SNS functionality if desired
-    
-  
