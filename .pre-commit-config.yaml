@@ -30,7 +30,7 @@ repos:
       - id: markdownlint
         entry: markdownlint --ignore .github/*.md
 
-  - repo: github.com/aws-cloudformation/cfn-python-lint
+  - repo: git://github.com/aws-cloudformation/cfn-python-lint
     rev: stable
     hooks:
       - id: cfn-python-lint
