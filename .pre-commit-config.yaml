@@ -13,10 +13,13 @@ repos:
   - repo: git://github.com/pre-commit/pre-commit-hooks
     rev: v2.2.3
     hooks:
+      - id: cfn-python-lint
+        files: deploy/
       - id: check-ast
       - id: check-json
       - id: check-merge-conflict
       - id: check-yaml
+        exlude: deploy/
       - id: debug-statements
       - id: detect-private-key
       - id: fix-encoding-pragma
