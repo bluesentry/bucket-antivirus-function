@@ -17,7 +17,7 @@ repos:
       - id: check-json
       - id: check-merge-conflict
       - id: check-yaml
-        exlude: deploy/
+        exclude: deploy/
       - id: debug-statements
       - id: detect-private-key
       - id: fix-encoding-pragma
