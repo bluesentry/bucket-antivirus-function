@@ -109,9 +109,6 @@
 
     IamPolicyAVDefinitions:
       Type: AWS::IAM::Policy
-      DependsOn:
-        - S3BucketAVDefinitions
-        - IamRoleAVDefinitions
       Properties: 
         PolicyName: AVDefinitionsLambdaPolicy
         Roles:
@@ -146,9 +143,6 @@
 
     IamPolicyAVScanner:
       Type: AWS::IAM::Policy
-      DependsOn:
-        - S3BucketAVDefinitions
-        - IamRoleAVScanner
       Properties: 
         PolicyName: AVScannerLambdaPolicy
         Roles:
@@ -203,8 +197,6 @@
 
     LambdaAVUpdateDefinitions:
       Type: AWS::Lambda::Function
-      DependsOn:
-        - S3BucketAVDefinitions
       Properties:
         FunctionName: avUpdateDefinitions
         Description: LambdaFunction to update the AntiVirus definitions in the AV Definitions bucket.
