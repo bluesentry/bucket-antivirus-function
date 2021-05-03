@@ -4,7 +4,7 @@ repos:
     rev: 19.3b0
     hooks:
       - id: black
-        language_version: python3.8
+        language_version: python3.7
         exclude: >
           (?x)^(
             scripts/gen-docs-index|
