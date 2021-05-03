@@ -13,8 +13,6 @@ repos:
   - repo: git://github.com/pre-commit/pre-commit-hooks
     rev: v2.2.3
     hooks:
-      - id: cfn-python-lint
-        files: deploy/
       - id: check-ast
       - id: check-json
       - id: check-merge-conflict
@@ -31,3 +29,9 @@ repos:
     hooks:
       - id: markdownlint
         entry: markdownlint --ignore .github/*.md
+
+  - repo: github.com/aws-cloudformation/cfn-python-lint
+    rev: stable
+    hooks:
+      - id: cfn-python-lint
+        files: deploy/
