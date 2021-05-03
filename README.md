@@ -44,7 +44,7 @@ Use CloudFormation with the `cloudformation.yaml` located in the `deploy/` direc
 * An S3 bucket that will store AntiVirus definitions.
 * A Lambda Function called `avUpdateDefinitions` that will update the AV Definitions in the S3 Bucket every 3 hours. 
 This function accesses the user’s above S3 Bucket to download updated definitions using `freshclam`.  
-* A Lambda Function called `avScanner` that is triggered on each new S3 object creation which scans the object and tags it appropriately. It is created with `1600mb` of memory which should be enough, however if you start to see timeouts, this memory may have to be bumped up. In the past, we recommended using `1024mb`, but that has started causing Lambda timeouts and bumping this memory has resolved it.
+* A Lambda Function called `avScanner` that is triggered on each new S3 object creation which scans the object and tags it appropriately. It is created with `1600mb` of memory which should be enough, however if you start to see function timeouts, this memory may have to be bumped up. In the past, we recommended using `1024mb`, but that has started causing Lambda timeouts and bumping this memory has resolved it.
 
 Running CloudFormation, it will ask for 2 inputs for this stack:
 1. BucketType: `private` (default) or `public`. This is applied to the S3 bucket that stores the AntiVirus definitions. We recommend to only use `public` when other AWS accounts need access to this bucket.
