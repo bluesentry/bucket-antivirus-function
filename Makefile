@@ -41,7 +41,7 @@ archive: clean  ## Create the archive for AWS lambda
 .PHONY: pre_commit_install  ## Ensure that pre-commit hook is installed and kept up to date
 pre_commit_install: .git/hooks/pre-commit ## Ensure pre-commit is installed
 .git/hooks/pre-commit: /usr/local/bin/pre-commit
-	pip install pre-commit==1.18.3
+	pip install pre-commit==2.12.1
 	pre-commit install
 	pre-commit install-hooks
 

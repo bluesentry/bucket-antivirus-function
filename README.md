@@ -34,207 +34,34 @@ or INFECTED, along with the date and time of the scan.
 
 ### Build from Source
 
-To build the archive to upload to AWS Lambda, run `make`.  The build process is completed using
+To build the archive to upload to AWS Lambda, run `make all`.  The build process is completed using
 the [amazonlinux](https://hub.docker.com/_/amazonlinux/) [Docker](https://www.docker.com)
  image.  The resulting archive will be built at `build/lambda.zip`.  This file will be
  uploaded to AWS for both Lambda functions below.
 
-### AV Definition Bucket
+### Create Relevant AWS Infra via CloudFormation
 
-Create an s3 bucket to store current antivirus definitions.  This
-provides the fastest download speeds for the scanner.  This bucket can
-be kept as private.
+Use CloudFormation with the `cloudformation.yaml` located in the `deploy/` directory to quickly spin up the AWS infra needed to run this project. CloudFormation will create:
 
-To allow public access, useful for other accounts,
-add the following policy to the bucket.
+- An S3 bucket that will store AntiVirus definitions.
+- A Lambda Function called `avUpdateDefinitions` that will update the AV Definitions in the S3 Bucket every 3 hours.
+This function accesses the user’s above S3 Bucket to download updated definitions using `freshclam`.
+- A Lambda Function called `avScanner` that is triggered on each new S3 object creation which scans the object and tags it appropriately. It is created with `1600mb` of memory which should be enough, however if you start to see function timeouts, this memory may have to be bumped up. In the past, we recommended using `1024mb`, but that has started causing Lambda timeouts and bumping this memory has resolved it.
 
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "AllowPublic",
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": [
-                "s3:GetObject",
-                "s3:GetObjectTagging"
-            ],
-            "Resource": "arn:aws:s3:::<bucket-name>/*"
-        }
-    ]
-}
-```
+Running CloudFormation, it will ask for 2 inputs for this stack:
 
-### Definition Update Lambda
+1. BucketType: `private` (default) or `public`. This is applied to the S3 bucket that stores the AntiVirus definitions. We recommend to only use `public` when other AWS accounts need access to this bucket.
+2. SourceBucket: [a non-empty string]. The name (do not include `s3://`) of the S3 bucket that will have its objects scanned. _Note - this is just used to create the IAM Policy, you can add/change source buckets later via the IAM Policy that CloudFormation outputs_
 
-This function accesses the user’s ClamAV instance to download
-updated definitions using `freshclam`.  It is recommended to run
-this every 3 hours to stay protected from the latest threats.
+After the Stack has successfully created, there are 3 manual processes that still have to be done:
 
-1. Create the archive using the method in the
- [Build from Source](#build-from-source) section.
-2. From the AWS Lambda Dashboard, click **Create function**
-3. Choose **Author from scratch** on the *Create function* page
-4. Name your function `bucket-antivirus-update` when prompted on the
-*Configure function* step.
-5. Set *Runtime* to `Python 3.7`
-6. Create a new role name `bucket-antivirus-update` that uses the
-following policy document
+1. Upload the `build/lambda.zip` file that was created by running `make all` to the `avUpdateDefinitions` and `avScanner` Lambda functions via the Lambda Console.
+2. To trigger the Scanner function on new S3 objects, go to the `avScanner` Lambda function console, navigate to `Configuration` -> `Trigger` -> `Add Trigger` -> Search for S3, and choose your bucket(s) and select `All object create events`, then click `Add`. _Note - if you chose more than 1 bucket as the source, or chose a different bucket than the Source Bucket in the CloudFormation parameter, you will have to also edit the IAM Role to reflect these new buckets (see "Adding or Changing Source Buckets")_
+3. Navigate to the `avUpdateDefinitions` Lambda function and manually trigger the function to get the initial Clam definitions in the bucket (instead of waiting for the 3 hour trigger to happen). Do this by clicking the `Test` section, and then clicking the orange `test` button. The function should take a few seconds to execute, and when finished you should see the `clam_defs` in the `av-definitions` S3 bucket.
 
-    ```json
-    {
-       "Version":"2012-10-17",
-       "Statement":[
-          {
-             "Sid":"WriteCloudWatchLogs",
-             "Effect":"Allow",
-             "Action":[
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
-             ],
-             "Resource":"*"
-          },
-          {
-             "Sid":"s3GetAndPutWithTagging",
-             "Action":[
-                "s3:GetObject",
-                "s3:GetObjectTagging",
-                "s3:PutObject",
-                "s3:PutObjectTagging",
-                "s3:PutObjectVersionTagging"
-             ],
-             "Effect":"Allow",
-             "Resource":[
-                "arn:aws:s3:::<av-definition-s3-bucket>/*"
-             ]
-          },
-          {
-             "Sid": "s3HeadObject",
-             "Effect": "Allow",
-             "Action": "s3:ListBucket",
-             "Resource": [
-                 "arn:aws:s3:::<av-definition-s3-bucket>/*",
-                 "arn:aws:s3:::<av-definition-s3-bucket>"
-             ]
-          }
-       ]
-    }
-    ```
+#### Adding or Changing Source Buckets
 
-7. Click next to go to the Configuration page
-8. Add a trigger from the left of **CloudWatch Event** using `rate(3 hours)`
-for the **Schedule expression**.  Be sure to check **Enable trigger**
-9. Choose **Upload a ZIP file** for *Code entry type* and select the archive
-downloaded in step 1.
-10. Add a single environment variable named `AV_DEFINITION_S3_BUCKET`
-and set its value to the name of the bucket created to store your AV
-definitions.
-11. Set *Lambda handler* to `update.lambda_handler`
-12. Under *Basic Settings*, set *Timeout* to **5 minutes** and *Memory* to
-**1024**
-13. Save and test your function.  If prompted for test data, just use
-the default provided.
-
-### AV Scanner Lambda
-
-1. Create the archive using the method in the
- [Build from Source](#build-from-source) section.
-2. From the AWS Lambda Dashboard, click **Create function**
-3. Choose **Author from scratch** on the *Create function* page
-4. Name your function `bucket-antivirus-function`
-5. Set *Runtime* to `Python 3.7`
-6. Create a new role name `bucket-antivirus-function` that uses the
-following policy document
-
-    ```json
-    {
-       "Version":"2012-10-17",
-       "Statement":[
-          {
-             "Sid":"WriteCloudWatchLogs",
-             "Effect":"Allow",
-             "Action":[
-                "logs:CreateLogGroup",
-                "logs:CreateLogStream",
-                "logs:PutLogEvents"
-             ],
-             "Resource":"*"
-          },
-          {
-             "Sid":"s3AntiVirusScan",
-             "Action":[
-                "s3:GetObject",
-                "s3:GetObjectTagging",
-                "s3:GetObjectVersion",
-                "s3:PutObjectTagging",
-                "s3:PutObjectVersionTagging"
-             ],
-             "Effect":"Allow",
-             "Resource": [
-               "arn:aws:s3:::<bucket-name-1>/*",
-               "arn:aws:s3:::<bucket-name-2>/*"
-             ]
-          },
-          {
-             "Sid":"s3AntiVirusDefinitions",
-             "Action":[
-                "s3:GetObject",
-                "s3:GetObjectTagging"
-             ],
-             "Effect":"Allow",
-             "Resource": [
-               "arn:aws:s3:::<av-definition-s3-bucket>/*"
-             ]
-          },
-          {
-             "Sid":"kmsDecrypt",
-             "Action":[
-                "kms:Decrypt"
-             ],
-             "Effect":"Allow",
-             "Resource": [
-               "arn:aws:s3:::<bucket-name-1>/*",
-               "arn:aws:s3:::<bucket-name-2>/*"
-             ]
-          },
-          {
-             "Sid":"snsPublish",
-             "Action": [
-                "sns:Publish"
-             ],
-             "Effect":"Allow",
-             "Resource": [
-               "arn:aws:sns:::<av-scan-start>",
-               "arn:aws:sns:::<av-status>"
-             ]
-          },
-          {
-             "Sid":"s3HeadObject",
-             "Effect":"Allow",
-             "Action":"s3:ListBucket",
-             "Resource":[
-                 "arn:aws:s3:::<av-definition-s3-bucket>/*",
-                 "arn:aws:s3:::<av-definition-s3-bucket>"
-             ]
-          }
-       ]
-    }
-    ```
-
-7. Click *next* to head to the Configuration page
-8. Add a new trigger of type **S3 Event** using `ObjectCreate(all)`.
-9. Choose **Upload a ZIP file** for *Code entry type* and select the archive
-created in step 1.
-10. Set *Lambda handler* to `scan.lambda_handler`
-11. Add a single environment variable named `AV_DEFINITION_S3_BUCKET`
-and set its value to the name of the bucket created to store your AV
-definitions. If your bucket is `s3://my-bucket`, the value should be `my-bucket`.
-12. Under *Basic settings*, set *Timeout* to **5 minutes** and *Memory* to
-**1024**
-13. Save the function.  Testing is easiest performed by uploading a
-file to the bucket configured as the trigger in step 4.
+Changing or adding Source Buckets is done by editing the `AVScannerLambdaRole` IAM Role. More specifically, the `S3AVScan` and `KmsDecrypt` parts of that IAM Role's policy.
 
 ### S3 Events
 

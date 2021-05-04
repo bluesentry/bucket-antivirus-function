@@ -1,0 +1,287 @@
+---
+  AWSTemplateFormatVersion: '2010-09-09'
+
+  Description: Bucket Antivirus Quickstart Template
+
+  Parameters:
+
+    AVBucketType:
+      Type: String
+      Description: Specifies if the bucket to hold the AV deinitions should be "public" or "private". Only choose "public" if other accounts need to access this bucket."
+      Default: "private"
+      AllowedValues:
+        - "public"
+        - "private"
+
+    SourceBucket:
+      Type: String
+      Description: Name of the source bucket whose objects will be scanned. If more than one source bucket, the others will have to be manually added to the AV Scanner Policy after creation.
+      Default: "<source-bucket>"
+      AllowedPattern : ".+"
+
+  Conditions:
+    publicBucket: !Equals [ !Ref AVBucketType, "public" ]
+
+  Resources:
+
+    S3BucketAVDefinitions:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: !Join  # Append the CloudFormation StackId for unique bucket naming
+          - "-"
+          - - "antivirus-definitions"
+            - !Select
+              - 0
+              - !Split
+                - "-"
+                - !Select
+                  - 2
+                  - !Split
+                    - "/"
+                    - !Ref "AWS::StackId"
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        AccessControl: BucketOwnerFullControl
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: !If [ publicBucket, false, true ]
+          BlockPublicPolicy: !If [ publicBucket, false, true ]
+          IgnorePublicAcls: !If [ publicBucket, false, true ]
+          RestrictPublicBuckets: !If [ publicBucket, false, true ]
+        Tags:
+          - Key: Service
+            Value: bucket-antivirus
+        VersioningConfiguration:
+          Status: Suspended
+
+    S3BucketPolicyAVDefinitions:
+      Type: AWS::S3::BucketPolicy
+      Condition: publicBucket
+      Properties:
+        Bucket: !Ref S3BucketAVDefinitions
+        PolicyDocument:
+          Statement:
+            - Sid: AllowPublic
+              Action:
+                - s3:GetObject
+                - s3:GetObjectTagging
+              Effect: Allow
+              Principal:
+                AWS:
+                  - "*"
+              Resource:
+                - !Sub [ "arn:aws:s3:::${BucketName}/*", { BucketName: !Ref S3BucketAVDefinitions } ]
+
+    IamRoleAVDefinitions:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: AVDefinitionsLambdaRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        Tags:
+          - Key: Service
+            Value: bucket-antivirus
+
+    IamRoleAVScanner:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: AVScannerLambdaRole
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action:
+                - 'sts:AssumeRole'
+        Tags:
+          - Key: Service
+            Value: bucket-antivirus
+
+    IamPolicyAVDefinitions:
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyName: AVDefinitionsLambdaPolicy
+        Roles:
+          - !Ref IamRoleAVDefinitions
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: WriteCloudWatchLogs
+              Effect: Allow
+              Action:
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+              Resource: "*"
+            - Sid: S3GetAndPutWithTagging
+              Effect: Allow
+              Action:
+                - "s3:GetObject"
+                - "s3:GetObjectTagging"
+                - "s3:PutObject"
+                - "s3:PutObjectTagging"
+                - "s3:PutObjectVersionTagging"
+              Resource:
+                - !Sub [ "arn:aws:s3:::${BucketName}/*", { BucketName: !Ref S3BucketAVDefinitions } ]
+            - Sid: S3HeadObject
+              Effect: Allow
+              Action:
+                - "s3:ListBucket"
+              Resource:
+                - !Sub [ "arn:aws:s3:::${BucketName}/*", { BucketName: !Ref S3BucketAVDefinitions } ]
+                - !Sub [ "arn:aws:s3:::${BucketName}", { BucketName: !Ref S3BucketAVDefinitions } ]
+
+    IamPolicyAVScanner:
+      Type: AWS::IAM::Policy
+      Properties:
+        PolicyName: AVScannerLambdaPolicy
+        Roles:
+          - !Ref IamRoleAVScanner
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Sid: WriteCloudWatchLogs
+              Effect: Allow
+              Action:
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+              Resource: "*"
+            - Sid: S3AVScan
+              Effect: Allow
+              Action:
+                - "s3:GetObject"
+                - "s3:GetObjectTagging"
+                - "s3:GetObjectVersion"
+                - "s3:PutObjectTagging"
+                - "s3:PutObjectVersionTagging"
+              Resource:
+                - !Sub [ "arn:aws:s3:::${SourceBucketName}/*", { SourceBucketName: !Ref SourceBucket } ]
+            - Sid: S3AVDefinitions
+              Effect: Allow
+              Action:
+                - "s3:GetObject"
+                - "s3:GetObjectTagging"
+              Resource:
+                - !Sub [ "arn:aws:s3:::${BucketName}/*", { BucketName: !Ref S3BucketAVDefinitions } ]
+            - Sid: KmsDecrypt
+              Effect: Allow
+              Action:
+                - "kms:Decrypt"
+              Resource:
+                - !Sub [ "arn:aws:s3:::${SourceBucketName}/*", { SourceBucketName: !Ref SourceBucket } ]
+            - Sid: SNSPublic
+              Effect: Allow
+              Action:
+                - "sns:Publish"
+              Resource:
+                - "arn:aws:sns:::<av-scan-start>"
+                - "arn:aws:sns:::<av-status>"
+            - Sid: S3HeadObject
+              Effect: Allow
+              Action:
+                - "s3:ListBucket"
+              Resource:
+                - !Sub [ "arn:aws:s3:::${BucketName}/*", { BucketName: !Ref S3BucketAVDefinitions } ]
+                - !Sub [ "arn:aws:s3:::${BucketName}", { BucketName: !Ref S3BucketAVDefinitions } ]
+
+    LambdaAVUpdateDefinitions:
+      Type: AWS::Lambda::Function
+      Properties:
+        FunctionName: avUpdateDefinitions
+        Description: LambdaFunction to update the AntiVirus definitions in the AV Definitions bucket.
+        Runtime: python3.7
+        Code:
+          ZipFile: |
+            import json
+            def lambda_handler(event, context):
+                return {
+                    'statusCode': 200, 'body': json.dumps('Hello from Lambda!')
+                }
+        Handler: "update.lambda_handler"
+        MemorySize: 1024
+        Timeout: 300
+        Role: !GetAtt [ IamRoleAVDefinitions, Arn ]
+        Environment:
+          Variables:
+            AV_DEFINITION_S3_BUCKET: !Ref S3BucketAVDefinitions
+        Tags:
+          - Key: Service
+            Value: bucket-antivirus
+
+    LambdaAVUpdateDefinitionsSchedule:
+      Type: "AWS::Events::Rule"
+      DependsOn:
+        - LambdaAVUpdateDefinitions
+      Properties:
+        Name: LambdaAVUpdateDefinitionsSchedule
+        Description: A schedule for the AV Update Definitions Lambda function.
+        ScheduleExpression: rate(3 hours)
+        State: ENABLED
+        Targets:
+          - Arn: !Sub ${LambdaAVUpdateDefinitions.Arn}
+            Id: LambdaAVUpdateDefinitionsSchedule
+
+    LambdaAVUpdateDefinitionsSchedulePermission:
+      Type: "AWS::Lambda::Permission"
+      DependsOn:
+        - LambdaAVUpdateDefinitionsSchedule
+      Properties:
+        Action: 'lambda:InvokeFunction'
+        FunctionName: !Sub ${LambdaAVUpdateDefinitions.Arn}
+        Principal: 'events.amazonaws.com'
+        SourceArn: !Sub ${LambdaAVUpdateDefinitionsSchedule.Arn}
+
+    LambdaAVScanner:
+      Type: AWS::Lambda::Function
+      Properties:
+        FunctionName: avScanner
+        Description: LambdaFunction to scan newly uploaded objects in S3.
+        Runtime: python3.7
+        Code:
+          ZipFile: |
+            import json
+            def lambda_handler(event, context):
+                return {
+                    'statusCode': 200, 'body': json.dumps('Hello from Lambda!')
+                }
+        Handler: "scan.lambda_handler"
+        MemorySize: 1500
+        Timeout: 300
+        Role: !GetAtt [ IamRoleAVScanner, Arn ]
+        Environment:
+          Variables:
+            AV_DEFINITION_S3_BUCKET: !Ref S3BucketAVDefinitions
+        Tags:
+          - Key: Service
+            Value: bucket-antivirus
+
+
+
+  Outputs:
+
+    S3BucketAvDefinitions:
+      Value: !Ref S3BucketAVDefinitions
+      Description: S3 Bucket for the AV Definitions
+
+    LambdaAVUpdateDefinitions:
+      Value: !Ref LambdaAVUpdateDefinitions
+      Description: Lambda function to update the Antivirus Definitions in its respective bucket
+
+    LambdaAVScanner:
+      Value: !Ref LambdaAVScanner
+      Description: Lambda function to scan newly created S3 objects
+
+    IamRoleAVScanner:
+      Value: !Ref IamRoleAVScanner
+      Description: IAM Role used by the Lambda Scanner function. Edit its policy to add/change source S3 buckets, and also to enable SNS functionality if desired
