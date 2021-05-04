@@ -19,15 +19,17 @@ import argparse
 import json
 import sys
 
+from distutils.util import strtobool
+
 import boto3
 
 from common import AV_STATUS_METADATA
 from common import AV_TIMESTAMP_METADATA
+from common import AV_SCAN_FORCE_ALL
 
 
 # Get all objects in an S3 bucket that have not been previously scanned
 def get_objects(s3_client, s3_bucket_name):
-
     s3_object_list = []
 
     s3_list_objects_result = {"IsTruncated": True}
@@ -42,7 +44,9 @@ def get_objects(s3_client, s3_bucket_name):
         for key in s3_list_objects_result["Contents"]:
             key_name = key["Key"]
             # Don't include objects that have been scanned
-            if not object_previously_scanned(s3_client, s3_bucket_name, key_name):
+            if strtobool(AV_SCAN_FORCE_ALL) or not object_previously_scanned(
+                s3_client, s3_bucket_name, key_name
+            ):
                 s3_object_list.append(key_name)
 
     return s3_object_list
@@ -62,7 +66,6 @@ def object_previously_scanned(s3_client, s3_bucket_name, key_name):
 # Scan an S3 object for viruses by invoking the lambda function
 # Skip any objects that have already been scanned
 def scan_object(lambda_client, lambda_function_name, s3_bucket_name, key_name):
-
     print("Scanning: {}/{}".format(s3_bucket_name, key_name))
     s3_event = format_s3_event(s3_bucket_name, key_name)
     lambda_invoke_result = lambda_client.invoke(
