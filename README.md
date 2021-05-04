@@ -61,7 +61,7 @@ After the Stack has successfully created, there are 3 manual processes that stil
 
 #### Adding or Changing Source Buckets
 
-Changing or adding Source Buckets is done by editing the `AVScannerLambdaRole` IAM Role. More specifically, the `S3AVScan` and `KmsDecrypt` parts of that IAM Role's policy.
+Changing or adding Source Buckets is done by editing the `AVScannerLambdaRole` IAM Role. More specifically, the `S3AVScan` and `KmsDecrypt` parts of that IAM Role's policy. As well as also adding or changing the source buckets in the `triggers` section of the `avScanner` Lambda function.
 
 ### S3 Events
 
