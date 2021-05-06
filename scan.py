@@ -32,6 +32,7 @@ from common import AV_SCAN_START_SNS_ARN
 from common import AV_SIGNATURE_METADATA
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
+from common import AV_STATUS_FAILED
 from common import AV_STATUS_METADATA
 from common import AV_STATUS_SNS_ARN
 from common import AV_STATUS_SNS_PUBLISH_CLEAN
@@ -198,31 +199,9 @@ def sns_scan_results(
     )
 
 
-def lambda_handler(event, context):
-    s3 = boto3.resource("s3")
+def download_clamav_databases():
     s3_client = boto3.client("s3")
-    sns_client = boto3.client("sns")
-
-    # Get some environment variables
-    ENV = os.getenv("ENV", "")
-    EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
-
-    start_time = get_timestamp()
-    print("Script starting at %s\n" % (start_time))
-    s3_object = event_object(event, event_source=EVENT_SOURCE)
-
-    if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
-        verify_s3_object_version(s3, s3_object)
-
-    # Publish the start time of the scan
-    if AV_SCAN_START_SNS_ARN not in [None, ""]:
-        start_scan_time = get_timestamp()
-        sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
-
-    file_path = get_local_path(s3_object, "/tmp")
-    create_dir(os.path.dirname(file_path))
-    s3_object.download_file(file_path)
-
+    s3 = boto3.resource("s3")
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
     )
@@ -233,13 +212,20 @@ def lambda_handler(event, context):
         print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % (local_path))
-    scan_result, scan_signature = clamav.scan_file(file_path)
-    print(
-        "Scan of s3://%s resulted in %s\n"
-        % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result)
-    )
 
+
+def remove_file(file_path):
+    try:
+        os.remove(file_path)
+    except OSError:
+        pass
+
+
+def publish_results(s3_object, scan_result, scan_signature):
     result_time = get_timestamp()
+    sns_client = boto3.client("sns")
+    s3_client = boto3.client("s3")
+    ENV = os.getenv("ENV", "")
     # Set the properties on the object with the scan results
     if "AV_UPDATE_METADATA" in os.environ:
         set_av_metadata(s3_object, scan_result, scan_signature, result_time)
@@ -259,11 +245,52 @@ def lambda_handler(event, context):
     metrics.send(
         env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result
     )
-    # Delete downloaded file to free up room on re-usable lambda function container
+
+
+def lambda_handler(event, context):
+    s3 = boto3.resource("s3")
+    sns_client = boto3.client("sns")
+
+    # Get some environment variables
+    EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
+
+    start_time = get_timestamp()
+    print("Script starting at %s\n" % (start_time))
+    s3_object = event_object(event, event_source=EVENT_SOURCE)
+
+    if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
+        verify_s3_object_version(s3, s3_object)
+
+    # Publish the start time of the scan
+    if AV_SCAN_START_SNS_ARN not in [None, ""]:
+        start_scan_time = get_timestamp()
+        sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
+
+    file_path = get_local_path(s3_object, "/tmp")
+    create_dir(os.path.dirname(file_path))
     try:
-        os.remove(file_path)
-    except OSError:
-        pass
+        s3_object.download_file(file_path)
+    except OSError as e:
+        remove_file(file_path)
+        if e.errno == 28:
+            print("Ran out of disk space. Scan failed")
+            publish_results(s3_object, AV_STATUS_FAILED, "File too large to scan")
+            return
+        else:
+            raise
+
+    download_clamav_databases()
+
+    scan_result, scan_signature = clamav.scan_file(file_path)
+    print(
+        "Scan of s3://%s resulted in %s\n"
+        % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result)
+    )
+
+    publish_results(s3_object, scan_result, scan_signature)
+
+    # Delete downloaded file to free up room on re-usable lambda function container
+    remove_file(file_path)
     if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
         delete_s3_object(s3_object)
     stop_scan_time = get_timestamp()

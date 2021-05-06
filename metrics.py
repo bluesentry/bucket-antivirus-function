@@ -18,6 +18,7 @@ import os
 import datadog
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
+from common import AV_STATUS_FAILED
 
 
 def send(env, bucket, key, status):
@@ -37,6 +38,8 @@ def send(env, bucket, key, status):
                 text="Virus found in s3://%s/%s." % (bucket, key),
                 tags=metric_tags,
             )
+        elif status == AV_STATUS_FAILED:
+            result_metric_name = "scan_failed"
 
         scanned_metric = {
             "metric": "s3_antivirus.scanned",
