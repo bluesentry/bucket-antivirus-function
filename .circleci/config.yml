@@ -28,9 +28,6 @@ jobs:
     docker:
       - image: circleci/node:7.10
     steps:
-      - add_ssh_keys:
-          fingerprints:
-            - "ce:7e:7f:43:84:f7:e0:b1:59:be:e6:ec:cc:a3:13:9e"
       - setup_remote_docker:
           reusable: true    # default - false
           exclusive: true   # default - true
