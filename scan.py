@@ -16,7 +16,7 @@
 import copy
 import json
 import os
-import urllib
+from urllib.parse import unquote_plus
 from distutils.util import strtobool
 
 import boto3
@@ -66,7 +66,7 @@ def event_object(event, event_source="s3"):
     key_name = s3_obj["object"].get("key", None)
 
     if key_name:
-        key_name = urllib.unquote_plus(key_name.encode("utf8"))
+        key_name = unquote_plus(key_name)
 
     # Ensure both bucket and key exist
     if (not bucket_name) or (not key_name):
@@ -222,7 +222,17 @@ def lambda_handler(event, context):
     file_path = get_local_path(s3_object, "/tmp")
     create_dir(os.path.dirname(file_path))
     s3_object.download_file(file_path)
-    clamav.update_defs_from_s3(AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX)
+
+    to_download = clamav.update_defs_from_s3(
+        s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
+    )
+
+    for download in to_download.values():
+        s3_path = download["s3_path"]
+        local_path = download["local_path"]
+        print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
+        s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
+        print("Downloading definition file %s complete!" % (local_path))
     scan_result, scan_signature = clamav.scan_file(file_path)
     print(
         "Scan of s3://%s resulted in %s\n"

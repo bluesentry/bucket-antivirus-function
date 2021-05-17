@@ -16,6 +16,7 @@
 import errno
 import datetime
 import os
+import os.path
 
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
@@ -40,13 +41,8 @@ AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv(
 )
 AV_DELETE_INFECTED_FILES = os.getenv("AV_DELETE_INFECTED_FILES", "False")
 
-AV_DEFINITION_FILENAMES = [
-    "main.cvd",
-    "daily.cvd",
-    "daily.cud",
-    "bytecode.cvd",
-    "bytecode.cud",
-]
+AV_DEFINITION_FILE_PREFIXES = ["main", "daily", "bytecode"]
+AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 
 
 def create_dir(path):

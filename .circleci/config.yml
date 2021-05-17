@@ -15,7 +15,7 @@ executors:
       - image: docker:17.05.0-ce
   python_test:
     docker:
-      - image: circleci/python:2.7-stretch
+      - image: circleci/python:3.7-stretch
   pre_commit_test:
     docker:
       - image: circleci/python:3.7-stretch
@@ -72,7 +72,7 @@ jobs:
       - restore_cache:
           keys:
             - pre-commit-dot-cache-{{ checksum ".pre-commit-config.yaml" }}
-      - run: sudo pip install pre-commit==1.18.3
+      - run: sudo pip install pre-commit==2.12.1
       - run: pre-commit install-hooks
 
       - save_cache:
