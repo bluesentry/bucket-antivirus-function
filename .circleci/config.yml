@@ -54,6 +54,7 @@ jobs:
             echo "Deploying version ${VERSION}"
             git tag "release/${VERSION}"
             git push origin master --tags
+            ls build
             mv build/lambda.zip build/bucket-antivirus-${VERSION}.zip
             aws --region eu-west-1 s3 sync build s3://s3-repository-s3repositorybucket-138dzyat89h8m
       - store_artifacts:
