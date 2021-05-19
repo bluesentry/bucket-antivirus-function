@@ -114,6 +114,8 @@ workflows:
             - pre_commit_deps
       - test
       - build:
+          context:
+            - portinsider
           requires:
             - pre_commit_test
             - test
