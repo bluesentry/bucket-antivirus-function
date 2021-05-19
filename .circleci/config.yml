@@ -55,7 +55,9 @@ jobs:
             git tag "release/${VERSION}"
             git push origin master --tags
             docker run -v $(pwd)/build:/opt/mount --rm --entrypoint cat bucket-antivirus-function:latest /opt/app/build/lambda.zip > build/bucket-antivirus-${VERSION}.zip
-            aws --region eu-west-1 s3 sync build s3://s3-repository-s3repositorybucket-138dzyat89h8m
+            aws --region eu-west-1 s3 sync build s3://portinsider-lambda-repo-eu-west-1/bucket-antivirus-function/
+            aws --region eu-west-2 s3 sync build s3://portinsider-lambda-repo-eu-west-2/bucket-antivirus-function/
+            aws --region ap-southeast-2 s3 sync build s3://portinsider-lambda-repo-ap-southeast-2/bucket-antivirus-function/
       - store_artifacts:
           path: build
 
