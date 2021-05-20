@@ -24,7 +24,7 @@ import boto3
 import botocore
 from pytz import utc
 
-from common import AV_DEFINITION_S3_PREFIX
+from common import AV_DEFINITION_S3_PREFIX, S3_ENDPOINT
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_FILE_PREFIXES
 from common import AV_DEFINITION_FILE_SUFFIXES
@@ -90,7 +90,7 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
                         "Uploading %s to s3://%s"
                         % (local_file_path, os.path.join(bucket, prefix, filename))
                     )
-                    s3 = boto3.resource("s3")
+                    s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
                     s3_object = s3.Object(bucket, os.path.join(prefix, filename))
                     s3_object.upload_file(os.path.join(local_path, filename))
                     s3_client.put_object_tagging(

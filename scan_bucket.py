@@ -21,8 +21,9 @@ import sys
 
 import boto3
 
-from common import AV_STATUS_METADATA
+from common import AV_STATUS_METADATA, LAMBDA_ENDPOINT
 from common import AV_TIMESTAMP_METADATA
+from common import S3_ENDPOINT
 
 
 # Get all objects in an S3 bucket that have not been previously scanned
@@ -87,7 +88,7 @@ def format_s3_event(s3_bucket_name, key_name):
 
 def main(lambda_function_name, s3_bucket_name, limit):
     # Verify the lambda exists
-    lambda_client = boto3.client("lambda")
+    lambda_client = boto3.client("lambda", endpoint_url=LAMBDA_ENDPOINT)
     try:
         lambda_client.get_function(FunctionName=lambda_function_name)
     except Exception:
@@ -95,7 +96,7 @@ def main(lambda_function_name, s3_bucket_name, limit):
         sys.exit(1)
 
     # Verify the S3 bucket exists
-    s3_client = boto3.client("s3")
+    s3_client = boto3.client("s3", endpoint_url=S3_ENDPOINT)
     try:
         s3_client.head_bucket(Bucket=s3_bucket_name)
     except Exception:

@@ -20,7 +20,7 @@ import sys
 
 import boto3
 
-from common import AV_SIGNATURE_METADATA
+from common import AV_SIGNATURE_METADATA, S3_ENDPOINT
 from common import AV_SIGNATURE_OK
 from common import AV_SIGNATURE_UNKNOWN
 from common import AV_STATUS_METADATA
@@ -78,7 +78,7 @@ def object_infected(s3_client, s3_bucket_name, key_name):
 def main(s3_bucket_name):
 
     # Verify the S3 bucket exists
-    s3_client = boto3.client("s3")
+    s3_client = boto3.client("s3", endpoint_url=S3_ENDPOINT)
     try:
         s3_client.head_bucket(Bucket=s3_bucket_name)
     except Exception:
