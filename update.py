@@ -22,9 +22,7 @@ from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
 from common import CLAMAVLIB_PATH
-from common import CLAMAVLIB_PATH
 from common import S3_ENDPOINT
-from common import SNS_ENDPOINT
 from common import get_timestamp
 
 
