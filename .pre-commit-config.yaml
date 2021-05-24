@@ -19,7 +19,9 @@ repos:
       - id: check-yaml
         exclude: deploy/
       - id: debug-statements
+      - id: detect-aws-credentials
       - id: detect-private-key
+      - id: end-of-file-fixer
       - id: fix-encoding-pragma
       - id: flake8
       - id: trailing-whitespace
@@ -29,9 +31,3 @@ repos:
     hooks:
       - id: markdownlint
         entry: markdownlint --ignore .github/*.md
-
-  - repo: git://github.com/aws-cloudformation/cfn-python-lint
-    rev: v0.49.0
-    hooks:
-      - id: cfn-python-lint
-        files: deploy/
