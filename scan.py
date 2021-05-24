@@ -25,6 +25,7 @@ from distutils.util import strtobool
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
 from common import AV_DELETE_INFECTED_FILES
+from common import AV_DELETE_SNS_ARN
 from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
 from common import AV_SCAN_ROLE_ARN
 from common import AV_SCAN_SKIP_METADATA
@@ -101,14 +102,12 @@ def verify_s3_object_version(s3, s3_object):
 
 
 # Determine if an object was safely created by a VISO process and can be ignored
-
-
 def object_does_not_require_scan(s3_client, s3_bucket_name, key_name):
     s3_object_tags = s3_client.get_object_tagging(Bucket=s3_bucket_name, Key=key_name)
     if "TagSet" not in s3_object_tags:
         return False
     for tag in s3_object_tags["TagSet"]:
-        if tag["Key"] == "" and tag["Value"] == "":
+        if tag["Key"] == "viso:antivirus:file-source" and tag["Value"] in ["textract"]:
             return True
     return False
 
@@ -228,6 +227,28 @@ def sns_scan_results(
     )
 
 
+def sns_delete_results(s3_object, result):
+    if AV_DELETE_INFECTED_FILES and AV_DELETE_SNS_ARN:
+        message = {
+            "ClamAV automation has detected an infected file was uploaded and deleted it.": {
+                "bucket": s3_object.bucket_name,
+                "key": s3_object.key,
+                "version": s3_object.version_id,
+                AV_STATUS_METADATA: result,
+                AV_TIMESTAMP_METADATA: get_timestamp(),
+            }
+        }
+        sns_client = boto3.client("sns")
+        sns_client.publish(
+            TargetArn=AV_DELETE_SNS_ARN,
+            Message=json.dumps({"default": json.dumps(message)}),
+            MessageStructure="json",
+            MessageAttributes={
+                AV_STATUS_METADATA: {"DataType": "String", "StringValue": result}
+            },
+        )
+
+
 def lambda_handler(event, context):
     if AV_SCAN_ROLE_ARN:
         sts_client = boto3.client("sts")
@@ -243,9 +264,9 @@ def lambda_handler(event, context):
         s3_client = session.client("s3")
         sns_client = session.client("sns")
     else:
-        s3 = None
-        s3_client = None
-        sns_client = None
+        s3 = boto3.resource("s3")
+        s3_client = boto3.client("s3")
+        sns_client = boto3.client("sns")
 
     # Get some environment variables
     ENV = os.getenv("ENV", "")
@@ -318,6 +339,7 @@ def lambda_handler(event, context):
         except OSError:
             pass
         if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
+            sns_delete_results(s3_object, scan_result)
             delete_s3_object(s3_object)
 
     stop_scan_time = get_timestamp()
