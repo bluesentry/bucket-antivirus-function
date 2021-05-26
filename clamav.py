@@ -166,7 +166,7 @@ def md5_from_s3_tags(s3_client, bucket, key):
     for tag in tags:
         if tag["Key"] == "md5":
             return tag["Value"]
-    print("No tag for Key md5 found for %s/%s" % bucket, key)
+    print("No tag for Key md5 found for %s/%s" % (bucket, key))
     return ""
 
 

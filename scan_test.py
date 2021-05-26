@@ -363,7 +363,8 @@ class TestScan(unittest.TestCase):
         sns_stubber = Stubber(self.sns_client)
         s3_stubber_resource = Stubber(self.s3.meta.client)
 
-        sns_arn = "some_arn"
+        status_sns_arn = "some_status_arn"
+        clean_sns_arn = "some_clean_arn"
         version_id = "version-id"
         scan_result = "CLEAN"
         scan_signature = AV_SIGNATURE_OK
@@ -377,8 +378,8 @@ class TestScan(unittest.TestCase):
             AV_TIMESTAMP_METADATA: timestamp,
         }
         publish_response = {"MessageId": "message_id"}
-        publish_expected_params = {
-            "TargetArn": sns_arn,
+        publish_expected_status_params = {
+            "TargetArn": status_sns_arn,
             "Message": json.dumps({"default": json.dumps(message)}),
             "MessageAttributes": {
                 "av-status": {"DataType": "String", "StringValue": scan_result},
@@ -386,7 +387,22 @@ class TestScan(unittest.TestCase):
             },
             "MessageStructure": "json",
         }
-        sns_stubber.add_response("publish", publish_response, publish_expected_params)
+        sns_stubber.add_response(
+            "publish", publish_response, publish_expected_status_params
+        )
+
+        publish_expected_clean_params = {
+            "TargetArn": clean_sns_arn,
+            "Message": json.dumps({"default": json.dumps(message)}),
+            "MessageAttributes": {
+                "av-status": {"DataType": "String", "StringValue": scan_result},
+                "av-signature": {"DataType": "String", "StringValue": scan_signature},
+            },
+            "MessageStructure": "json",
+        }
+        sns_stubber.add_response(
+            "publish", publish_response, publish_expected_clean_params
+        )
 
         head_object_response = {"VersionId": version_id}
         head_object_expected_params = {
@@ -399,7 +415,13 @@ class TestScan(unittest.TestCase):
         with sns_stubber, s3_stubber_resource:
             s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             sns_scan_results(
-                self.sns_client, s3_obj, sns_arn, scan_result, scan_signature, timestamp
+                self.sns_client,
+                s3_obj,
+                status_sns_arn,
+                clean_sns_arn,
+                scan_result,
+                scan_signature,
+                timestamp,
             )
 
     def test_delete_s3_object(self):
