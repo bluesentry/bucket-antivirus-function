@@ -1,0 +1,46 @@
+name: CI
+env:
+  GITHUB_REF: ${{ github.ref }}
+  AWS_DEFAULT_REGION: "us-west-2"
+  AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOY_AWS_SECRET_ACCESS_KEY }}
+  GITHUB_ACTION_ROLE_ARN: "arn:aws:iam::522044879847:role/github-actions"
+  AWS_INFRA_ACCOUNT_ID: "502892685001"
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  test-and-deploy-lambda:
+    name: Test lambda function on ${{ matrix.os }} python version ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        python: ["3.7"]
+        os: ["ubuntu-20.04"]
+    steps:
+      - name: checkout
+        uses: actions/checkout/@v2
+
+      - name: setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+          architecture: x64
+
+      - name: test
+        working-directory: ./
+        run: |
+          echo "testing $ {{ GITHUB_REF }}"
+          pip install -r requirements-dev.txt
+          python -m unittest discover ./ -p "*_test.py"
+
+      - name: zip and update lambda function
+        if: |
+          success() &&
+          (github.ref == 'refs/heads/master')
+        working-directory: ./
+        run: ./scripts/build_and_deploy_lambda.sh

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Upside Travel, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,32 +13,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import boto3
 import errno
+import datetime
 import os
+import os.path
 
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
 AV_DEFINITION_PATH = os.getenv("AV_DEFINITION_PATH", "/tmp/clamav_defs")
+AV_SCAN_ROLE_ARN = os.getenv("AV_SCAN_ROLE_ARN")
+AV_SCAN_SKIP_METADATA = os.getenv("AV_SCAN_SKIP_METADATA", "av-scan-skipped")
 AV_SCAN_START_SNS_ARN = os.getenv("AV_SCAN_START_SNS_ARN")
 AV_SCAN_START_METADATA = os.getenv("AV_SCAN_START_METADATA", "av-scan-start")
+AV_SIGNATURE_METADATA = os.getenv("AV_SIGNATURE_METADATA", "av-signature")
+AV_SIGNATURE_OK = "OK"
+AV_SIGNATURE_UNKNOWN = "UNKNOWN"
 AV_STATUS_CLEAN = os.getenv("AV_STATUS_CLEAN", "CLEAN")
+AV_STATUS_CLEAN_SNS_ARN = os.getenv("AV_STATUS_CLEAN_SNS_ARN")
 AV_STATUS_INFECTED = os.getenv("AV_STATUS_INFECTED", "INFECTED")
 AV_STATUS_METADATA = os.getenv("AV_STATUS_METADATA", "av-status")
 AV_STATUS_SNS_ARN = os.getenv("AV_STATUS_SNS_ARN")
-AV_SCAN_ROLE_ARN = os.getenv("AV_SCAN_ROLE_ARN")
+AV_STATUS_SNS_PUBLISH_CLEAN = os.getenv("AV_STATUS_SNS_PUBLISH_CLEAN", "True")
+AV_STATUS_SNS_PUBLISH_INFECTED = os.getenv("AV_STATUS_SNS_PUBLISH_INFECTED", "True")
 AV_TIMESTAMP_METADATA = os.getenv("AV_TIMESTAMP_METADATA", "av-timestamp")
 CLAMAVLIB_PATH = os.getenv("CLAMAVLIB_PATH", "./bin")
 CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
-AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv("AV_PROCESS_ORIGINAL_VERSION_ONLY", "False")
+AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv(
+    "AV_PROCESS_ORIGINAL_VERSION_ONLY", "False"
+)
 AV_DELETE_INFECTED_FILES = os.getenv("AV_DELETE_INFECTED_FILES", "False")
 AV_DELETE_SNS_ARN = os.getenv("AV_DELETE_SNS_ARN")
 
-AV_DEFINITION_FILENAMES = ["main.cvd", "daily.cvd", "daily.cud", "bytecode.cvd", "bytecode.cud"]
-
-s3 = boto3.resource('s3')
-s3_client = boto3.client('s3')
+AV_DEFINITION_FILE_PREFIXES = ["main", "daily", "bytecode"]
+AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 
 
 def create_dir(path):
@@ -48,3 +57,7 @@ def create_dir(path):
         except OSError as exc:
             if exc.errno != errno.EEXIST:
                 raise
+
+
+def get_timestamp():
+    return datetime.datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")
