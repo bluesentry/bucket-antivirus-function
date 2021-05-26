@@ -35,7 +35,7 @@ jobs:
         working-directory: ./
         run: |
           echo "testing $ {{ GITHUB_REF }}"
-          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
           python -m unittest discover ./ -p "*_test.py"
 
       - name: zip and update lambda function

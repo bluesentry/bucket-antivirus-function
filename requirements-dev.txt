@@ -1,5 +1,13 @@
-# boto3 available by default in AWS but not locally
 boto3
+certifi==2018.11.29
+chardet==3.0.4
+datadog==0.26.0
+decorator==4.3
+idna==2.8
+requests==2.21
+simplejson==3.16
+urllib3==1.24.2
+pytz==2019.3
 
 # Test requirements
 coverage
