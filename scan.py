@@ -49,12 +49,13 @@ def event_object(event, event_source="s3"):
     # SNS events are slightly different
     if event_source.upper() == "SNS":
         event = json.loads(event["Records"][0]["Sns"]["Message"])
-
+    print("event_object event: %s" % event)
     # Break down the record
     records = event["Records"]
     if len(records) == 0:
         raise Exception("No records found in event!")
     record = records[0]
+    print("event_object record: %s" % record)
 
     s3_obj = record["s3"]
 
@@ -293,6 +294,7 @@ def lambda_handler(event, context):
 
     start_time = get_timestamp()
     print("Script starting at %s\n" % (start_time))
+    print("Event received: %s" % event)
     s3_object = event_object(event, event_source=EVENT_SOURCE)
 
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
