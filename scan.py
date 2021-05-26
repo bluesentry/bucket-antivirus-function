@@ -17,6 +17,7 @@ import copy
 import json
 import os
 from urllib.parse import unquote_plus
+import urllib
 from distutils.util import strtobool
 
 import boto3
@@ -49,6 +50,15 @@ def event_object(event, event_source="s3"):
     if event_source.upper() == "SNS":
         event = json.loads(event["Records"][0]["Sns"]["Message"])
 
+    # S3 Batch
+    if "Records" not in event:
+        s3Key = urllib.unquote(event["tasks"][0]["s3Key"]).decode("utf8")
+        s3BucketArn = event["tasks"][0]["s3BucketArn"]
+        s3Bucket = s3BucketArn.split(":::")[-1]
+        # Create and return the object
+        s3 = boto3.resource("s3")
+        return s3.Object(s3Bucket, s3Key)
+
     # Break down the record
     records = event["Records"]
     if len(records) == 0:
@@ -68,7 +78,7 @@ def event_object(event, event_source="s3"):
     key_name = s3_obj["object"].get("key", None)
 
     if key_name:
-        key_name = unquote_plus(key_name)
+        key_name = urllib.unquote_plus(key_name.encode("utf8"))
 
     # Ensure both bucket and key exist
     if (not bucket_name) or (not key_name):
@@ -209,6 +219,20 @@ def lambda_handler(event, context):
     ENV = os.getenv("ENV", "")
     EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
+    region = context.invoked_function_arn.split(":")[3]
+    log_group_name = context.log_group_name
+    log_stream_name = context.log_stream_name
+    log_url = (
+        "https://"
+        + region
+        + ".console.aws.amazon.com/cloudwatch/home?region="
+        + region
+        + "#logEvent:group="
+        + log_group_name
+        + ";stream="
+        + log_stream_name
+    )
+
     start_time = get_timestamp()
     print("Script starting at %s\n" % (start_time))
     s3_object = event_object(event, event_source=EVENT_SOURCE)
@@ -259,7 +283,12 @@ def lambda_handler(event, context):
         )
 
     metrics.send(
-        env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result
+        env=ENV,
+        bucket=s3_object.bucket_name,
+        key=s3_object.key,
+        status=scan_result,
+        signature=scan_signature,
+        logurl=log_url,
     )
     # Delete downloaded file to free up room on re-usable lambda function container
     try:
