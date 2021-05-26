@@ -32,6 +32,10 @@ clean:  ## Clean build artifacts
 	find ./ -type d -name '__pycache__' -delete
 	find ./ -type f -name '*.pyc' -delete
 
+.PHONY: cleandocker
+cleandocker: clean
+	docker rmi bucket-antivirus-function:latest
+
 .PHONY: archive
 archive: clean  ## Create the archive for AWS lambda
 	docker build -t bucket-antivirus-function:latest .
