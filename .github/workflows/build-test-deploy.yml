@@ -4,7 +4,7 @@ env:
   AWS_DEFAULT_REGION: "us-west-2"
   AWS_ACCESS_KEY_ID: ${{ secrets.DEPLOY_AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.DEPLOY_AWS_SECRET_ACCESS_KEY }}
-  GITHUB_ACTION_ROLE_ARN: "arn:aws:iam::522044879847:role/github-actions"
+  GITHUB_ACTION_ROLE_ARN: "arn:aws:iam::502892685001:role/github-actions"
   AWS_INFRA_ACCOUNT_ID: "502892685001"
 
 on:
