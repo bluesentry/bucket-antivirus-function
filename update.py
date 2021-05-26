@@ -22,12 +22,13 @@ from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
 from common import CLAMAVLIB_PATH
+from common import S3_ENDPOINT
 from common import get_timestamp
 
 
 def lambda_handler(event, context):
-    s3 = boto3.resource("s3")
-    s3_client = boto3.client("s3")
+    s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
+    s3_client = boto3.client("s3", endpoint_url=S3_ENDPOINT)
 
     print("Script starting at %s\n" % (get_timestamp()))
     to_download = clamav.update_defs_from_s3(

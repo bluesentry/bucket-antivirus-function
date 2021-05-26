@@ -37,6 +37,8 @@ from common import AV_STATUS_SNS_ARN
 from common import AV_STATUS_SNS_PUBLISH_CLEAN
 from common import AV_STATUS_SNS_PUBLISH_INFECTED
 from common import AV_TIMESTAMP_METADATA
+from common import SNS_ENDPOINT
+from common import S3_ENDPOINT
 from common import create_dir
 from common import get_timestamp
 
@@ -73,7 +75,7 @@ def event_object(event, event_source="s3"):
         raise Exception("Unable to retrieve object from event.\n{}".format(event))
 
     # Create and return the object
-    s3 = boto3.resource("s3")
+    s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
     return s3.Object(bucket_name, key_name)
 
 
@@ -199,9 +201,9 @@ def sns_scan_results(
 
 
 def lambda_handler(event, context):
-    s3 = boto3.resource("s3")
-    s3_client = boto3.client("s3")
-    sns_client = boto3.client("sns")
+    s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
+    s3_client = boto3.client("s3", endpoint_url=S3_ENDPOINT)
+    sns_client = boto3.client("sns", endpoint_url=SNS_ENDPOINT)
 
     # Get some environment variables
     ENV = os.getenv("ENV", "")

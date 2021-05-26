@@ -103,6 +103,9 @@ the table below for reference.
 | AV_PROCESS_ORIGINAL_VERSION_ONLY | Controls that only original version of an S3 key is processed (if bucket versioning is enabled) | False | No |
 | AV_DELETE_INFECTED_FILES | Controls whether infected files should be automatically deleted | False | No |
 | EVENT_SOURCE | The source of antivirus scan event "S3" or "SNS" (optional) | S3 | No |
+| S3_ENDPOINT | The Endpoint to use when interacting wth S3 | None | No |
+| SNS_ENDPOINT | The Endpoint to use when interacting wth SNS | None | No |
+| LAMBDA_ENDPOINT | The Endpoint to use when interacting wth Lambda | None | No |
 
 ## S3 Bucket Policy Examples
 
