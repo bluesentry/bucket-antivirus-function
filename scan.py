@@ -16,6 +16,10 @@
 import copy
 import json
 import os
+
+import check_mime
+import check_pdf
+
 from urllib.parse import unquote_plus
 from distutils.util import strtobool
 
@@ -23,6 +27,7 @@ import boto3
 
 import clamav
 import metrics
+
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
 from common import AV_DELETE_INFECTED_FILES
@@ -225,20 +230,31 @@ def lambda_handler(event, context):
     create_dir(os.path.dirname(file_path))
     s3_object.download_file(file_path)
 
-    to_download = clamav.update_defs_from_s3(
-        s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
-    )
+    # do a pre scan on file mimetype
+    scan_result, scan_signature = check_mime.check_path(file_path)
 
-    for download in to_download.values():
-        s3_path = download["s3_path"]
-        local_path = download["local_path"]
-        print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
-        s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
-        print("Downloading definition file %s complete!" % (local_path))
-    scan_result, scan_signature = clamav.scan_file(file_path)
+    # only bother pdf screening if the pre scan result is actually clean
+    if scan_result == AV_STATUS_CLEAN and os.path.splitext(file_path)[1] == ".pdf":
+        scan_result, scan_signature = check_pdf.check_path(file_path)
+
+
+    # only bother virus scanning if the pre scan result(s) is/are actually clean
+    if scan_result == AV_STATUS_CLEAN:
+        to_download = clamav.update_defs_from_s3(
+            s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
+        )
+        for download in to_download.values():
+            s3_path = download["s3_path"]
+            local_path = download["local_path"]
+            print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
+            s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
+            print("Downloading definition file %s complete!" % (local_path))
+
+        scan_result, scan_signature = clamav.scan_file(file_path)
+
     print(
-        "Scan of s3://%s resulted in %s\n"
-        % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result)
+        "Scan of s3://%s resulted in %s (%s)\n"
+        % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result, scan_signature)
     )
 
     result_time = get_timestamp()
