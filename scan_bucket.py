@@ -64,7 +64,7 @@ def object_previously_scanned(s3_client, s3_bucket_name, key_name):
 # Skip any objects that have already been scanned
 def scan_object(lambda_client, lambda_function_name, s3_bucket_name, key_name):
 
-    print("Scanning: {}/{}".format(s3_bucket_name, key_name))
+    print("Scanning: {}/{}".format(s3_bucket_name, key_name.encode('utf-8')))
     s3_event = format_s3_event(s3_bucket_name, key_name)
     lambda_invoke_result = lambda_client.invoke(
         FunctionName=lambda_function_name,
