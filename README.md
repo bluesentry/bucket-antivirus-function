@@ -174,6 +174,12 @@ This tool will scan all objects that have not been previously scanned in the buc
 asynchronously. As such you'll have to go to your cloudwatch logs to see the scan results or failures. Additionally,
 the script uses the same environment variables you'd use in your lambda so you can configure them similarly.
 
+If you want to scan a subset of the bucket (or even a single object) you can use the `--prefix` option to filter objects. Remember that S3 objects are not real paths and prefixes match on substrings, so `--prefix=test` will match objects named `test`, `testfoo`, and `testing/foo`:
+
+```sh
+scan_bucket.py --lambda-function-name=<lambda_function_name> --s3-bucket-name=<s3-bucket-to-scan> --prefix=path/to/files/
+```
+
 ## Testing
 
 There are two types of tests in this repository. The first is pre-commit tests and the second are python tests. All of
