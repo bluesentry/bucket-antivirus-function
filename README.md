@@ -63,6 +63,28 @@ After the Stack has successfully created, there are 3 manual processes that stil
 
 Changing or adding Source Buckets is done by editing the `AVScannerLambdaRole` IAM Role. More specifically, the `S3AVScan` and `KmsDecrypt` parts of that IAM Role's policy.
 
+**NOTE**
+If you wish the have the files tagged as CLEAN copied to a new bucket you will
+need to include the following policy in the role created in Step 6.
+
+   ```json
+      {
+         "Sid":"s3CleanBucketCopy",
+            "Action":[
+               "s3:PutObject",
+               "s3:PutObjectTagging",
+               "s3:PutObjectVersion",
+               "s3:GetObject",
+               "s3:GetObjectTagging",
+               "s3:GetObjectVersionTagging"
+            ],
+            "Effect":"Allow",
+            "Resource": [
+               "arn:aws:s3:::<clean-bucket-name>/*"
+            ]
+      }
+   ```
+
 ### S3 Events
 
 Configure scanning of additional buckets by adding a new S3 event to
@@ -84,6 +106,7 @@ the table below for reference.
 | Variable | Description | Default | Required |
 | --- | --- | --- | --- |
 | AV_DEFINITION_S3_BUCKET | Bucket containing antivirus definition files |  | Yes |
+| AV_DEFINITION_S3_CLEAN_BUCKET | Bucket to copy clean files once scanned. |  | No |
 | AV_DEFINITION_S3_PREFIX | Prefix for antivirus definition files | clamav_defs | No |
 | AV_DEFINITION_PATH | Path containing files at runtime | /tmp/clamav_defs | No |
 | AV_SCAN_START_SNS_ARN | SNS topic ARN to publish notification about start of scan | | No |

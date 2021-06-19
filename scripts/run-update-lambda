@@ -15,6 +15,7 @@ docker run --rm \
   -v "$(pwd)/tmp/:/var/task" \
   -e AV_DEFINITION_PATH \
   -e AV_DEFINITION_S3_BUCKET \
+  -e AV_DEFINITION_S3_CLEAN_BUCKET \
   -e AV_DEFINITION_S3_PREFIX \
   -e AWS_ACCESS_KEY_ID \
   -e AWS_DEFAULT_REGION \
