@@ -31,6 +31,7 @@ from common import AV_SCAN_START_METADATA
 from common import AV_SCAN_START_SNS_ARN
 from common import AV_SIGNATURE_METADATA
 from common import AV_STATUS_CLEAN
+from common import AV_STATUS_DO_NOT_SCAN
 from common import AV_STATUS_INFECTED
 from common import AV_STATUS_METADATA
 from common import AV_STATUS_SNS_ARN
@@ -213,6 +214,14 @@ def lambda_handler(event, context):
     print("Script starting at %s\n" % (start_time))
     s3_object = event_object(event, event_source=EVENT_SOURCE)
 
+    if not object_have_to_be_scanned(s3_client, s3_object):
+        set_av_tags(s3_client, s3_object, AV_STATUS_DO_NOT_SCAN, AV_SIGNATURE_UNKNOWN, get_timestamp())
+        print(
+            "Skipp of s3://%s file is tagged DO_NOT_SCAN \n"
+            % (os.path.join(s3_object.bucket_name, s3_object.key))
+        )
+        return
+
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
         verify_s3_object_version(s3, s3_object)
 
@@ -274,3 +283,15 @@ def lambda_handler(event, context):
 
 def str_to_bool(s):
     return bool(strtobool(str(s)))
+
+
+# Determine if an object have to be scanned (tagged DO_NOT_CLEAN)
+def object_have_to_be_scanned(s3_client, s3_object):
+    s3_object_tags = s3_client.get_object_tagging(Bucket=s3_object.bucket_name, Key=s3_object.key)
+    if "TagSet" not in s3_object_tags:
+        return True
+    for tag in s3_object_tags["TagSet"]:
+        if tag["Key"] in [AV_STATUS_METADATA] and tag["Value"] in [AV_STATUS_DO_NOT_SCAN]:
+            return False
+    return True
+
