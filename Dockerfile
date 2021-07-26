@@ -1,5 +1,7 @@
 FROM amazonlinux:2
 
+ARG clamav_version=0.103.3
+
 RUN amazon-linux-extras install -y python3.8
 RUN ln -f /usr/bin/python3.8 /usr/bin/python3 && ln -f /usr/bin/pip3.8 /usr/bin/pip3
 
@@ -12,8 +14,8 @@ RUN mkdir -p /var/task/bin/
 
 RUN wget https://github.com/curl/curl/releases/download/curl-7_76_1/curl-7.76.1.tar.bz2 && tar xvfj curl-7.76.1.tar.bz2
 RUN pushd curl-7.76.1 && ./configure --prefix=/var/task --disable-shared && make install && popd
-RUN wget https://www.clamav.net/downloads/production/clamav-0.103.2.tar.gz && tar xvfz clamav-0.103.2.tar.gz
-RUN pushd clamav-0.103.2 && ./configure --enable-static=yes --enable-shared=no --disable-unrar --with-libcurl=/var/task/ --prefix=/var/task && make install && popd
+RUN wget https://www.clamav.net/downloads/production/clamav-${clamav_version}.tar.gz && tar xvfz clamav-${clamav_version}.tar.gz
+RUN pushd clamav-${clamav_version} && ./configure --enable-static=yes --enable-shared=no --disable-unrar --with-libcurl=/var/task/ --prefix=/var/task && make install && popd
 
 # This had --no-cache-dir, tracing through multiple tickets led to a problem in wheel
 WORKDIR /var/task
