@@ -27,9 +27,9 @@ RUN rm -rf /root/.cache/pip
 RUN echo "DatabaseMirror database.clamav.net" > /var/task/bin/freshclam.conf
 RUN echo "CompressLocalDatabase yes" >> /var/task/bin/freshclam.conf
 
+# Copy Python code into lambda
 COPY ./*.py /var/task/
 
-# Copy in the lambda source
 # Create the zip file
 RUN zip -r9 --exclude="*test*" /lambda.zip *.py bin
 
