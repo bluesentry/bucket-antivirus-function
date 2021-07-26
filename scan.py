@@ -211,7 +211,7 @@ def lambda_handler(event, context):
     EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
     start_time = get_timestamp()
-    logging.info("Script starting at %s\n" % (start_time))
+    logging.debug("Script starting at %s\n" % (start_time))
     s3_object = event_object(event, event_source=EVENT_SOURCE)
 
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
@@ -233,9 +233,9 @@ def lambda_handler(event, context):
     for download in to_download.values():
         s3_path = download["s3_path"]
         local_path = download["local_path"]
-        logging.info("Downloading definition file %s from s3://%s" % (local_path, s3_path))
+        logging.debug("Downloading definition file %s from s3://%s" % (local_path, s3_path))
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
-        logging.info("Downloading definition file %s complete!" % (local_path))
+        logging.debug("Downloading definition file %s complete!" % (local_path))
     scan_result, scan_signature = clamav.scan_file(file_path)
     logging.info(
         "Scan of s3://%s resulted in %s\n"
@@ -270,7 +270,7 @@ def lambda_handler(event, context):
     if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
         delete_s3_object(s3_object)
     stop_scan_time = get_timestamp()
-    logging.info("Script finished at %s\n" % stop_scan_time)
+    logging.debug("Script finished at %s\n" % stop_scan_time)
 
 
 def str_to_bool(s):

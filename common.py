@@ -52,7 +52,7 @@ AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 
 
 def create_dir(path):
-    logging.info("Attempting to create directory %s.\n" % path)
+    logging.debug("Attempting to create directory %s.\n" % path)
     shutil.rmtree(path, ignore_errors=True)
     os.makedirs(path)
 
