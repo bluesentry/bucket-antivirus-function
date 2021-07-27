@@ -135,7 +135,7 @@ def update_defs_from_freshclam(path, library_path=""):
     return fc_proc.returncode
 
 
-# Makes sure only formatted messages are send to Sentry (identified by WARNING/ERROR)
+# Makes sure only formatted messages are sent to Sentry (identified by WARNING/ERROR)
 def print_freshclam_output(output):
     output = output.replace("ERROR:", "error:")
     output = output.replace("WARNING:", "warning:")
