@@ -134,19 +134,21 @@ def update_defs_from_freshclam(path, library_path=""):
         print("Unexpected exit code from freshclam: %s." % fc_proc.returncode)
     return fc_proc.returncode
 
+
 # Makes sure only formatted messages are send to Sentry (identified by WARNING/ERROR)
 def print_freshclam_output(output):
- output = output.replace("ERROR:", "error:")
- output = output.replace("WARNING:", "warning:")
- print("freshclam output:\n%s" % output)
- 
- if "error:" in output:
-   err = "ERROR: Database update process failed"
-   
-   if "error: Database update process failed: Connection failed" in output:
-     err = err + ": Connection error"
-   
-   print(err)   
+    output = output.replace("ERROR:", "error:")
+    output = output.replace("WARNING:", "warning:")
+    print("freshclam output:\n%s" % output)
+
+    if "error:" in output:
+        err = "ERROR: Database update process failed"
+
+        if "error: Database update process failed: Connection failed" in output:
+            err = err + ": Connection error"
+
+        print(err)
+
 
 def md5_from_file(filename):
     hash_md5 = hashlib.md5()
