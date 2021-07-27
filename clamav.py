@@ -136,15 +136,16 @@ def update_defs_from_freshclam(path, library_path=""):
 
 
 # Makes sure only formatted messages are sent to Sentry (identified by WARNING/ERROR)
-def print_freshclam_output(output):
-    output = output.replace("ERROR:", "error:")
-    output = output.replace("WARNING:", "warning:")
-    print("freshclam output:\n%s" % output)
+def print_freshclam_output(output: bytes):
+    textOutput = output.decode()
+    textOutput = output.replace("ERROR:", "error:")
+    textOutput = output.replace("WARNING:", "warning:")
+    print("freshclam output:\n%s" % textOutput)
 
-    if "error:" in output:
+    if "error:" in textOutput:
         err = "ERROR: Database update process failed"
 
-        if "error: Database update process failed: Connection failed" in output:
+        if "error: Database update process failed: Connection failed" in textOutput:
             err = err + ": Connection error"
 
         print(err)
