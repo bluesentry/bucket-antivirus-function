@@ -15,8 +15,11 @@
 
 import errno
 import datetime
+import logging
 import os
 import os.path
+
+logging.getLogger().setLevel(level=os.getenv("LOG_LEVEL", logging.INFO))
 
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
@@ -51,7 +54,7 @@ LAMBDA_ENDPOINT = os.getenv("LAMBDA_ENDPOINT", None)
 def create_dir(path):
     if not os.path.exists(path):
         try:
-            print("Attempting to create directory %s.\n" % path)
+            logging.info("Attempting to create directory %s.\n" % path)
             os.makedirs(path)
         except OSError as exc:
             if exc.errno != errno.EEXIST:

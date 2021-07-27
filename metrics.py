@@ -13,11 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import os
 
 import datadog
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
+
+logging.getLogger().setLevel(level=os.getenv("LOG_LEVEL", logging.INFO))
 
 
 def send(env, bucket, key, status):
@@ -50,5 +53,5 @@ def send(env, bucket, key, status):
             "points": 1,
             "tags": metric_tags,
         }
-        print("Sending metrics to Datadog.")
+        logging.info("Sending metrics to Datadog.")
         datadog.api.Metric.send([scanned_metric, result_metric])
