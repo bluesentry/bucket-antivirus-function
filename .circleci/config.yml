@@ -71,7 +71,6 @@ jobs:
           keys:
             - pre-commit-dot-cache-{{ checksum ".pre-commit-config.yaml" }}
       - run: sudo pip install pre-commit==2.12.1
-      - run: sudo pip install networkx
       - run: pre-commit install-hooks
 
       - save_cache:
