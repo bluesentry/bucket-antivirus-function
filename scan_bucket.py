@@ -18,6 +18,8 @@
 import argparse
 import json
 import sys
+import logging
+import os
 
 import boto3
 
@@ -25,6 +27,7 @@ from common import AV_STATUS_METADATA, LAMBDA_ENDPOINT
 from common import AV_TIMESTAMP_METADATA
 from common import S3_ENDPOINT
 
+logging.getLogger().setLevel(level=os.getenv("LOG_LEVEL", logging.INFO))
 
 # Get all objects in an S3 bucket that have not been previously scanned
 def get_objects(s3_client, s3_bucket_name):
@@ -64,7 +67,7 @@ def object_previously_scanned(s3_client, s3_bucket_name, key_name):
 # Skip any objects that have already been scanned
 def scan_object(lambda_client, lambda_function_name, s3_bucket_name, key_name):
 
-    print("Scanning: {}/{}".format(s3_bucket_name, key_name))
+    logging.info("Scanning: {}/{}".format(s3_bucket_name, key_name))
     s3_event = format_s3_event(s3_bucket_name, key_name)
     lambda_invoke_result = lambda_client.invoke(
         FunctionName=lambda_function_name,
@@ -72,7 +75,7 @@ def scan_object(lambda_client, lambda_function_name, s3_bucket_name, key_name):
         Payload=json.dumps(s3_event),
     )
     if lambda_invoke_result["ResponseMetadata"]["HTTPStatusCode"] != 202:
-        print("Error invoking lambda: {}".format(lambda_invoke_result))
+        logging.info("Error invoking lambda: {}".format(lambda_invoke_result))
 
 
 # Format an S3 Event to use when invoking the lambda function
@@ -92,7 +95,7 @@ def main(lambda_function_name, s3_bucket_name, limit):
     try:
         lambda_client.get_function(FunctionName=lambda_function_name)
     except Exception:
-        print("Lambda Function '{}' does not exist".format(lambda_function_name))
+        logging.info("Lambda Function '{}' does not exist".format(lambda_function_name))
         sys.exit(1)
 
     # Verify the S3 bucket exists
@@ -100,7 +103,7 @@ def main(lambda_function_name, s3_bucket_name, limit):
     try:
         s3_client.head_bucket(Bucket=s3_bucket_name)
     except Exception:
-        print("S3 Bucket '{}' does not exist".format(s3_bucket_name))
+        logging.info("S3 Bucket '{}' does not exist".format(s3_bucket_name))
         sys.exit(1)
 
     # Scan the objects in the bucket

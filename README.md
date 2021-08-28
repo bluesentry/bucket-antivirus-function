@@ -1,5 +1,13 @@
 # bucket-antivirus-function
 
+This is a fork that:
+
+* supports Python 3.8
+* uses uptodate versions of the libraries
+* uses an uptodate version of clamav
+* allows setting a log level through environment variables
+* allows to pass in an EFS mount via the environment variable EFS_SCAN_FILE_PATH which greatly enhances lambda container reuse
+
 [![CircleCI](https://circleci.com/gh/upsidetravel/bucket-antivirus-function.svg?style=svg)](https://circleci.com/gh/upsidetravel/bucket-antivirus-function)
 
 Scan new objects added to any s3 bucket using AWS Lambda. [more details in this post](https://engineering.upside.com/s3-antivirus-scanning-with-lambda-and-clamav-7d33f9c5092e)

@@ -49,4 +49,4 @@ docker run --rm \
   --memory-swap="${MEM}" \
   --cpus="${CPUS}" \
   --name="${NAME}" \
-  lambci/lambda:python3.7 scan.lambda_handler "${EVENT}"
+  lambci/lambda:python3.8 scan.lambda_handler "${EVENT}"

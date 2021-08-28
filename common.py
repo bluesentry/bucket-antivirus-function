@@ -17,6 +17,11 @@ import errno
 import datetime
 import os
 import os.path
+import logging
+import shutil
+
+
+logging.getLogger().setLevel(level=os.getenv("LOG_LEVEL", logging.INFO))
 
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
@@ -36,6 +41,7 @@ AV_TIMESTAMP_METADATA = os.getenv("AV_TIMESTAMP_METADATA", "av-timestamp")
 CLAMAVLIB_PATH = os.getenv("CLAMAVLIB_PATH", "./bin")
 CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
+EFS_SCAN_FILE_PATH = os.getenv("EFS_SCAN_FILE_PATH", "/tmp")
 AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv(
     "AV_PROCESS_ORIGINAL_VERSION_ONLY", "False"
 )
@@ -49,13 +55,9 @@ LAMBDA_ENDPOINT = os.getenv("LAMBDA_ENDPOINT", None)
 
 
 def create_dir(path):
-    if not os.path.exists(path):
-        try:
-            print("Attempting to create directory %s.\n" % path)
-            os.makedirs(path)
-        except OSError as exc:
-            if exc.errno != errno.EEXIST:
-                raise
+    logging.debug("Attempting to create directory %s.\n" % path)
+    shutil.rmtree(path, ignore_errors=True)
+    os.makedirs(path)
 
 
 def get_timestamp():
