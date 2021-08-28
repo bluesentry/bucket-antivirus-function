@@ -266,8 +266,8 @@ class TestScan(unittest.TestCase):
 
         s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
         file_path = get_local_path(s3_obj, local_prefix)
-        expected_file_path = "/tmp/test_bucket/test_key"
-        self.assertEquals(file_path, expected_file_path)
+        self.assertIn('test_bucket', file_path)
+        self.assertIn('test_key', file_path)
 
     def test_set_av_metadata(self):
         scan_result = "CLEAN"

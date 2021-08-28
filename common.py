@@ -23,7 +23,6 @@ import shutil
 
 logging.getLogger().setLevel(level=os.getenv("LOG_LEVEL", logging.INFO))
 
-
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
 AV_DEFINITION_PATH = os.getenv("AV_DEFINITION_PATH", "/tmp/clamav_defs")
@@ -42,6 +41,7 @@ AV_TIMESTAMP_METADATA = os.getenv("AV_TIMESTAMP_METADATA", "av-timestamp")
 CLAMAVLIB_PATH = os.getenv("CLAMAVLIB_PATH", "./bin")
 CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
+EFS_SCAN_FILE_PATH = os.getenv("EFS_SCAN_FILE_PATH", "/tmp")
 AV_PROCESS_ORIGINAL_VERSION_ONLY = os.getenv(
     "AV_PROCESS_ORIGINAL_VERSION_ONLY", "False"
 )

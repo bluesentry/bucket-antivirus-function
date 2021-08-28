@@ -6,7 +6,7 @@ This is a fork that:
 * uses uptodate versions of the libraries
 * uses an uptodate version of clamav
 * allows setting a log level through environment variables
-
+* allows to pass in an EFS mount via the environment variable EFS_SCAN_FILE_PATH which greatly enhances lambda container reuse
 
 [![CircleCI](https://circleci.com/gh/upsidetravel/bucket-antivirus-function.svg?style=svg)](https://circleci.com/gh/upsidetravel/bucket-antivirus-function)
 
