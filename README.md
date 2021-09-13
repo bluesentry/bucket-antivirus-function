@@ -103,6 +103,8 @@ the table below for reference.
 | AV_PROCESS_ORIGINAL_VERSION_ONLY | Controls that only original version of an S3 key is processed (if bucket versioning is enabled) | False | No |
 | AV_DELETE_INFECTED_FILES | Controls whether infected files should be automatically deleted | False | No |
 | EVENT_SOURCE | The source of antivirus scan event "S3" or "SNS" (optional) | S3 | No |
+| AV_EFS_MOUNT_POINT | EFS mount point that used to scan larger files (optional) | | No |
+| AV_EFS_LARGE_FILE_SIZE_THRESHOLD | Threshold for a file size in bytes to be copied to EFS-mounted system instead of lambda internal storage. Only useful if AV_EFS_MOUNT_POINT is set | 314572800 | No |
 | S3_ENDPOINT | The Endpoint to use when interacting wth S3 | None | No |
 | SNS_ENDPOINT | The Endpoint to use when interacting wth SNS | None | No |
 | LAMBDA_ENDPOINT | The Endpoint to use when interacting wth Lambda | None | No |

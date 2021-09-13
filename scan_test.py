@@ -29,7 +29,7 @@ from common import AV_TIMESTAMP_METADATA
 from common import get_timestamp
 from scan import delete_s3_object
 from scan import event_object
-from scan import get_local_path
+from scan import get_local_path_internal
 from scan import set_av_metadata
 from scan import set_av_tags
 from scan import sns_start_scan
@@ -261,13 +261,44 @@ class TestScan(unittest.TestCase):
             s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
             sns_start_scan(self.sns_client, s3_obj, sns_arn, timestamp)
 
-    def test_get_local_path(self):
-        local_prefix = "/tmp"
-
+    def test_get_local_path_internal(self):
         s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
-        file_path = get_local_path(s3_obj, local_prefix)
-        expected_file_path = "/tmp/test_bucket/test_key"
-        self.assertEquals(file_path, expected_file_path)
+        s3_stubber_resource = Stubber(self.s3.meta.client)
+        content_length = 200
+        head_object_response = {
+            "ContentType": "content",
+            "Metadata": {},
+            "ContentLength": content_length,
+        }
+        head_object_expected_params = {
+            "Bucket": self.s3_bucket_name,
+            "Key": self.s3_key_name,
+        }
+        s3_stubber_resource.add_response(
+            "head_object", head_object_response, head_object_expected_params
+        )
+
+        with s3_stubber_resource:
+            file_path = get_local_path_internal(
+                s3_obj, "/tmp", "/mnt", content_length - 1
+            )
+
+            expected_file_path = "/mnt/test_bucket/test_key"
+            self.assertEquals(file_path, expected_file_path)
+
+        with s3_stubber_resource:
+            file_path = get_local_path_internal(
+                s3_obj, "/tmp", "/mnt", content_length + 1
+            )
+
+            expected_file_path = "/tmp/test_bucket/test_key"
+            self.assertEquals(file_path, expected_file_path)
+
+        with s3_stubber_resource:
+            file_path = get_local_path_internal(s3_obj, "/tmp", None, None)
+
+            expected_file_path = "/tmp/test_bucket/test_key"
+            self.assertEquals(file_path, expected_file_path)
 
     def test_set_av_metadata(self):
         scan_result = "CLEAN"

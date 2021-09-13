@@ -39,8 +39,12 @@ from common import AV_STATUS_SNS_PUBLISH_INFECTED
 from common import AV_TIMESTAMP_METADATA
 from common import SNS_ENDPOINT
 from common import S3_ENDPOINT
+from common import AV_EFS_MOUNT_POINT
+from common import AV_EFS_LARGE_FILE_SIZE_THRESHOLD
 from common import create_dir
 from common import get_timestamp
+
+DEFAULT_SCAN_DIR = "/tmp"
 
 
 def event_object(event, event_source="s3"):
@@ -100,8 +104,21 @@ def verify_s3_object_version(s3, s3_object):
         )
 
 
-def get_local_path(s3_object, local_prefix):
-    return os.path.join(local_prefix, s3_object.bucket_name, s3_object.key)
+def get_local_path(s3_object):
+    return get_local_path_internal(
+        s3_object,
+        DEFAULT_SCAN_DIR,
+        AV_EFS_MOUNT_POINT,
+        int(AV_EFS_LARGE_FILE_SIZE_THRESHOLD),
+    )
+
+
+def get_local_path_internal(s3_object, local_prefix, efs_prefix, efs_threshold):
+    if efs_prefix and s3_object.content_length > efs_threshold:
+        prefix = efs_prefix
+    else:
+        prefix = local_prefix
+    return os.path.join(prefix, s3_object.bucket_name, s3_object.key)
 
 
 def delete_s3_object(s3_object):
@@ -221,7 +238,7 @@ def lambda_handler(event, context):
         start_scan_time = get_timestamp()
         sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
 
-    file_path = get_local_path(s3_object, "/tmp")
+    file_path = get_local_path(s3_object)
     create_dir(os.path.dirname(file_path))
     s3_object.download_file(file_path)
 
