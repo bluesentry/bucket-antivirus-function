@@ -17,6 +17,14 @@ current_dir := $(shell pwd)
 container_dir := /opt/app
 circleci := ${CIRCLECI}
 
+# use default Dockerfile for x86_64
+ARCH:=$(shell uname -i)
+DOCKERFILE := Dockerfile
+ifeq (aarch64,$(strip $(ARCH)))
+  # Use separate docker file for ARM arch
+  DOCKERFILE := 'Dockerfile.aarch64'
+endif
+
 .PHONY: help
 help:  ## Print the help documentation
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -34,7 +42,7 @@ clean:  ## Clean build artifacts
 
 .PHONY: archive
 archive: clean  ## Create the archive for AWS lambda
-	docker build -t bucket-antivirus-function:latest .
+	docker build -t bucket-antivirus-function:latest . -f $(DOCKERFILE)
 	mkdir -p ./build/
 	docker run -v $(current_dir)/build:/opt/mount --rm --entrypoint cp bucket-antivirus-function:latest /opt/app/build/lambda.zip /opt/mount/lambda.zip
 

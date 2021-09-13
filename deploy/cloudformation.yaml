@@ -200,7 +200,7 @@
       Properties:
         FunctionName: avUpdateDefinitions
         Description: LambdaFunction to update the AntiVirus definitions in the AV Definitions bucket.
-        Runtime: python3.7
+        Runtime: python3.8
         Code:
           ZipFile: |
             import json
@@ -247,7 +247,7 @@
       Properties:
         FunctionName: avScanner
         Description: LambdaFunction to scan newly uploaded objects in S3.
-        Runtime: python3.7
+        Runtime: python3.8
         Code:
           ZipFile: |
             import json
