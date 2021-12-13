@@ -37,12 +37,6 @@ jobs:
       - run:
           name: Build
           command: make archive
-
-  # checking for the lambda.zip archive after build completes
-  check:
-    executor: primary
-    working_directory: ~/src
-    steps:
       - run:
           name: Where am i
           command: pwd
@@ -106,6 +100,3 @@ workflows:
           requires:
             - pre_commit_test
             # - test
-      - check:
-          requires:
-            - build
