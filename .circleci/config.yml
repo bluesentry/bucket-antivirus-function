@@ -41,8 +41,8 @@ jobs:
           name: Where am i
           command: pwd
       - run:
-          name: list all dirs
-          command: ls -l build
+          name: list all /opt dirs
+          command: ls -lR /opt
 
   # `pre_commit_deps` is used for cache pre-commit sources
   pre_commit_deps:
