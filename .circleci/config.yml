@@ -12,7 +12,7 @@ version: "2.1"
 executors:
   primary:
     docker:
-      - image: docker:17.05.0-ce
+      - image: alpine/terragrunt:1.0.5
   python_test:
     docker:
       - image: circleci/python:3.7-stretch
@@ -38,6 +38,18 @@ jobs:
           name: Build
           command: make archive
 
+  # checking for the lambda.zip archive after build completes
+  check:
+    executor: primary
+    working_directory: ~/src
+    steps:
+      - run:
+          name: Find archive in build dir
+          command: ls -l /opt/app/build
+      - run:
+          name: Find archive in mount dir
+          command: ls -l /opt/mount
+          
   # `pre_commit_deps` is used for cache pre-commit sources
   pre_commit_deps:
     executor: pre_commit_test
