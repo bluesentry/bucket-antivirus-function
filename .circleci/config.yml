@@ -32,7 +32,7 @@ jobs:
           exclusive: true   # default - true
       - run:
           name: Dependencies
-          command: apk add --no-cache make git curl openssh
+          command: apk add --no-cache make git curl openssh docker && service start docker
       - checkout
       - run:
           name: Build
@@ -106,3 +106,6 @@ workflows:
           requires:
             - pre_commit_test
             - test
+      - check:
+          requires:
+            - build
