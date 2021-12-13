@@ -42,7 +42,7 @@ jobs:
           command: pwd
       - run:
           name: list all dirs
-          command: ls -l
+          command: ls -l build
 
   # `pre_commit_deps` is used for cache pre-commit sources
   pre_commit_deps:
