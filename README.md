@@ -41,7 +41,7 @@ the [amazonlinux](https://hub.docker.com/_/amazonlinux/) [Docker](https://www.do
 
 ### Create Relevant AWS Infra via Terraform
 
-The infrastructure for this project is built using `terragrunt plan` and `terragrunt apply` from the infrastructure directory. infrastructure/modules holds the Terraform that defines the infrastructure configuration. 
+The infrastructure for this project is built using `terragrunt plan` and `terragrunt apply` from the infrastructure directory. infrastructure/modules holds the Terraform that defines the infrastructure configuration.
 
 #### Adding or Changing Source Buckets
 
