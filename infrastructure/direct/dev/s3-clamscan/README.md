@@ -1,0 +1,2 @@
+This is meant to be run from Jenkins (pipeline tbd); if you're running this manually, you need to clone [this](https://github.com/bluesentry/bucket-antivirus-function/) repo, checkout to v2.0.0, run `make all`, and copy the artifact to this directory. *do not commit this artifact to git* - it will be uploaded to an s3 bucket and build artifacts should not live in git.
+ 
