@@ -43,9 +43,9 @@ jobs:
     executor: primary
     working_directory: ~/src
     steps:
-      - run:
-          name: Find archive in build dir
-          command: ls -l /opt/app/build
+      # - run:
+      #     name: Find archive in build dir
+      #     command: ls -l /opt/app/build
       - run:
           name: Find archive in mount dir
           command: ls -l /opt/mount
@@ -101,7 +101,7 @@ workflows:
       - pre_commit_test:
           requires:
             - pre_commit_deps
-      - test
+      #- test
       - build:
           requires:
             - pre_commit_test
