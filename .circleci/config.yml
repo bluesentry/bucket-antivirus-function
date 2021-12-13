@@ -36,7 +36,7 @@ jobs:
       - checkout
       - run:
           name: Build
-          command: make archive
+          command: make all
       - run:
           name: Where am i
           command: pwd
