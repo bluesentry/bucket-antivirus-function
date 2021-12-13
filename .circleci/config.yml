@@ -43,12 +43,12 @@ jobs:
     executor: primary
     working_directory: ~/src
     steps:
-      # - run:
-      #     name: Find archive in build dir
-      #     command: ls -l /opt/app/build
       - run:
-          name: Find archive in mount dir
-          command: ls -l /opt/mount
+          name: Where am i
+          command: pwd
+      - run:
+          name: list all dirs
+          command: ls -l
 
   # `pre_commit_deps` is used for cache pre-commit sources
   pre_commit_deps:
