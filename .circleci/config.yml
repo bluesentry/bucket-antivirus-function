@@ -105,7 +105,7 @@ workflows:
       - build:
           requires:
             - pre_commit_test
-            - test
+            # - test
       - check:
           requires:
             - build
