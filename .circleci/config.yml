@@ -49,7 +49,7 @@ jobs:
       - run:
           name: Find archive in mount dir
           command: ls -l /opt/mount
-          
+
   # `pre_commit_deps` is used for cache pre-commit sources
   pre_commit_deps:
     executor: pre_commit_test
