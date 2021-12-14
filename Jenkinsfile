@@ -36,10 +36,12 @@ pipeline {
     stages {
         stage ("build") {
             steps {
-                sh 'git clone "git@github.com:NavigatingCancer/bucket-antivirus-function.git" --single-branch --branch "SRE-3926-s3-clamscan-poc" "src"'
-                dir ("src"){
-                    sh "make all"
-                    sh "cp ./build/lambda.zip /tmp/lambda.zip"
+                sshagent(credentials : ["Jenkins-SSH"]) {
+                    sh 'git clone "git@github.com:NavigatingCancer/bucket-antivirus-function.git" --single-branch --branch "SRE-3926-s3-clamscan-poc" "src"'
+                    dir ("src"){
+                        sh "make all"
+                        sh "cp ./build/lambda.zip /tmp/lambda.zip"
+                    }
                 }
             }
         }
