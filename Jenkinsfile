@@ -23,7 +23,7 @@ pipeline {
             description: "AWS account to deploy the scanner function to"
         )
     }
-    
+
     stages {
         stage ("build") {
             steps {
