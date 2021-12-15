@@ -42,14 +42,14 @@ variable "lambda_package_key" {
 
 variable "memory_size" {
   description = "Lambda memory allocation, in MB"
-  type        = string
+  type        = number
   default     = 2048
 }
 
 variable "av_update_minutes" {
   default     = 180
   description = "How often to download updated AV signatures."
-  type        = string
+  type        = number
 }
 
 variable "av_scan_buckets" {
@@ -59,8 +59,14 @@ variable "av_scan_buckets" {
 
 variable "timeout_seconds" {
   description = "Lambda timeout, in seconds"
-  type        = string
+  type        = number
   default     = 300
+}
+
+variable "av_scan_minutes" {
+  description = "How often to trigger the scanner Lambda."
+  default     = 1
+  type        = number
 }
 
 #

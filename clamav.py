@@ -187,6 +187,14 @@ def scan_output_to_json(output):
 def scan_file(path):
     av_env = os.environ.copy()
     av_env["LD_LIBRARY_PATH"] = CLAMAVLIB_PATH
+    ls = subprocess.Popen(
+        ["/bin/ls", "-l", "/tmp/scandir"],
+        stderr=subprocess.STDOUT,
+        stdout=subprocess.PIPE,
+        env=av_env
+    )
+    output = ls.communicate()[0].decode()
+    print("Directory contents of /tmp/scandir: %s\n" % output)
     print("Starting clamscan of %s." % path)
     av_proc = subprocess.Popen(
         [CLAMSCAN_PATH, "-v", "-a", "--stdout", "-d", AV_DEFINITION_PATH, path],
@@ -199,6 +207,7 @@ def scan_file(path):
 
     # Turn the output into a data source we can read
     summary = scan_output_to_json(output)
+    print(summary) # this is for debugging purposes
     if av_proc.returncode == 0:
         return AV_STATUS_CLEAN, AV_SIGNATURE_OK
     elif av_proc.returncode == 1:

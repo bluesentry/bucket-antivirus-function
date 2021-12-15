@@ -80,6 +80,19 @@ data "aws_iam_policy_document" "main_scan" {
   }
 
   statement {
+    sid = "sqsReceiveAndDelete"
+
+    effect = "Allow"
+
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage"
+    ]
+
+    resources = [aws_sqs_queue.messages.arn]
+  }
+
+  statement {
     sid = "kmsDecrypt"
 
     effect = "Allow"
@@ -126,23 +139,25 @@ resource "aws_iam_role_policy" "main_scan" {
 }
 
 #
-# S3 Event
+# Scheduled trigger
 #
 
-data "aws_s3_bucket" "main_scan" {
-  count  = length(var.av_scan_buckets)
-  bucket = var.av_scan_buckets[count.index]
+resource "aws_cloudwatch_event_rule" "main_scan" {
+  name                = "cwer-${var.env_name}-s3-clamscan-scanner"
+  description         = "scheduled trigger for s3-clamscan-scanner"
+  schedule_expression = "rate(${var.av_scan_minutes} minute)"
+  tags = {
+    "name"      = "cwer-${var.env_name}-s3-clamscan-scanner"
+    "app"       = "s3-clamscan"
+    "env"       = var.env_name
+    "team"      = "sre"
+    "sensitive" = "no"
+  }
 }
 
-resource "aws_s3_bucket_notification" "main_scan" {
-  count  = length(var.av_scan_buckets)
-  bucket = element(data.aws_s3_bucket.main_scan.*.id, count.index)
-
-  lambda_function {
-    id                  = element(data.aws_s3_bucket.main_scan.*.id, count.index)
-    lambda_function_arn = aws_lambda_function.main_scan.arn
-    events              = ["s3:ObjectCreated:*"]
-  }
+resource "aws_cloudwatch_event_target" "main_scan" {
+  rule = aws_cloudwatch_event_rule.main_scan.name
+  arn  = aws_lambda_function.main_scan.arn
 }
 
 #
@@ -187,10 +202,12 @@ resource "aws_lambda_function" "main_scan" {
       AV_DEFINITION_S3_BUCKET        = aws_s3_bucket.virus_definitions.id
       AV_DEFINITION_S3_PREFIX        = var.lambda_package
       AV_SCAN_START_SNS_ARN          = var.av_scan_start_sns_arn
+      AV_SCAN_BUCKET_NAME            = data.aws_s3_bucket.main_scan[0].id
       AV_STATUS_SNS_ARN              = var.av_status_sns_arn
       AV_STATUS_SNS_PUBLISH_CLEAN    = var.av_status_sns_publish_clean
       AV_STATUS_SNS_PUBLISH_INFECTED = var.av_status_sns_publish_infected
       AV_DELETE_INFECTED_FILES       = var.av_delete_infected_files
+      SQS_QUEUE_URL                  = aws_sqs_queue.messages.url
     }
   }
 
@@ -204,15 +221,11 @@ resource "aws_lambda_function" "main_scan" {
 }
 
 resource "aws_lambda_permission" "main_scan" {
-  count = length(var.av_scan_buckets)
+  statement_id = "AllowExecutionFromCloudWatch"
 
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.main_scan.function_name
 
-  principal = "s3.amazonaws.com"
-
-  source_account = var.aws_account_id
-  source_arn     = element(data.aws_s3_bucket.main_scan.*.arn, count.index)
-
-  statement_id = replace("lmb-${var.env_name}-s3-clamscan-scanner-${element(data.aws_s3_bucket.main_scan.*.id, count.index)}", ".", "-")
+  principal  = "events.amazonaws.com"
+  source_arn = aws_cloudwatch_event_rule.main_scan.arn
 }

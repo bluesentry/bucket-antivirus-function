@@ -21,6 +21,7 @@ import os.path
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
 AV_DEFINITION_PATH = os.getenv("AV_DEFINITION_PATH", "/tmp/clamav_defs")
+AV_SCAN_BUCKET_NAME = os.getenv("AV_SCAN_BUCKET_NAME", None)
 AV_SCAN_START_SNS_ARN = os.getenv("AV_SCAN_START_SNS_ARN")
 AV_SCAN_START_METADATA = os.getenv("AV_SCAN_START_METADATA", "av-scan-start")
 AV_SIGNATURE_METADATA = os.getenv("AV_SIGNATURE_METADATA", "av-signature")
@@ -46,6 +47,7 @@ AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 SNS_ENDPOINT = os.getenv("SNS_ENDPOINT", None)
 S3_ENDPOINT = os.getenv("S3_ENDPOINT", None)
 LAMBDA_ENDPOINT = os.getenv("LAMBDA_ENDPOINT", None)
+SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", None)
 
 
 def create_dir(path):
