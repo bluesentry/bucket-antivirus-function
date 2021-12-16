@@ -18,6 +18,8 @@ import datetime
 import os
 import os.path
 
+import boto3
+
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
 AV_DEFINITION_PATH = os.getenv("AV_DEFINITION_PATH", "/tmp/clamav_defs")
@@ -62,3 +64,16 @@ def create_dir(path):
 
 def get_timestamp():
     return datetime.datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")
+
+def get_s3_objects_from_key_names(key_names, bucket_name):
+    s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
+    all_objects = []
+    # translates key names into s3 objects and puts them in an array
+    for key in key_names:
+        key_string = str(key)
+        print("Getting object from key: %s\n" % key_string)
+        print("Bucket name is: %s\n" % bucket_name)
+        object = s3.Object(bucket_name, key_string)
+        all_objects.append(object)
+    # returns array of s3 objects
+    return all_objects
