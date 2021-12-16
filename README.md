@@ -39,25 +39,9 @@ the [amazonlinux](https://hub.docker.com/_/amazonlinux/) [Docker](https://www.do
  image.  The resulting archive will be built at `build/lambda.zip`.  This file will be
  uploaded to AWS for both Lambda functions below.
 
-### Create Relevant AWS Infra via CloudFormation
+### Create Relevant AWS Infra via Terraform
 
-Use CloudFormation with the `cloudformation.yaml` located in the `deploy/` directory to quickly spin up the AWS infra needed to run this project. CloudFormation will create:
-
-- An S3 bucket that will store AntiVirus definitions.
-- A Lambda Function called `avUpdateDefinitions` that will update the AV Definitions in the S3 Bucket every 3 hours.
-This function accesses the user’s above S3 Bucket to download updated definitions using `freshclam`.
-- A Lambda Function called `avScanner` that is triggered on each new S3 object creation which scans the object and tags it appropriately. It is created with `1600mb` of memory which should be enough, however if you start to see function timeouts, this memory may have to be bumped up. In the past, we recommended using `1024mb`, but that has started causing Lambda timeouts and bumping this memory has resolved it.
-
-Running CloudFormation, it will ask for 2 inputs for this stack:
-
-1. BucketType: `private` (default) or `public`. This is applied to the S3 bucket that stores the AntiVirus definitions. We recommend to only use `public` when other AWS accounts need access to this bucket.
-2. SourceBucket: [a non-empty string]. The name (do not include `s3://`) of the S3 bucket that will have its objects scanned. _Note - this is just used to create the IAM Policy, you can add/change source buckets later via the IAM Policy that CloudFormation outputs_
-
-After the Stack has successfully created, there are 3 manual processes that still have to be done:
-
-1. Upload the `build/lambda.zip` file that was created by running `make all` to the `avUpdateDefinitions` and `avScanner` Lambda functions via the Lambda Console.
-2. To trigger the Scanner function on new S3 objects, go to the `avScanner` Lambda function console, navigate to `Configuration` -> `Trigger` -> `Add Trigger` -> Search for S3, and choose your bucket(s) and select `All object create events`, then click `Add`. _Note - if you chose more than 1 bucket as the source, or chose a different bucket than the Source Bucket in the CloudFormation parameter, you will have to also edit the IAM Role to reflect these new buckets (see "Adding or Changing Source Buckets")_
-3. Navigate to the `avUpdateDefinitions` Lambda function and manually trigger the function to get the initial Clam definitions in the bucket (instead of waiting for the 3 hour trigger to happen). Do this by clicking the `Test` section, and then clicking the orange `test` button. The function should take a few seconds to execute, and when finished you should see the `clam_defs` in the `av-definitions` S3 bucket.
+The infrastructure for this project is built using `terragrunt plan` and `terragrunt apply` from the infrastructure directory. infrastructure/modules holds the Terraform that defines the infrastructure configuration.
 
 #### Adding or Changing Source Buckets
 
