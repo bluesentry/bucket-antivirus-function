@@ -239,11 +239,7 @@ def lambda_handler(event, context):
         dir_path = os.path.dirname(f'/tmp/scandir/{s3_object.key}')
         create_dir(dir_path)
         print("Downloading object: %s\n" % s3_object.key)
-<<<<<<< HEAD
         s3_object.download_file(f'/tmp/scandir/{s3_object.key}')
-=======
-        s3_object.download_file(f'{dir_path}/{s3_object.key}')
->>>>>>> 052ee8f1363840355b8f3ba4719cd0d6a47fa744
 
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
