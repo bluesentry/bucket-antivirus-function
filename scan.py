@@ -16,68 +16,89 @@
 import copy
 import json
 import os
-from urllib.parse import unquote_plus
 from distutils.util import strtobool
+import shutil
 
 import boto3
 
 import clamav
-import metrics
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
 from common import AV_DELETE_INFECTED_FILES
 from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
+from common import AV_SCAN_BUCKET_NAME
 from common import AV_SCAN_START_METADATA
-from common import AV_SCAN_START_SNS_ARN
 from common import AV_SIGNATURE_METADATA
+from common import AV_SIGNATURE_OK
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
 from common import AV_STATUS_METADATA
-from common import AV_STATUS_SNS_ARN
 from common import AV_STATUS_SNS_PUBLISH_CLEAN
 from common import AV_STATUS_SNS_PUBLISH_INFECTED
 from common import AV_TIMESTAMP_METADATA
-from common import SNS_ENDPOINT
 from common import S3_ENDPOINT
+from common import SQS_QUEUE_URL
 from common import create_dir
 from common import get_timestamp
+from common import get_s3_objects_from_key_names
 
+def get_objects_from_sqs():
+    # create the client
+    sqs = boto3.client('sqs')
+    queue_url = SQS_QUEUE_URL
 
-def event_object(event, event_source="s3"):
+    # receive first message from the queue
+    all_messages = []
+    response = sqs.receive_message(
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=1,
+            MessageAttributeNames=[
+                'All'
+            ],
+            VisibilityTimeout=0,
+            WaitTimeSeconds=0
+        )
+    print("Response: %s\n" % response)
+    try:
+        receipt_handle = response['Messages'][0]['ReceiptHandle']
+        message = response['Messages'][0]['Body']
+    except KeyError:
+        print("No messages in queue")
+        return None
+    print("Receipt Handle: %s\n" % receipt_handle)
+    print("Message: %s\n" % message)
+    sqs.delete_message(
+        QueueUrl=queue_url,
+        ReceiptHandle=receipt_handle
+    )
 
-    # SNS events are slightly different
-    if event_source.upper() == "SNS":
-        event = json.loads(event["Records"][0]["Sns"]["Message"])
-
-    # Break down the record
-    records = event["Records"]
-    if len(records) == 0:
-        raise Exception("No records found in event!")
-    record = records[0]
-
-    s3_obj = record["s3"]
-
-    # Get the bucket name
-    if "bucket" not in s3_obj:
-        raise Exception("No bucket found in event!")
-    bucket_name = s3_obj["bucket"].get("name", None)
-
-    # Get the key name
-    if "object" not in s3_obj:
-        raise Exception("No key found in event!")
-    key_name = s3_obj["object"].get("key", None)
-
-    if key_name:
-        key_name = unquote_plus(key_name)
-
-    # Ensure both bucket and key exist
-    if (not bucket_name) or (not key_name):
-        raise Exception("Unable to retrieve object from event.\n{}".format(event))
-
-    # Create and return the object
-    s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
-    return s3.Object(bucket_name, key_name)
-
+    # receive the rest of the messages from the queue
+    while (len(response) > 0):
+        all_messages.append(message)
+        response = sqs.receive_message(
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=1,
+            MessageAttributeNames=[
+                'All'
+            ],
+            VisibilityTimeout=0,
+            WaitTimeSeconds=0
+        )
+        print("Response: %s\n" % response)
+        try:
+            receipt_handle = response['Messages'][0]['ReceiptHandle']
+            message = response['Messages'][0]['Body']
+            print("Receipt Handle: %s\n" % receipt_handle)
+            print("Message: %s\n" % message)
+            sqs.delete_message(
+                QueueUrl=queue_url,
+                ReceiptHandle=receipt_handle
+            )
+        except KeyError:
+            print("No more messages in queue; exiting loop...")
+            break
+    all_objects = get_s3_objects_from_key_names(all_messages, AV_SCAN_BUCKET_NAME)
+    return all_objects
 
 def verify_s3_object_version(s3, s3_object):
     # validate that we only process the original version of a file, if asked to do so
@@ -98,11 +119,6 @@ def verify_s3_object_version(s3, s3_object):
         raise Exception(
             "Object versioning is not enabled in bucket %s" % s3_object.bucket_name
         )
-
-
-def get_local_path(s3_object, local_prefix):
-    return os.path.join(local_prefix, s3_object.bucket_name, s3_object.key)
-
 
 def delete_s3_object(s3_object):
     try:
@@ -203,29 +219,31 @@ def sns_scan_results(
 def lambda_handler(event, context):
     s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
     s3_client = boto3.client("s3", endpoint_url=S3_ENDPOINT)
-    sns_client = boto3.client("sns", endpoint_url=SNS_ENDPOINT)
 
     # Get some environment variables
     ENV = os.getenv("ENV", "")
-    EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
 
     start_time = get_timestamp()
     print("Script starting at %s\n" % (start_time))
-    s3_object = event_object(event, event_source=EVENT_SOURCE)
+    s3_objects = get_objects_from_sqs()
+    if s3_objects == None:
+        end_time = get_timestamp()
+        print("Script finished at %s\n" % end_time)
+        return 0
 
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
-        verify_s3_object_version(s3, s3_object)
-
-    # Publish the start time of the scan
-    if AV_SCAN_START_SNS_ARN not in [None, ""]:
-        start_scan_time = get_timestamp()
-        sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
+        for s3_object in s3_objects:
+            verify_s3_object_version(s3, s3_object)
 
     for s3_object in s3_objects:
         dir_path = os.path.dirname(f'/tmp/scandir/{s3_object.key}')
         create_dir(dir_path)
         print("Downloading object: %s\n" % s3_object.key)
+<<<<<<< HEAD
         s3_object.download_file(f'/tmp/scandir/{s3_object.key}')
+=======
+        s3_object.download_file(f'{dir_path}/{s3_object.key}')
+>>>>>>> 052ee8f1363840355b8f3ba4719cd0d6a47fa744
 
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
@@ -237,42 +255,37 @@ def lambda_handler(event, context):
         print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % (local_path))
-    scan_result, scan_signature = clamav.scan_file(file_path)
-    print(
-        "Scan of s3://%s resulted in %s\n"
-        % (os.path.join(s3_object.bucket_name, s3_object.key), scan_result)
-    )
+
+    safe_files, infected_files = clamav.scan_file('/tmp/scandir/', s3_client)
+    safe_objects = get_s3_objects_from_key_names(safe_files, AV_SCAN_BUCKET_NAME)
+    infected_objects = get_s3_objects_from_key_names(infected_files.keys(), AV_SCAN_BUCKET_NAME)
 
     result_time = get_timestamp()
     # Set the properties on the object with the scan results
-    if "AV_UPDATE_METADATA" in os.environ:
-        set_av_metadata(s3_object, scan_result, scan_signature, result_time)
-    set_av_tags(s3_client, s3_object, scan_result, scan_signature, result_time)
-
-    # Publish the scan results
-    if AV_STATUS_SNS_ARN not in [None, ""]:
-        sns_scan_results(
-            sns_client,
-            s3_object,
-            AV_STATUS_SNS_ARN,
-            scan_result,
-            scan_signature,
-            result_time,
-        )
-
-    metrics.send(
-        env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result
-    )
-    # Delete downloaded file to free up room on re-usable lambda function container
+    # for s3_object in s3_objects:
+    #     if "AV_UPDATE_METADATA" in os.environ:
+    #         set_av_metadata(s3_object, scan_result, scan_signature, result_time)
+    #     set_av_tags(s3_client, s3_object, scan_result, scan_signature, result_time)
+    if safe_objects:
+        for object in safe_objects:
+            if "AV_UPDATE_METADATA" in os.environ:
+                set_av_metadata(object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
+            set_av_tags(s3_client, object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
+    if infected_objects:
+        for object in infected_objects:
+            if "AV_UPDATE_METADATA" in os.environ:
+                set_av_metadata(object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
+            set_av_tags(s3_client, object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
+    # Delete downloaded files to free up room on re-usable lambda function container
     try:
-        os.remove(file_path)
+        shutil.rmtree('/tmp/scandir/')
     except OSError:
         pass
-    if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
-        delete_s3_object(s3_object)
+    if str_to_bool(AV_DELETE_INFECTED_FILES) and infected_objects is not {}:
+        for object in infected_objects:
+            delete_s3_object(object)
     stop_scan_time = get_timestamp()
     print("Script finished at %s\n" % stop_scan_time)
-
 
 def str_to_bool(s):
     return bool(strtobool(str(s)))

@@ -18,9 +18,12 @@ import datetime
 import os
 import os.path
 
+import boto3
+
 AV_DEFINITION_S3_BUCKET = os.getenv("AV_DEFINITION_S3_BUCKET")
 AV_DEFINITION_S3_PREFIX = os.getenv("AV_DEFINITION_S3_PREFIX", "clamav_defs")
 AV_DEFINITION_PATH = os.getenv("AV_DEFINITION_PATH", "/tmp/clamav_defs")
+AV_SCAN_BUCKET_NAME = os.getenv("AV_SCAN_BUCKET_NAME", None)
 AV_SCAN_START_SNS_ARN = os.getenv("AV_SCAN_START_SNS_ARN")
 AV_SCAN_START_METADATA = os.getenv("AV_SCAN_START_METADATA", "av-scan-start")
 AV_SIGNATURE_METADATA = os.getenv("AV_SIGNATURE_METADATA", "av-signature")
@@ -46,6 +49,7 @@ AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 SNS_ENDPOINT = os.getenv("SNS_ENDPOINT", None)
 S3_ENDPOINT = os.getenv("S3_ENDPOINT", None)
 LAMBDA_ENDPOINT = os.getenv("LAMBDA_ENDPOINT", None)
+SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL", None)
 
 
 def create_dir(path):
@@ -60,3 +64,16 @@ def create_dir(path):
 
 def get_timestamp():
     return datetime.datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")
+
+def get_s3_objects_from_key_names(key_names, bucket_name):
+    s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
+    all_objects = []
+    # translates key names into s3 objects and puts them in an array
+    for key in key_names:
+        key_string = str(key)
+        print("Getting object from key: %s\n" % key_string)
+        print("Bucket name is: %s\n" % bucket_name)
+        object = s3.Object(bucket_name, key_string)
+        all_objects.append(object)
+    # returns array of s3 objects
+    return all_objects

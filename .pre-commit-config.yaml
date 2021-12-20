@@ -17,7 +17,6 @@ repos:
       - id: check-json
       - id: check-merge-conflict
       - id: check-yaml
-        exclude: deploy/
       - id: debug-statements
       - id: detect-private-key
       - id: fix-encoding-pragma
@@ -29,9 +28,3 @@ repos:
     hooks:
       - id: markdownlint
         entry: markdownlint --ignore .github/*.md
-
-  - repo: git://github.com/aws-cloudformation/cfn-python-lint
-    rev: v0.49.0
-    hooks:
-      - id: cfn-python-lint
-        files: deploy/

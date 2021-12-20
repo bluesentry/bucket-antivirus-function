@@ -117,3 +117,6 @@ tmp/
 
 # EICAR Files
 *eicar*
+
+# Terragrunt cache
+.terragrunt-cache/

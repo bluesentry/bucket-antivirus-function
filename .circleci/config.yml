@@ -10,9 +10,6 @@
 version: "2.1"
 
 executors:
-  primary:
-    docker:
-      - image: docker:17.05.0-ce
   python_test:
     docker:
       - image: circleci/python:3.7-stretch
@@ -21,22 +18,6 @@ executors:
       - image: circleci/python:3.7-stretch
 
 jobs:
-
-  # `build` is used for building the archive
-  build:
-    executor: primary
-    working_directory: ~/src
-    steps:
-      - setup_remote_docker:
-          reusable: true    # default - false
-          exclusive: true   # default - true
-      - run:
-          name: Dependencies
-          command: apk add --no-cache make git curl openssh
-      - checkout
-      - run:
-          name: Build
-          command: make archive
 
   # `pre_commit_deps` is used for cache pre-commit sources
   pre_commit_deps:
@@ -90,7 +71,3 @@ workflows:
           requires:
             - pre_commit_deps
       - test
-      - build:
-          requires:
-            - pre_commit_test
-            - test
