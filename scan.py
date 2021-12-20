@@ -221,9 +221,11 @@ def lambda_handler(event, context):
         start_scan_time = get_timestamp()
         sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
 
-    file_path = get_local_path(s3_object, "/tmp")
-    create_dir(os.path.dirname(file_path))
-    s3_object.download_file(file_path)
+    for s3_object in s3_objects:
+        dir_path = os.path.dirname(f'/tmp/scandir/{s3_object.key}')
+        create_dir(dir_path)
+        print("Downloading object: %s\n" % s3_object.key)
+        s3_object.download_file(f'/tmp/scandir/{s3_object.key}')
 
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX

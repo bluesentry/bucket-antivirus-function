@@ -189,7 +189,7 @@ def scan_file(path):
     av_env["LD_LIBRARY_PATH"] = CLAMAVLIB_PATH
     print("Starting clamscan of %s." % path)
     av_proc = subprocess.Popen(
-        [CLAMSCAN_PATH, "-v", "-a", "--stdout", "-d", AV_DEFINITION_PATH, path],
+        [CLAMSCAN_PATH, "-v", "-a", "-r", "--stdout", "-d", AV_DEFINITION_PATH, path],
         stderr=subprocess.STDOUT,
         stdout=subprocess.PIPE,
         env=av_env,
