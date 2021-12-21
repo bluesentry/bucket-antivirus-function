@@ -69,11 +69,13 @@ def get_s3_objects_from_key_names(key_names, bucket_name):
     s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
     all_objects = []
     # translates key names into s3 objects and puts them in an array
+    timestamp = get_timestamp()
+    print("Getting S3 Objects from key names starting at %s\n" % timestamp)
     for key in key_names:
         key_string = str(key)
-        print("Getting object from key: %s\n" % key_string)
-        print("Bucket name is: %s\n" % bucket_name)
         object = s3.Object(bucket_name, key_string)
         all_objects.append(object)
     # returns array of s3 objects
+    timestamp = get_timestamp()
+    print("Getting S3 Objects from key names finished at %s\n" % timestamp)
     return all_objects

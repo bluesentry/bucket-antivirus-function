@@ -18,6 +18,7 @@ import json
 import os
 from distutils.util import strtobool
 import shutil
+import concurrent.futures
 
 import boto3
 
@@ -47,6 +48,8 @@ def get_objects_from_sqs():
     sqs = boto3.client('sqs')
     queue_url = SQS_QUEUE_URL
 
+    timestamp = get_timestamp()
+    print("Starting to receive messages from SQS queue at %s\n" % timestamp)
     # receive first message from the queue
     all_messages = []
     response = sqs.receive_message(
@@ -58,15 +61,14 @@ def get_objects_from_sqs():
             VisibilityTimeout=0,
             WaitTimeSeconds=0
         )
-    print("Response: %s\n" % response)
     try:
         receipt_handle = response['Messages'][0]['ReceiptHandle']
         message = response['Messages'][0]['Body']
     except KeyError:
         print("No messages in queue")
+        timestamp = get_timestamp()
+        print("Finished receiving messages from SQS queue at %s\n" % timestamp)
         return None
-    print("Receipt Handle: %s\n" % receipt_handle)
-    print("Message: %s\n" % message)
     sqs.delete_message(
         QueueUrl=queue_url,
         ReceiptHandle=receipt_handle
@@ -84,12 +86,9 @@ def get_objects_from_sqs():
             VisibilityTimeout=0,
             WaitTimeSeconds=0
         )
-        print("Response: %s\n" % response)
         try:
             receipt_handle = response['Messages'][0]['ReceiptHandle']
             message = response['Messages'][0]['Body']
-            print("Receipt Handle: %s\n" % receipt_handle)
-            print("Message: %s\n" % message)
             sqs.delete_message(
                 QueueUrl=queue_url,
                 ReceiptHandle=receipt_handle
@@ -97,6 +96,8 @@ def get_objects_from_sqs():
         except KeyError:
             print("No more messages in queue; exiting loop...")
             break
+    timestamp = get_timestamp()
+    print("Finished receiving messages from SQS queue at %s\n" % timestamp)
     all_objects = get_s3_objects_from_key_names(all_messages, AV_SCAN_BUCKET_NAME)
     return all_objects
 
@@ -220,11 +221,8 @@ def lambda_handler(event, context):
     s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
     s3_client = boto3.client("s3", endpoint_url=S3_ENDPOINT)
 
-    # Get some environment variables
-    ENV = os.getenv("ENV", "")
-
     start_time = get_timestamp()
-    print("Script starting at %s\n" % (start_time))
+    print("Scanner starting at %s\n" % (start_time))
     s3_objects = get_objects_from_sqs()
     if s3_objects == None:
         end_time = get_timestamp()
@@ -234,12 +232,15 @@ def lambda_handler(event, context):
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
         for s3_object in s3_objects:
             verify_s3_object_version(s3, s3_object)
-
+    
+    timestamp = get_timestamp()
+    print("Starting to download objects from S3 at %s\n" % timestamp)
     for s3_object in s3_objects:
         dir_path = os.path.dirname(f'/tmp/scandir/{s3_object.key}')
         create_dir(dir_path)
-        print("Downloading object: %s\n" % s3_object.key)
         s3_object.download_file(f'/tmp/scandir/{s3_object.key}')
+    timestamp = get_timestamp()
+    print("Finished downloading objects from S3 at %s\n" % timestamp)
 
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
@@ -253,7 +254,9 @@ def lambda_handler(event, context):
         print("Downloading definition file %s complete!" % (local_path))
 
     safe_files, infected_files = clamav.scan_file('/tmp/scandir/', s3_client)
+    print("Starting to get objects from key names for safe_objects")
     safe_objects = get_s3_objects_from_key_names(safe_files, AV_SCAN_BUCKET_NAME)
+    print("Starting to get objects from key names for infected_objects")
     infected_objects = get_s3_objects_from_key_names(infected_files.keys(), AV_SCAN_BUCKET_NAME)
 
     result_time = get_timestamp()
@@ -263,15 +266,23 @@ def lambda_handler(event, context):
     #         set_av_metadata(s3_object, scan_result, scan_signature, result_time)
     #     set_av_tags(s3_client, s3_object, scan_result, scan_signature, result_time)
     if safe_objects:
+        timestamp = get_timestamp()
+        print("Starting to update safe_objects tags at %s\n" % timestamp)
         for object in safe_objects:
             if "AV_UPDATE_METADATA" in os.environ:
                 set_av_metadata(object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
             set_av_tags(s3_client, object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
+        timestamp = get_timestamp()
+        print("Finished updating safe_objects tags at %s\n" % timestamp)
     if infected_objects:
+        timestamp = get_timestamp()
+        print("Starting to update infected_objects tags at %s\n" % timestamp)
         for object in infected_objects:
             if "AV_UPDATE_METADATA" in os.environ:
                 set_av_metadata(object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
             set_av_tags(s3_client, object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
+        timestamp = get_timestamp()
+        print("Finished updating infected_objects tags at %s\n" % timestamp)
     # Delete downloaded files to free up room on re-usable lambda function container
     try:
         shutil.rmtree('/tmp/scandir/')
