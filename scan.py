@@ -13,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from concurrent.futures.thread import ThreadPoolExecutor
 import copy
 import json
 import os
 from distutils.util import strtobool
 import shutil
 import concurrent.futures
+from threading import Thread
 
 import boto3
 
@@ -223,6 +225,7 @@ def lambda_handler(event, context):
 
     start_time = get_timestamp()
     print("Scanner starting at %s\n" % (start_time))
+    # todo add multithreading to sqs receive
     s3_objects = get_objects_from_sqs()
     if s3_objects == None:
         end_time = get_timestamp()
@@ -235,10 +238,8 @@ def lambda_handler(event, context):
     
     timestamp = get_timestamp()
     print("Starting to download objects from S3 at %s\n" % timestamp)
-    for s3_object in s3_objects:
-        dir_path = os.path.dirname(f'/tmp/scandir/{s3_object.key}')
-        create_dir(dir_path)
-        s3_object.download_file(f'/tmp/scandir/{s3_object.key}')
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        executor.map(download_file, s3_objects)
     timestamp = get_timestamp()
     print("Finished downloading objects from S3 at %s\n" % timestamp)
 
@@ -260,27 +261,24 @@ def lambda_handler(event, context):
     infected_objects = get_s3_objects_from_key_names(infected_files.keys(), AV_SCAN_BUCKET_NAME)
 
     result_time = get_timestamp()
-    # Set the properties on the object with the scan results
-    # for s3_object in s3_objects:
-    #     if "AV_UPDATE_METADATA" in os.environ:
-    #         set_av_metadata(s3_object, scan_result, scan_signature, result_time)
-    #     set_av_tags(s3_client, s3_object, scan_result, scan_signature, result_time)
     if safe_objects:
         timestamp = get_timestamp()
         print("Starting to update safe_objects tags at %s\n" % timestamp)
-        for object in safe_objects:
-            if "AV_UPDATE_METADATA" in os.environ:
-                set_av_metadata(object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
-            set_av_tags(s3_client, object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            for object in safe_objects:
+                if "AV_UPDATE_METADATA" in os.environ:
+                    executor.submit(set_av_metadata, object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
+                executor.submit(set_av_tags, s3_client, object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
         timestamp = get_timestamp()
         print("Finished updating safe_objects tags at %s\n" % timestamp)
     if infected_objects:
         timestamp = get_timestamp()
         print("Starting to update infected_objects tags at %s\n" % timestamp)
-        for object in infected_objects:
-            if "AV_UPDATE_METADATA" in os.environ:
-                set_av_metadata(object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
-            set_av_tags(s3_client, object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            for object in infected_objects:
+                if "AV_UPDATE_METADATA" in os.environ:
+                    executor.submit(set_av_metadata, object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
+                executor.submit(set_av_tags, s3_client, object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
         timestamp = get_timestamp()
         print("Finished updating infected_objects tags at %s\n" % timestamp)
     # Delete downloaded files to free up room on re-usable lambda function container
@@ -296,3 +294,10 @@ def lambda_handler(event, context):
 
 def str_to_bool(s):
     return bool(strtobool(str(s)))
+
+def download_file(s3_object):
+    dir_path = os.path.dirname(f'/tmp/scandir/{s3_object.key}')
+    create_dir(dir_path)
+    s3_object.download_file(f'/tmp/scandir/{s3_object.key}')
+    # todo add error handling if the download fails
+    return 0

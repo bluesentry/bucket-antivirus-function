@@ -192,7 +192,6 @@ def scan_file(path, s3_client):
         env=av_env,
     )
     output = av_proc.communicate()[0].decode()
-    print("clamscan output:\n%s" % output)
 
     # Turn the output into a data source we can read
     summary = scan_output_to_json(output)
