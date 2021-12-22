@@ -40,10 +40,22 @@ variable "lambda_package_key" {
   default     = null
 }
 
-variable "memory_size" {
-  description = "Lambda memory allocation, in MB"
+variable "scanner_memory_size" {
+  description = "Memory allocation for Scanner Lambda, in MB"
   type        = number
   default     = 2048
+}
+
+variable "updater_memory_size" {
+  description = "Memory allocation for Updater Lambda, in MB"
+  type        = number
+  default     = 2048
+}
+
+variable "publisher_memory_size" {
+  description = "Memory allocation for Publisher Lambda, in MB"
+  type        = number
+  default     = 128
 }
 
 variable "av_update_minutes" {

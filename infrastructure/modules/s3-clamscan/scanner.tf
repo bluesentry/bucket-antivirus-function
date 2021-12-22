@@ -194,7 +194,7 @@ resource "aws_lambda_function" "main_scan" {
   role          = aws_iam_role.main_scan.arn
   handler       = "scan.lambda_handler"
   runtime       = "python3.7"
-  memory_size   = var.memory_size
+  memory_size   = var.scanner_memory_size
   timeout       = var.timeout_seconds
 
   environment {
