@@ -19,8 +19,6 @@ import json
 import os
 from distutils.util import strtobool
 import shutil
-import concurrent.futures
-from threading import Thread
 
 import boto3
 
