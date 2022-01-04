@@ -9,5 +9,5 @@ include {
 inputs = {
   lambda_version = "v3.0.0"
   lambda_package = "antivirus"
-  av_scan_buckets = ["dev-s3-clamscan-poc"]
+  av_scan_buckets = ["nc-staging"]
 }
