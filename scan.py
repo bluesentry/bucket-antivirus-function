@@ -135,22 +135,6 @@ def delete_s3_object(s3_object):
         print("Infected file deleted: %s.%s" % (s3_object.bucket_name, s3_object.key))
 
 
-def set_av_metadata(s3_object, scan_result, scan_signature, timestamp):
-    content_type = s3_object.content_type
-    metadata = s3_object.metadata
-    metadata[AV_SIGNATURE_METADATA] = scan_signature
-    metadata[AV_STATUS_METADATA] = scan_result
-    metadata[AV_TIMESTAMP_METADATA] = timestamp
-    s3_object.copy(
-        {"Bucket": s3_object.bucket_name, "Key": s3_object.key},
-        ExtraArgs={
-            "ContentType": content_type,
-            "Metadata": metadata,
-            "MetadataDirective": "REPLACE",
-        },
-    )
-
-
 def set_av_tags(s3_client, s3_object, scan_result, scan_signature, timestamp):
     curr_tags = s3_client.get_object_tagging(
         Bucket=s3_object.bucket_name, Key=s3_object.key
@@ -266,8 +250,6 @@ def lambda_handler(event, context):
         print("Starting to update safe_objects tags at %s\n" % timestamp)
         with ThreadPoolExecutor(max_workers=10) as executor:
             for object in safe_objects:
-                if "AV_UPDATE_METADATA" in os.environ:
-                    executor.submit(set_av_metadata, object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
                 executor.submit(set_av_tags, s3_client, object, AV_STATUS_CLEAN, AV_SIGNATURE_OK, result_time)
         timestamp = get_timestamp()
         print("Finished updating safe_objects tags at %s\n" % timestamp)
@@ -276,8 +258,6 @@ def lambda_handler(event, context):
         print("Starting to update infected_objects tags at %s\n" % timestamp)
         with ThreadPoolExecutor(max_workers=10) as executor:
             for object in infected_objects:
-                if "AV_UPDATE_METADATA" in os.environ:
-                    executor.submit(set_av_metadata, object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
                 executor.submit(set_av_tags, s3_client, object, AV_STATUS_INFECTED, infected_files[object.key], result_time)
         timestamp = get_timestamp()
         print("Finished updating infected_objects tags at %s\n" % timestamp)
