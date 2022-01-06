@@ -1,5 +1,5 @@
 pipeline {
-    agent { 
+    agent {
         docker {
 			alwaysPull true
 			args "--user root:root"
@@ -7,7 +7,7 @@ pipeline {
 			label "worker"
 			registryCredentialsId "ecr:us-east-1:Jenkins-AWS-Key"
 			registryUrl "https://393224622068.dkr.ecr.us-east-1.amazonaws.com"
-		} 
+		}
     }
     options {
         ansiColor("xterm")
