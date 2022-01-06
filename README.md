@@ -131,7 +131,7 @@ It should be in the format provided below:
 
 ## Manually Scanning Buckets
 
-# This has not been refactored since NC adjusted this repo. This does not work currently.
+### This has not been refactored since NC adjusted this repo. This does not work currently
 
 You may want to scan all the objects in a bucket that have not previously been scanned or were created
 prior to setting up your lambda functions. To do this you can use the `scan_bucket.py` utility.
