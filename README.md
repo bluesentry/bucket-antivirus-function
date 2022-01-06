@@ -1,8 +1,6 @@
 # bucket-antivirus-function
 
-[![CircleCI](https://circleci.com/gh/upsidetravel/bucket-antivirus-function.svg?style=svg)](https://circleci.com/gh/upsidetravel/bucket-antivirus-function)
-
-Scan new objects added to any s3 bucket using AWS Lambda. [more details in this post](https://engineering.upside.com/s3-antivirus-scanning-with-lambda-and-clamav-7d33f9c5092e)
+Scan new objects added to any s3 bucket using AWS Lambda.
 
 ## Features
 
@@ -14,21 +12,17 @@ open source antivirus engine [ClamAV](http://www.clamav.net/)
 
 ## How It Works
 
-![architecture-diagram](../master/images/bucket-antivirus-function.png)
-
-- Each time a new object is added to a bucket, S3 invokes the Lambda
-function to scan the object
-- The function package will download (if needed) current antivirus
+- Each time a new object is added to a bucket, S3 invokes the publisher
+Lambda function to publish the key name to SQS
+- Every minute (adjustable in the infrastructure configuration), the
+scanner function will run, receiving all messages from the SQS queue
+- The scanner function will download (if needed) current antivirus
 definitions from a S3 bucket. Transfer speeds between a S3 bucket and
 Lambda are typically faster and more reliable than another source
-- The object is scanned for viruses and malware.  Archive files are
+- The objects are scanned for viruses and malware.  Archive files are
 extracted and the files inside scanned also
-- The objects tags are updated to reflect the result of the scan, CLEAN
-or INFECTED, along with the date and time of the scan.
-- Object metadata is updated to reflect the result of the scan (optional)
-- Metrics are sent to [DataDog](https://www.datadoghq.com/) (optional)
-- Scan results are published to a SNS topic (optional) (Optionally choose to only publish INFECTED results)
-- Files found to be INFECTED are automatically deleted (optional)
+- The objects' tags are updated to reflect the result of the scan (malicious
+or not_malicious), along with the date and time of the scan.
 
 ## Installation
 
@@ -39,26 +33,17 @@ the [amazonlinux](https://hub.docker.com/_/amazonlinux/) [Docker](https://www.do
  image.  The resulting archive will be built at `build/lambda.zip`.  This file will be
  uploaded to AWS for both Lambda functions below.
 
-### Create Relevant AWS Infra via Terraform
+### Create Relevant AWS Infra via Terragrunt
 
-The infrastructure for this project is built using `terragrunt plan` and `terragrunt apply` from the infrastructure directory. infrastructure/modules holds the Terraform that defines the infrastructure configuration.
+The infrastructure for this project is built using `terragrunt plan` and `terragrunt apply` from the
+infrastructure directory. infrastructure/modules holds the Terraform that defines the infrastructure
+configuration.
 
 #### Adding or Changing Source Buckets
 
-Changing or adding Source Buckets is done by editing the `AVScannerLambdaRole` IAM Role. More specifically, the `S3AVScan` and `KmsDecrypt` parts of that IAM Role's policy.
-
-### S3 Events
-
-Configure scanning of additional buckets by adding a new S3 event to
-invoke the Lambda function.  This is done from the properties of any
-bucket in the AWS console.
-
-![s3-event](../master/images/s3-event.png)
-
-Note: If configured to update object metadata, events must only be
-configured for `PUT` and `POST`. Metadata is immutable, which requires
-the function to copy the object over itself with updated metadata. This
-can cause a continuous loop of scanning if improperly configured.
+Changing or adding Source Buckets is done by adding bucket names to the `av_scan_buckets` variable
+in the terragrunt configuration for the associated environment. Note that currently, only 1 bucket
+can be targeted by the scanner at a time; this will be fixed in a future release.
 
 ## Configuration
 
@@ -93,12 +78,12 @@ the table below for reference.
 
 ## S3 Bucket Policy Examples
 
-### Deny to download the object if not "CLEAN"
+### Deny to download the object if not "not_malicious"
 
 This policy doesn't allow to download the object until:
 
 1. The lambda that run Clam-AV is finished (so the object has a tag)
-2. The file is not CLEAN
+2. The file is not_malicious
 
 Please make sure to check cloudtrail for the arn:aws:sts, just find the event open it and copy the sts.
 It should be in the format provided below:
@@ -117,13 +102,13 @@ It should be in the format provided below:
     "Resource": "arn:aws:s3:::<<bucket-name>>/*",
     "Condition": {
         "StringNotEquals": {
-            "s3:ExistingObjectTag/av-status": "CLEAN"
+            "s3:ExistingObjectTag/fss-scan-result": "not_malicious"
         }
     }
 }
 ```
 
-### Deny to download and re-tag "INFECTED" object
+### Deny to download and re-tag "malicious" object
 
 ```json
 {
@@ -136,7 +121,7 @@ It should be in the format provided below:
       "Resource": ["arn:aws:s3:::<<bucket-name>>/*"],
       "Condition": {
         "StringEquals": {
-          "s3:ExistingObjectTag/av-status": "INFECTED"
+          "s3:ExistingObjectTag/fss-scan-result": "malicious"
         }
       }
     }
@@ -145,6 +130,8 @@ It should be in the format provided below:
 ```
 
 ## Manually Scanning Buckets
+
+# This has not been refactored since NC adjusted this repo. This does not work currently.
 
 You may want to scan all the objects in a bucket that have not previously been scanned or were created
 prior to setting up your lambda functions. To do this you can use the `scan_bucket.py` utility.
