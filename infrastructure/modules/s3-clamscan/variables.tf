@@ -19,7 +19,7 @@ variable "env_name" {
 }
 
 variable "cloudwatch_logs_retention_days" {
-  default     = "2"
+  default     = "3"
   description = "Number of days to keep logs in AWS CloudWatch."
   type        = string
 }
