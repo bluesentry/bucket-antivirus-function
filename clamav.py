@@ -24,7 +24,12 @@ import boto3
 import botocore
 from pytz import utc
 
-from common import AV_DEFINITION_S3_PREFIX, AV_SCAN_BUCKET_NAME, S3_ENDPOINT, get_timestamp
+from common import (
+    AV_DEFINITION_S3_PREFIX,
+    AV_SCAN_BUCKET_NAME,
+    S3_ENDPOINT,
+    get_timestamp,
+)
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_FILE_PREFIXES
 from common import AV_DEFINITION_FILE_SUFFIXES
@@ -203,7 +208,7 @@ def scan_file(path, s3_client):
         print("No infected files array populate starting at %s\n" % timestamp)
         for key in summary:
             if search_string in key:
-                object_name = key.replace(search_string, '')
+                object_name = key.replace(search_string, "")
                 safe_files.append(object_name)
         timestamp = get_timestamp()
         print("No infected files array populate finished at %s\n" % timestamp)
@@ -211,8 +216,12 @@ def scan_file(path, s3_client):
         timestamp = get_timestamp()
         print("Infected files array populate starting at %s\n" % timestamp)
         for key in summary:
-            if search_string in key: # checks if the key we're currently on is a scan result since there are non-file keys in the summary
-                object_name = key.replace(search_string, '') # trims string down to just the key name by removing /tmp/scandir/
+            if (
+                search_string in key
+            ):  # checks if the key we're currently on is a scan result since there are non-file keys in the summary
+                object_name = key.replace(
+                    search_string, ""
+                )  # trims string down to just the key name by removing /tmp/scandir/
                 if str(summary[key]) == str(AV_SIGNATURE_OK):
                     safe_files.append(object_name)
                 else:
@@ -220,11 +229,15 @@ def scan_file(path, s3_client):
                     object_exists = True
                     # we attempt to retrieve tags from the object since this will error out predictably if the object doesn't exist
                     try:
-                        s3_client.get_object_tagging(Bucket=AV_SCAN_BUCKET_NAME, Key=object_name)
+                        s3_client.get_object_tagging(
+                            Bucket=AV_SCAN_BUCKET_NAME, Key=object_name
+                        )
                     except botocore.exceptions.ClientError:
                         object_exists = False
                     if object_exists:
-                        infected_files[object_name] = summary[key] # sets the value to the signature result from summary
+                        infected_files[object_name] = summary[
+                            key
+                        ]  # sets the value to the signature result from summary
         timestamp = get_timestamp()
         print("Infected files array populate finished at %s\n" % timestamp)
     else:

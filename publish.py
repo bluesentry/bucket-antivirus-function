@@ -30,13 +30,15 @@ def lambda_handler(event, context):
     print("Script starting at %s\n" % (start_time))
     s3_object_key = get_keyname(event, event_source=EVENT_SOURCE)
     response = send_to_queue(s3_object_key, SQS_QUEUE_URL)
-    print(response['MessageId'])
+    print(response["MessageId"])
 
     stop_time = get_timestamp()
     print("Script finished at %s\n" % stop_time)
 
 
-def get_keyname(event, event_source="s3"): # returns the name of the object that triggered this lambda
+def get_keyname(
+    event, event_source="s3"
+):  # returns the name of the object that triggered this lambda
     # Break down the record
     records = event["Records"]
     if len(records) == 0:
@@ -67,14 +69,11 @@ def get_keyname(event, event_source="s3"): # returns the name of the object that
     return key_name
 
 
-def send_to_queue(message, queue_url): # sends a message to the SQS queue
+def send_to_queue(message, queue_url):  # sends a message to the SQS queue
     # create the client
-    sqs = boto3.client('sqs')
+    sqs = boto3.client("sqs")
 
     # send message to the queue
-    response = sqs.send_message(
-        QueueUrl=queue_url,
-        MessageBody=message
-    )
+    response = sqs.send_message(QueueUrl=queue_url, MessageBody=message)
 
     return response

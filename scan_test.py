@@ -44,12 +44,11 @@ class TestScan(unittest.TestCase):
         self.s3_client = botocore.session.get_session().create_client("s3")
         self.s3_obj = self.s3.Object(self.s3_bucket_name, self.s3_key_name)
 
-
     @mock_sqs
     def test_get_objects_from_sqs(self):
-        sqs = boto3.client('sqs')
+        sqs = boto3.client("sqs")
         queue = sqs.create_queue(QueueName="test-queue")
-        queue_url = queue['QueueUrl']
+        queue_url = queue["QueueUrl"]
 
         # Stage SQS queue with a message
         message = self.s3_key_name
@@ -58,7 +57,6 @@ class TestScan(unittest.TestCase):
         all_objects = scan.get_objects_from_sqs(queue_url, self.s3_bucket_name)
         self.assertEquals(len(all_objects), 1)
         self.assertEquals(all_objects[0], self.s3_obj)
-
 
     def test_set_av_tags(self):
         scan_result = "not_malicious"
@@ -97,24 +95,24 @@ class TestScan(unittest.TestCase):
         )
 
         with s3_stubber:
-            response = scan.set_av_tags(self.s3_client, self.s3_obj, scan_result, scan_signature, timestamp)
+            response = scan.set_av_tags(
+                self.s3_client, self.s3_obj, scan_result, scan_signature, timestamp
+            )
 
         assert response == tag_set["TagSet"]
-
 
     def test_str_to_bool(self):
         string = "True"
         result = scan.str_to_bool(string)
         assert result is True
 
-
     @mock_s3
     def test_download_file(self):
         s3 = boto3.resource("s3")
         s3_client = botocore.session.get_session().create_client("s3")
         s3_client.create_bucket(Bucket=self.s3_bucket_name)
-        s3_client.put_object(Bucket=self.s3_bucket_name, Key=self.s3_key_name, Body='')
+        s3_client.put_object(Bucket=self.s3_bucket_name, Key=self.s3_key_name, Body="")
 
         s3_obj = s3.Object(self.s3_bucket_name, self.s3_key_name)
         scan.download_file(s3_obj)
-        assert os.path.isfile(f'/tmp/scandir/{s3_obj.key}')
+        assert os.path.isfile(f"/tmp/scandir/{s3_obj.key}")

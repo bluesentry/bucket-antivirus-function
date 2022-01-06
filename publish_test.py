@@ -21,93 +21,42 @@ import publish
 class TestScan(unittest.TestCase):
     def test_get_keyname_no_records(self):
         event_source = "S3"
-        event = {
-            "Records": {
-
-            }
-        }
+        event = {"Records": {}}
         with self.assertRaises(Exception) as context:
             publish.get_keyname(event, event_source)
         self.assertTrue("No records found in event!" in str(context.exception))
 
-
     def test_get_keyname_no_bucket(self):
         event_source = "S3"
-        event = {
-            "Records": [
-                {
-                    "s3": {
-                        "object": {
-                            "key": "test/key"
-                        }
-                    }
-                }
-            ]
-        }
+        event = {"Records": [{"s3": {"object": {"key": "test/key"}}}]}
         with self.assertRaises(Exception) as context:
             publish.get_keyname(event, event_source)
         self.assertTrue("No bucket found in event!" in str(context.exception))
 
-
     def test_get_keyname_no_key(self):
         event_source = "S3"
-        event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {
-                            "name": "test-bucket"
-                        }
-                    }
-                }
-            ]
-        }
+        event = {"Records": [{"s3": {"bucket": {"name": "test-bucket"}}}]}
         with self.assertRaises(Exception) as context:
             publish.get_keyname(event, event_source)
         self.assertTrue("No key found in event!" in str(context.exception))
 
-
     def test_get_keyname_no_bucket_name(self):
         event_source = "S3"
-        event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {
-
-                        },
-                        "object": {
-                            "key": "test/key"
-                        }
-                    }
-                }
-            ]
-        }
+        event = {"Records": [{"s3": {"bucket": {}, "object": {"key": "test/key"}}}]}
         with self.assertRaises(Exception) as context:
             publish.get_keyname(event, event_source)
-        self.assertTrue("Unable to retrieve object from event." in str(context.exception))
-
+        self.assertTrue(
+            "Unable to retrieve object from event." in str(context.exception)
+        )
 
     def test_get_keyname_no_key_name(self):
         event_source = "S3"
-        event = {
-            "Records": [
-                {
-                    "s3": {
-                        "bucket": {
-                            "name": "test-bucket"
-                        },
-                        "object": {
-
-                        }
-                    }
-                }
-            ]
-        }
+        event = {"Records": [{"s3": {"bucket": {"name": "test-bucket"}, "object": {}}}]}
         with self.assertRaises(Exception) as context:
             publish.get_keyname(event, event_source)
-        self.assertTrue("Unable to retrieve object from event." in str(context.exception))
-
+        self.assertTrue(
+            "Unable to retrieve object from event." in str(context.exception)
+        )
 
     def test_get_keyname(self):
         event_source = "S3"
@@ -115,12 +64,8 @@ class TestScan(unittest.TestCase):
             "Records": [
                 {
                     "s3": {
-                        "bucket": {
-                            "name": "test-bucket"
-                        },
-                        "object": {
-                            "key": "test/key"
-                        }
+                        "bucket": {"name": "test-bucket"},
+                        "object": {"key": "test/key"},
                     }
                 }
             ]

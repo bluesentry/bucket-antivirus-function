@@ -27,13 +27,12 @@ class TestCommon(unittest.TestCase):
     def setUp(self):
         # Common data
         self.s3_bucket_name = "test_bucket"
-        self.s3_key_names = ["test_key1","test_key2"]
+        self.s3_key_names = ["test_key1", "test_key2"]
         # Clients and Resources
         self.s3 = boto3.resource("s3")
         self.s3_client = botocore.session.get_session().create_client("s3")
         self.s3_obj1 = self.s3.Object(self.s3_bucket_name, self.s3_key_names[0])
         self.s3_obj2 = self.s3.Object(self.s3_bucket_name, self.s3_key_names[1])
-
 
     @mock.patch("common.os.path")
     @mock.patch("common.os")
@@ -44,7 +43,6 @@ class TestCommon(unittest.TestCase):
             mock_os.makedirs.called, "Failed to not make directories if path present."
         )
 
-
     @mock.patch("common.os.path")
     @mock.patch("common.os")
     def test_create_dir_doesnt_exist(self, mock_os, mock_path):
@@ -53,7 +51,6 @@ class TestCommon(unittest.TestCase):
         self.assertTrue(
             mock_os.makedirs.called, "Failed to make directories if path not present."
         )
-
 
     @mock.patch("common.os.path")
     @mock.patch("common.os")
@@ -64,7 +61,6 @@ class TestCommon(unittest.TestCase):
         self.assertTrue(
             mock_os.makedirs.called, "Failed to make directories if path not present."
         )
-
 
     @mock.patch("common.os.path")
     @mock.patch("common.os")
@@ -77,9 +73,10 @@ class TestCommon(unittest.TestCase):
             mock_os.makedirs.called, "Failed to make directories if path not present."
         )
 
-
     def test_get_s3_objects_from_key_names(self):
-        all_objects = get_s3_objects_from_key_names(self.s3_key_names, self.s3_bucket_name)
+        all_objects = get_s3_objects_from_key_names(
+            self.s3_key_names, self.s3_bucket_name
+        )
         self.assertEquals(len(all_objects), 2)
         self.assertEquals(all_objects[0], self.s3_obj1)
         self.assertEquals(all_objects[1], self.s3_obj2)
