@@ -21,6 +21,7 @@ from urllib.parse import unquote_plus
 
 import boto3
 
+
 def lambda_handler(event, context):
     # get some environment variables
     EVENT_SOURCE = os.getenv("EVENT_SOURCE", "S3")
@@ -33,6 +34,7 @@ def lambda_handler(event, context):
 
     stop_time = get_timestamp()
     print("Script finished at %s\n" % stop_time)
+
 
 def get_keyname(event, event_source="s3"): # returns the name of the object that triggered this lambda
     # Break down the record
@@ -63,6 +65,7 @@ def get_keyname(event, event_source="s3"): # returns the name of the object that
     # Return the key name
     print("Key Name: %s\n" % key_name)
     return key_name
+
 
 def send_to_queue(message, queue_url): # sends a message to the SQS queue
     # create the client

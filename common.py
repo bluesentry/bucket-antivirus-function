@@ -61,6 +61,7 @@ def create_dir(path):
 def get_timestamp():
     return datetime.datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S UTC")
 
+
 def get_s3_objects_from_key_names(key_names, bucket_name):
     s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
     all_objects = []

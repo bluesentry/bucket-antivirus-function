@@ -27,7 +27,7 @@ class TestScan(unittest.TestCase):
             }
         }
         with self.assertRaises(Exception) as context:
-            key_name = publish.get_keyname(event, event_source)
+            publish.get_keyname(event, event_source)
         self.assertTrue("No records found in event!" in str(context.exception))
 
 
@@ -45,7 +45,7 @@ class TestScan(unittest.TestCase):
             ]
         }
         with self.assertRaises(Exception) as context:
-            key_name = publish.get_keyname(event, event_source)
+            publish.get_keyname(event, event_source)
         self.assertTrue("No bucket found in event!" in str(context.exception))
 
 
@@ -63,7 +63,7 @@ class TestScan(unittest.TestCase):
             ]
         }
         with self.assertRaises(Exception) as context:
-            key_name = publish.get_keyname(event, event_source)
+            publish.get_keyname(event, event_source)
         self.assertTrue("No key found in event!" in str(context.exception))
 
 
@@ -84,7 +84,7 @@ class TestScan(unittest.TestCase):
             ]
         }
         with self.assertRaises(Exception) as context:
-            key_name = publish.get_keyname(event, event_source)
+            publish.get_keyname(event, event_source)
         self.assertTrue("Unable to retrieve object from event." in str(context.exception))
 
 
@@ -105,7 +105,7 @@ class TestScan(unittest.TestCase):
             ]
         }
         with self.assertRaises(Exception) as context:
-            key_name = publish.get_keyname(event, event_source)
+            publish.get_keyname(event, event_source)
         self.assertTrue("Unable to retrieve object from event." in str(context.exception))
 
 

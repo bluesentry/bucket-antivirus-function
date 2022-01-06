@@ -46,11 +46,11 @@ def lambda_handler(event, context):
     print("Scanner starting at %s\n" % (start_time))
     # todo add multithreading to sqs receive
     s3_objects = get_objects_from_sqs(SQS_QUEUE_URL, AV_SCAN_BUCKET_NAME)
-    if s3_objects == None:
+    if s3_objects is None:
         end_time = get_timestamp()
         print("Script finished at %s\n" % end_time)
         return 0
-    
+
     timestamp = get_timestamp()
     print("Starting to download objects from S3 at %s\n" % timestamp)
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -182,6 +182,7 @@ def set_av_tags(s3_client, s3_object, scan_result, scan_signature, timestamp):
 
 def str_to_bool(s):
     return bool(strtobool(str(s)))
+
 
 def download_file(s3_object):
     dir_path = os.path.dirname(f'/tmp/scandir/{s3_object.key}')

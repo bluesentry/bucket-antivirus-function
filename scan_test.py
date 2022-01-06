@@ -105,7 +105,7 @@ class TestScan(unittest.TestCase):
     def test_str_to_bool(self):
         string = "True"
         result = scan.str_to_bool(string)
-        assert result == True
+        assert result is True
 
 
     @mock_s3
