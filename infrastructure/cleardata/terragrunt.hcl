@@ -14,7 +14,6 @@ remote_state {
   }
 }
 
-# Generate AWS provider. You may need to add a second in your module if you need public DNS in route53.
 generate "provider" {
   path      = "provider.tf"
   if_exists = "overwrite_terragrunt"
