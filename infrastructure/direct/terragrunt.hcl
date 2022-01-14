@@ -40,15 +40,6 @@ provider "aws" {
   profile             = var.aws_profile_cleardata
   allowed_account_ids = [var.aws_account_id_cleardata]
 }
-
-# Legacy Direct hardcoded provider for route53
-# This provider is deprecated - use the Direct hardcoded provider
-provider "aws" {
-  alias               = "route53"
-  region              = var.aws_region
-  profile             = var.aws_profile_direct
-  allowed_account_ids = [var.aws_account_id_direct]
-}
 EOF
 }
 
