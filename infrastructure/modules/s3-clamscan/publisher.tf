@@ -32,7 +32,7 @@ data "aws_iam_policy_document" "main_publish" {
       "logs:PutLogEvents",
     ]
 
-    resources = ["arn:${data.aws_partition.current.partition}:logs:${var.aws_region}:${var.aws_account_id}:log-group:/aws/lambda/s3-clamscan-publisher:*"]
+    resources = ["arn:${data.aws_partition.current.partition}:logs:${var.aws_region}:${var.aws_account_id}:log-group:/aws/lambda/lmb-${var.env_name}-s3-clamscan-publisher:*"]
   }
   # Allow writing messages to SQS queue
   statement {
@@ -108,7 +108,7 @@ resource "aws_lambda_function" "main_publish" {
   role          = aws_iam_role.main_publish.arn
   handler       = "publish.lambda_handler"
   runtime       = "python3.7"
-  memory_size   = var.memory_size
+  memory_size   = var.publisher_memory_size
   timeout       = var.timeout_seconds
 
   environment {

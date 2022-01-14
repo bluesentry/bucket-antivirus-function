@@ -24,7 +24,12 @@ import boto3
 import botocore
 from pytz import utc
 
-from common import AV_DEFINITION_S3_PREFIX, AV_SCAN_BUCKET_NAME, S3_ENDPOINT
+from common import (
+    AV_DEFINITION_S3_PREFIX,
+    AV_SCAN_BUCKET_NAME,
+    S3_ENDPOINT,
+    get_timestamp,
+)
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_FILE_PREFIXES
 from common import AV_DEFINITION_FILE_SUFFIXES
@@ -184,14 +189,6 @@ def scan_output_to_json(output):
 def scan_file(path, s3_client):
     av_env = os.environ.copy()
     av_env["LD_LIBRARY_PATH"] = CLAMAVLIB_PATH
-    ls = subprocess.Popen(
-        ["/bin/ls", "-l", "-R", "/tmp/scandir/"],
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE,
-        env=av_env
-    )
-    output = ls.communicate()[0].decode()
-    print("Directory contents of /tmp/scandir/: \n%s" % output)
     print("Starting clamscan of %s." % path)
     av_proc = subprocess.Popen(
         [CLAMSCAN_PATH, "-v", "-a", "-r", "--stdout", "-d", AV_DEFINITION_PATH, path],
@@ -200,49 +197,52 @@ def scan_file(path, s3_client):
         env=av_env,
     )
     output = av_proc.communicate()[0].decode()
-    print("clamscan output:\n%s" % output)
 
     # Turn the output into a data source we can read
     summary = scan_output_to_json(output)
-    print(summary) # this is for debugging purposes
     safe_files = []
     infected_files = {}
     search_string = "/tmp/scandir/"
     if av_proc.returncode == 0:
+        timestamp = get_timestamp()
+        print("No infected files array populate starting at %s\n" % timestamp)
         for key in summary:
             if search_string in key:
-                object_name = key.replace(search_string, '')
-                print("Healthy object name is: %s\n" % object_name)
+                object_name = key.replace(search_string, "")
                 safe_files.append(object_name)
-        # return AV_STATUS_CLEAN, AV_SIGNATURE_OK
+        timestamp = get_timestamp()
+        print("No infected files array populate finished at %s\n" % timestamp)
     elif av_proc.returncode == 1:
+        timestamp = get_timestamp()
+        print("Infected files array populate starting at %s\n" % timestamp)
         for key in summary:
-            if search_string in key: # checks if the key we're currently on is a scan result since there are non-file keys in the summary
-                object_name = key.replace(search_string, '') # trims string down to just the key name by removing /tmp/scandir/
-                print("Summary value is: %s\n" % summary[key])
-                print("AV_SIGNATURE_OK value is: %s\n" % AV_SIGNATURE_OK)
+            if (
+                search_string in key
+            ):  # checks if the key we're currently on is a scan result since there are non-file keys in the summary
+                object_name = key.replace(
+                    search_string, ""
+                )  # trims string down to just the key name by removing /tmp/scandir/
                 if str(summary[key]) == str(AV_SIGNATURE_OK):
-                    print("Healthy object name is: %s\n" % object_name)
                     safe_files.append(object_name)
                 else:
                     # verify that the object actually exists; clamscan will report multiple times per infected file, so we have to make sure our object list is clean
                     object_exists = True
                     # we attempt to retrieve tags from the object since this will error out predictably if the object doesn't exist
                     try:
-                        s3_client.get_object_tagging(Bucket=AV_SCAN_BUCKET_NAME, Key=object_name)
+                        s3_client.get_object_tagging(
+                            Bucket=AV_SCAN_BUCKET_NAME, Key=object_name
+                        )
                     except botocore.exceptions.ClientError:
                         object_exists = False
                     if object_exists:
-                        print("Infected object name is: %s\n" % object_name)
-                        print("Signature result is: %s\n" % summary[key])
-                        infected_files[object_name] = summary[key] # sets the value to the signature result from summary
-        # signature = summary.get(path, AV_SIGNATURE_UNKNOWN)
-        # return AV_STATUS_INFECTED, signature
+                        infected_files[object_name] = summary[
+                            key
+                        ]  # sets the value to the signature result from summary
+        timestamp = get_timestamp()
+        print("Infected files array populate finished at %s\n" % timestamp)
     else:
         msg = "Unexpected exit code from clamscan: %s.\n" % av_proc.returncode
         print(msg)
         raise Exception(msg)
 
-    print("Safe files: %s\n" % safe_files)
-    print("Infected files: %s\n" % infected_files)
     return safe_files, infected_files

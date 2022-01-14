@@ -103,20 +103,6 @@ data "aws_iam_policy_document" "main_scan" {
 
     resources = formatlist("%s/*", data.aws_s3_bucket.main_scan.*.arn)
   }
-
-  dynamic "statement" {
-    for_each = length(compact([var.av_scan_start_sns_arn, var.av_status_sns_arn])) != 0 ? toset([0]) : toset([])
-
-    content {
-      sid = "snsPublish"
-
-      actions = [
-        "sns:Publish",
-      ]
-
-      resources = compact([var.av_scan_start_sns_arn, var.av_status_sns_arn])
-    }
-  }
 }
 
 resource "aws_iam_role" "main_scan" {
@@ -194,19 +180,14 @@ resource "aws_lambda_function" "main_scan" {
   role          = aws_iam_role.main_scan.arn
   handler       = "scan.lambda_handler"
   runtime       = "python3.7"
-  memory_size   = var.memory_size
+  memory_size   = var.scanner_memory_size
   timeout       = var.timeout_seconds
 
   environment {
     variables = {
       AV_DEFINITION_S3_BUCKET        = aws_s3_bucket.virus_definitions.id
       AV_DEFINITION_S3_PREFIX        = var.lambda_package
-      AV_SCAN_START_SNS_ARN          = var.av_scan_start_sns_arn
       AV_SCAN_BUCKET_NAME            = data.aws_s3_bucket.main_scan[0].id
-      AV_STATUS_SNS_ARN              = var.av_status_sns_arn
-      AV_STATUS_SNS_PUBLISH_CLEAN    = var.av_status_sns_publish_clean
-      AV_STATUS_SNS_PUBLISH_INFECTED = var.av_status_sns_publish_infected
-      AV_DELETE_INFECTED_FILES       = var.av_delete_infected_files
       SQS_QUEUE_URL                  = aws_sqs_queue.messages.url
     }
   }

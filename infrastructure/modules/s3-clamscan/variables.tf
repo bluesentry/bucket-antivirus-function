@@ -19,7 +19,7 @@ variable "env_name" {
 }
 
 variable "cloudwatch_logs_retention_days" {
-  default     = "90"
+  default     = "3"
   description = "Number of days to keep logs in AWS CloudWatch."
   type        = string
 }
@@ -40,10 +40,22 @@ variable "lambda_package_key" {
   default     = null
 }
 
-variable "memory_size" {
-  description = "Lambda memory allocation, in MB"
+variable "scanner_memory_size" {
+  description = "Memory allocation for Scanner Lambda, in MB"
   type        = number
   default     = 2048
+}
+
+variable "updater_memory_size" {
+  description = "Memory allocation for Updater Lambda, in MB"
+  type        = number
+  default     = 2048
+}
+
+variable "publisher_memory_size" {
+  description = "Memory allocation for Publisher Lambda, in MB"
+  type        = number
+  default     = 128
 }
 
 variable "av_update_minutes" {
@@ -67,38 +79,4 @@ variable "av_scan_minutes" {
   description = "How often to trigger the scanner Lambda."
   default     = 1
   type        = number
-}
-
-#
-# The variables below correspond to https://github.com/upsidetravel/bucket-antivirus-function/tree/master#configuration
-#
-
-variable "av_scan_start_sns_arn" {
-  description = "SNS topic ARN to publish notification about start of scan (optional)."
-  type        = string
-  default     = ""
-}
-
-variable "av_status_sns_arn" {
-  description = "SNS topic ARN to publish scan results (optional)."
-  type        = string
-  default     = ""
-}
-
-variable "av_status_sns_publish_clean" {
-  description = "Publish AV_STATUS_CLEAN results to AV_STATUS_SNS_ARN. No effect if av_status_sns_arn is not set."
-  type        = string
-  default     = "True"
-}
-
-variable "av_status_sns_publish_infected" {
-  description = "Publish AV_STATUS_INFECTED results to AV_STATUS_SNS_ARN. No effect if av_status_sns_arn is not set."
-  type        = string
-  default     = "True"
-}
-
-variable "av_delete_infected_files" {
-  description = "Set it True in order to delete infected values."
-  type        = string
-  default     = "False"
 }

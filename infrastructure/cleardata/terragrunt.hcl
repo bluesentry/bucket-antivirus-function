@@ -5,11 +5,11 @@ remote_state {
     if_exists = "overwrite"
   }
   config = {
-    bucket         = "nc-awsd-terraform-private"
+    bucket         = "nc-terraform-private"
     encrypt        = true
-    key            = "direct/${path_relative_to_include()}/terraform.tfstate"
+    key            = "cleardata/${path_relative_to_include()}/terraform.tfstate"
     region         = "us-east-1"
-    profile        = "direct"
+    profile        = "cleardata"
     dynamodb_table = "nc-terraform-lock-table"
   }
 }
@@ -33,7 +33,7 @@ provider "aws" {
   allowed_account_ids = [var.aws_account_id_direct]
 }
 
-# ClearData hardcoded provider
+# ClearDATA hardcoded provider
 provider "aws" {
   alias               = "cleardata"
   region              = var.aws_region
@@ -50,16 +50,24 @@ inputs = merge(
   yamldecode(
     file("${find_in_parent_folders("env.yaml", "empty.yaml")}"),
   ),
+  yamldecode(
+    file("${find_in_parent_folders("nc_vars.yaml", "empty.yaml")}"),
+  ),
   # Additional global inputs to pass to all modules called in this directory tree.
   {
-    aws_account_id              = "706014839439"
+    availability_zone_exclude_names = [
+      "us-east-1c",
+      "us-east-1e",
+      "us-east-1f"
+    ]
+    aws_account_id              = "393224622068"
     aws_account_id_cleardata    = "393224622068"
     aws_account_id_direct       = "706014839439"
-    aws_profile                 = "direct"
+    aws_profile                 = "cleardata"
     aws_profile_cleardata       = "cleardata"
     aws_profile_direct          = "direct"
-    terraform_state_aws_profile = "direct"
+    terraform_state_aws_profile = "cleardata"
     terraform_state_aws_region  = "us-east-1"
-    terraform_state_s3_bucket   = "nc-awsd-terraform-private"
+    terraform_state_s3_bucket   = "nc-terraform-private"
   },
 )
