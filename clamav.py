@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import chardet
 import datetime
 import hashlib
 import os
@@ -183,6 +184,14 @@ def scan_output_to_json(output):
             summary[key] = value.strip()
     return summary
 
+# Detect the most likely character encoding of input
+def detect_encoding(line):
+    chardet_encoding = chardet.detect(line)
+    print("Most likely encoding: %s" % chardet_encoding)
+    if chardet_encoding['confidence'] > 0.8
+        return chardet_encoding['encoding']
+    else
+        return None
 
 def scan_file(path):
     av_env = os.environ.copy()
@@ -194,7 +203,9 @@ def scan_file(path):
         stdout=subprocess.PIPE,
         env=av_env,
     )
-    output = av_proc.communicate()[0].decode()
+    result = av_proc.communicate()[0]
+    result_encoding = detect_encoding(result)
+    output = result.decode(result_encoding) if result_encoding is not None else result.decode('utf-8')
     print("clamscan output:\n%s" % output)
 
     # Turn the output into a data source we can read
