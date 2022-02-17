@@ -12,10 +12,10 @@ version: "2.1"
 executors:
   python_test:
     docker:
-      - image: circleci/python:3.7-stretch
+      - image: cimg/python:3.7-stretch
   pre_commit_test:
     docker:
-      - image: circleci/python:3.7-stretch
+      - image: cimg/python:3.7-stretch
 
 jobs:
 
