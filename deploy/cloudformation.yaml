@@ -16,7 +16,7 @@
     SourceBucket:
       Type: String
       Description: Name of the source bucket whose objects will be scanned. If more than one source bucket, the others will have to be manually added to the AV Scanner Policy after creation.
-      Default: "<source-bucket>"
+      Default: "<source-bucket-name>"
       AllowedPattern : ".+"
 
   Conditions:

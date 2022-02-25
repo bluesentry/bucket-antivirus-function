@@ -17,6 +17,10 @@ current_dir := $(shell pwd)
 container_dir := /opt/app
 circleci := ${CIRCLECI}
 
+AV_LAMBDA_STACK_NAME = av-lambda-stack
+CLOUDFORMATION_LOC = deploy/cloudformation.yaml
+LAMBDA_ZIP_LOC = build/lambda.zip
+
 .PHONY: help
 help:  ## Print the help documentation
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -64,3 +68,24 @@ scan: ./build/lambda.zip ## Run scan function locally
 .PHONY: update
 update: ./build/lambda.zip ## Run update function locally
 	scripts/run-update-lambda
+
+.PHONY: deploy_stack
+deploy_stack:
+	@echo "Deploying $(AV_LAMBDA_STACK_NAME) stack"
+	aws cloudformation deploy --template-file $(CLOUDFORMATION_LOC) --stack-name $(AV_LAMBDA_STACK_NAME) --parameters ParameterKey=SourceBucket,ParameterValue=$(BUCKET_NAME) --capabilities CAPABILITY_NAMED_IAM
+
+.PHONY: upload_lambda
+upload_lambda:
+	@echo "Uploading $(LAMBDA_ZIP_LOC) to 'avScanner' Lambda function"
+	aws lambda update-function-code --function-name avScanner --zip-file fileb://$(LAMBDA_ZIP_LOC)
+
+	@echo "Uploading $(LAMBDA_ZIP_LOC) to 'avUpdateDefinitions' Lambda function"
+	aws lambda update-function-code --function-name avUpdateDefinitions --zip-file fileb://$(LAMBDA_ZIP_LOC)
+
+.PHONY: deploy
+deploy: deploy_stack upload_lambda
+
+.PHONY: destroy
+destroy:
+	@echo "Destroying $(AV_LAMBDA_STACK_NAME) stack"
+	aws cloudformation delete-stack --stack-name $(AV_LAMBDA_STACK_NAME)
