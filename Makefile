@@ -72,15 +72,15 @@ update: ./build/lambda.zip ## Run update function locally
 .PHONY: deploy_stack
 deploy_stack:
 	@echo "Deploying $(AV_LAMBDA_STACK_NAME) stack"
-	aws cloudformation deploy --template-file $(CLOUDFORMATION_LOC) --stack-name $(AV_LAMBDA_STACK_NAME) --parameters ParameterKey=SourceBucket,ParameterValue=$(BUCKET_NAME) --capabilities CAPABILITY_NAMED_IAM
+	aws --profile $(AWS_PROFILE) --region us-east-1 cloudformation deploy --template-file $(CLOUDFORMATION_LOC) --stack-name $(AV_LAMBDA_STACK_NAME) --parameter-overrides SourceBucket=$(BUCKET_NAME) --capabilities CAPABILITY_NAMED_IAM
 
 .PHONY: upload_lambda
 upload_lambda:
 	@echo "Uploading $(LAMBDA_ZIP_LOC) to 'avScanner' Lambda function"
-	aws lambda update-function-code --function-name avScanner --zip-file fileb://$(LAMBDA_ZIP_LOC)
+	aws --profile $(AWS_PROFILE) --region us-east-1 lambda update-function-code --function-name avScanner --zip-file fileb://$(LAMBDA_ZIP_LOC)
 
 	@echo "Uploading $(LAMBDA_ZIP_LOC) to 'avUpdateDefinitions' Lambda function"
-	aws lambda update-function-code --function-name avUpdateDefinitions --zip-file fileb://$(LAMBDA_ZIP_LOC)
+	aws --profile $(AWS_PROFILE) --region us-east-1 lambda update-function-code --function-name avUpdateDefinitions --zip-file fileb://$(LAMBDA_ZIP_LOC)
 
 .PHONY: deploy
 deploy: deploy_stack upload_lambda
@@ -88,4 +88,4 @@ deploy: deploy_stack upload_lambda
 .PHONY: destroy
 destroy:
 	@echo "Destroying $(AV_LAMBDA_STACK_NAME) stack"
-	aws cloudformation delete-stack --stack-name $(AV_LAMBDA_STACK_NAME)
+	aws --profile $(AWS_PROFILE) --region us-east-1 cloudformation delete-stack --stack-name $(AV_LAMBDA_STACK_NAME)

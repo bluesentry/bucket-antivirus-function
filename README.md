@@ -42,7 +42,7 @@ the [amazonlinux](https://hub.docker.com/_/amazonlinux/) [Docker](https://www.do
 ### Create Relevant AWS Infra via CloudFormation
 
 Use CloudFormation with the `cloudformation.yaml` located in the `deploy/` directory to quickly spin up the AWS infra needed to run this project.
-Set `BUCKET_NAME` env variable and run `make deploy` to deploy defined resources from `cloudformation.yaml`.
+Set `BUCKET_NAME` and `AWS_PROFILE` env variables and run `make deploy` to deploy defined resources from `cloudformation.yaml`.
 
 CloudFormation will create:
 
