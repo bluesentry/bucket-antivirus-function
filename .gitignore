@@ -117,3 +117,4 @@ tmp/
 
 # EICAR Files
 *eicar*
+/.aws-sam/

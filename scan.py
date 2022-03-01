@@ -55,6 +55,10 @@ def event_object(event, event_source="s3"):
         raise Exception("No records found in event!")
     record = records[0]
 
+    if "ObjectCreated" not in record.get("eventName", ''):
+        print("Skipping non-ObjectCreated event types")
+        return None
+
     s3_obj = record["s3"]
 
     # Get the bucket name
@@ -212,6 +216,10 @@ def lambda_handler(event, context):
     start_time = get_timestamp()
     print("Script starting at %s\n" % (start_time))
     s3_object = event_object(event, event_source=EVENT_SOURCE)
+
+    # If event_type is not 'ObjectCreated' escape lambda
+    if s3_object is None:
+        return
 
     if str_to_bool(AV_PROCESS_ORIGINAL_VERSION_ONLY):
         verify_s3_object_version(s3, s3_object)
