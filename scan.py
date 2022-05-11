@@ -204,6 +204,12 @@ def sns_scan_results(
         },
     )
 
+def delete_file(file_path):
+    try:
+        print("Deleting local file: %s\n" % (file_path))
+        os.remove(file_path)
+    except OSError:
+        pass
 
 def lambda_handler(event, context):
     s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
@@ -230,13 +236,24 @@ def lambda_handler(event, context):
     create_dir(os.path.dirname(file_path))
     s3_object.download_file(file_path)
 
+    use_flattened = False
+
     # do a pre scan on file mimetype
     scan_result, scan_signature = check_mime.check_path(file_path)
+
 
     # only bother pdf screening if the pre scan result is actually clean
     if scan_result == AV_STATUS_CLEAN and os.path.splitext(file_path)[1] == ".pdf":
         scan_result, scan_signature = check_pdf.check_path(file_path)
-
+        if scan_result != AV_STATUS_CLEAN:
+            print("Scripts found, Flattening...")
+            flattened_path = os.path.splitext(file_path)[0]+"_flattened.pdf"
+            check_pdf.flatten_path(file_path,flattened_path)
+            # Delete original downloaded file (frees up room on re-usable lambda function container)
+            delete_file(file_path)
+            file_path = flattened_path
+            use_flattened = True
+            scan_result = AV_STATUS_CLEAN
 
     # only bother virus scanning if the pre scan result(s) is/are actually clean
     if scan_result == AV_STATUS_CLEAN:
@@ -251,6 +268,11 @@ def lambda_handler(event, context):
             print("Downloading definition file %s complete!" % (local_path))
 
         scan_result, scan_signature = clamav.scan_file(file_path)
+
+        if scan_result == AV_STATUS_CLEAN and use_flattened == True:
+            s3_object.upload_file(file_path)
+            scan_signature = "PDF.Flattened"
+
 
     print(
         "Scan of s3://%s resulted in %s (%s)\n"
@@ -277,11 +299,9 @@ def lambda_handler(event, context):
     metrics.send(
         env=ENV, bucket=s3_object.bucket_name, key=s3_object.key, status=scan_result
     )
-    # Delete downloaded file to free up room on re-usable lambda function container
-    try:
-        os.remove(file_path)
-    except OSError:
-        pass
+    # Delete file to free up room on re-usable lambda function container
+    delete_file(file_path)
+
     if str_to_bool(AV_DELETE_INFECTED_FILES) and scan_result == AV_STATUS_INFECTED:
         delete_s3_object(s3_object)
     stop_scan_time = get_timestamp()
