@@ -22,6 +22,7 @@ import check_pdf
 
 from urllib.parse import unquote_plus
 from distutils.util import strtobool
+from urllib import parse
 
 import boto3
 
@@ -35,7 +36,9 @@ from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
 from common import AV_SCAN_START_METADATA
 from common import AV_SCAN_START_SNS_ARN
 from common import AV_SIGNATURE_METADATA
+from common import AV_SIGNATURE_PDF_FLATTENED
 from common import AV_STATUS_CLEAN
+from common import AV_STATUS_PENDING
 from common import AV_STATUS_INFECTED
 from common import AV_STATUS_METADATA
 from common import AV_STATUS_SNS_ARN
@@ -232,31 +235,46 @@ def lambda_handler(event, context):
         start_scan_time = get_timestamp()
         sns_start_scan(sns_client, s3_object, AV_SCAN_START_SNS_ARN, start_scan_time)
 
+    prev_scan_result = ''
+    prev_scan_signature = ''
+    curr_tags = s3_client.get_object_tagging(
+        Bucket=s3_object.bucket_name, Key=s3_object.key
+    )["TagSet"]
+    for tag in curr_tags:
+        if tag["Key"] == AV_SIGNATURE_METADATA:
+            prev_scan_signature = tag["Value"]
+            scan_signature = prev_scan_signature
+        if tag["Key"] == AV_STATUS_METADATA:
+            prev_scan_result = tag["Value"]
+            scan_result = prev_scan_result
+
     file_path = get_local_path(s3_object, "/tmp")
     create_dir(os.path.dirname(file_path))
     s3_object.download_file(file_path)
 
-    use_flattened = False
+    if (prev_scan_result != AV_STATUS_PENDING):
 
-    # do a pre scan on file mimetype
-    scan_result, scan_signature = check_mime.check_path(file_path)
+        # do a pre scan on file mimetype
+        scan_result, scan_signature = check_mime.check_path(file_path)
 
-
-    # only bother pdf screening if the pre scan result is actually clean
-    if scan_result == AV_STATUS_CLEAN and os.path.splitext(file_path)[1] == ".pdf":
-        scan_result, scan_signature = check_pdf.check_path(file_path)
-        if scan_result != AV_STATUS_CLEAN:
-            print("Scripts found, Flattening...")
-            flattened_path = os.path.splitext(file_path)[0]+"_flattened.pdf"
-            check_pdf.flatten_path(file_path,flattened_path)
-            # Delete original downloaded file (frees up room on re-usable lambda function container)
-            delete_file(file_path)
-            file_path = flattened_path
-            use_flattened = True
-            scan_result = AV_STATUS_CLEAN
+        # only bother pdf screening if the pre scan result is actually clean
+        if scan_result == AV_STATUS_CLEAN and os.path.splitext(file_path)[1] == ".pdf":
+            scan_result, scan_signature = check_pdf.check_path(file_path)
+            if scan_result != AV_STATUS_CLEAN:
+                print("Scripts found, Flattening...")
+                flattened_path = os.path.splitext(file_path)[0]+"_flattened.pdf"
+                check_pdf.flatten_path(file_path,flattened_path)
+                # Delete original downloaded file (frees up room on re-usable lambda function container)
+                delete_file(file_path)
+                file_path = flattened_path
+                # This will trigger a second lambda invocation
+                tags = {AV_STATUS_METADATA: AV_STATUS_PENDING, AV_SIGNATURE_METADATA: AV_SIGNATURE_PDF_FLATTENED, AV_TIMESTAMP_METADATA :get_timestamp()}
+                s3_object.upload_file(file_path,ExtraArgs={"Tagging": parse.urlencode(tags)})
+                delete_file(file_path)
+                return
 
     # only bother virus scanning if the pre scan result(s) is/are actually clean
-    if scan_result == AV_STATUS_CLEAN:
+    if scan_result in [AV_STATUS_CLEAN,AV_STATUS_PENDING]:
         to_download = clamav.update_defs_from_s3(
             s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
         )
@@ -269,9 +287,8 @@ def lambda_handler(event, context):
 
         scan_result, scan_signature = clamav.scan_file(file_path)
 
-        if scan_result == AV_STATUS_CLEAN and use_flattened == True:
-            s3_object.upload_file(file_path)
-            scan_signature = "PDF.Flattened"
+        if scan_result == AV_STATUS_CLEAN and prev_scan_result == AV_STATUS_PENDING and prev_scan_signature == AV_SIGNATURE_PDF_FLATTENED:
+            scan_signature = AV_SIGNATURE_PDF_FLATTENED
 
 
     print(
