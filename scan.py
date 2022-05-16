@@ -269,7 +269,7 @@ def lambda_handler(event, context):
                 file_path = flattened_path
                 # This will trigger a second lambda invocation
                 tags = {AV_STATUS_METADATA: AV_STATUS_PENDING, AV_SIGNATURE_METADATA: AV_SIGNATURE_PDF_FLATTENED, AV_TIMESTAMP_METADATA :get_timestamp()}
-                s3_object.upload_file(file_path,ExtraArgs={"Tagging": parse.urlencode(tags)})
+                s3_object.upload_file(file_path,ExtraArgs={"Tagging": parse.urlencode(tags),"ContentType": s3_object.content_type})
                 delete_file(file_path)
                 return
 
