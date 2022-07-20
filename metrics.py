@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Upside Travel, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datadog
 import os
-import boto3
-from common import *
-from botocore.exceptions import ClientError
+
+import datadog
+from common import AV_STATUS_CLEAN
+from common import AV_STATUS_INFECTED
 
 def get_datadog_api_key():
     secret_name = os.environ.get("DATADOG_API_KEY_SECRET_NAME")
@@ -44,11 +45,7 @@ def send(env, bucket, key, status):
 
         result_metric_name = "unknown"
 
-        metric_tags = [
-            "env:%s" % env,
-            "bucket:%s" % bucket,
-            "object:%s" % key
-        ]
+        metric_tags = ["env:%s" % env, "bucket:%s" % bucket, "object:%s" % key]
 
         if status == AV_STATUS_CLEAN:
             result_metric_name = "clean"
@@ -57,21 +54,22 @@ def send(env, bucket, key, status):
             print("Sending Infected event")
 
             datadog.api.Event.create(
-                    title = "Infected S3 Object Found",
-                    text = "Virus found in s3://%s/%s." % (bucket, key),
-                    tags = metric_tags)
+                title="Infected S3 Object Found",
+                text="Virus found in s3://%s/%s." % (bucket, key),
+                tags=metric_tags,
+            )
 
         scanned_metric = {
             "metric": "s3_antivirus.scanned",
             "type": "counter",
             "points": 1,
-            "tags": metric_tags
+            "tags": metric_tags,
         }
         result_metric = {
             "metric": "s3_antivirus.%s" % result_metric_name,
             "type": "counter",
             "points": 1,
-            "tags": metric_tags
+            "tags": metric_tags,
         }
         print("Sending metrics to Datadog.")
         datadog.api.Metric.send([scanned_metric, result_metric])

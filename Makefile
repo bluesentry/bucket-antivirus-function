@@ -12,27 +12,55 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-AMZ_LINUX_VERSION:=latest
+AMZ_LINUX_VERSION:=2
 current_dir := $(shell pwd)
 container_dir := /opt/app
 circleci := ${CIRCLECI}
 
-all: archive
+.PHONY: help
+help:  ## Print the help documentation
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-clean:
-	rm -rf compile/lambda.zip
+all: archive  ## Build the entire project
 
-archive: clean
-ifeq ($(circleci), true)
-	docker create -v $(container_dir) --name src alpine:3.4 /bin/true
-	docker cp $(current_dir)/. src:$(container_dir)
-	docker run --rm -ti \
-		--volumes-from src \
-		amazonlinux:$(AMZ_LINUX_VERSION) \
-		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
-else
-	docker run --rm -ti \
-		-v $(current_dir):$(container_dir) \
-		amazonlinux:$(AMZ_LINUX_VERSION) \
-		/bin/bash -c "cd $(container_dir) && ./build_lambda.sh"
-endif
+.PHONY: clean
+clean:  ## Clean build artifacts
+	rm -rf bin/
+	rm -rf build/
+	rm -rf tmp/
+	rm -f .coverage
+	find ./ -type d -name '__pycache__' -delete
+	find ./ -type f -name '*.pyc' -delete
+
+.PHONY: archive
+archive: clean  ## Create the archive for AWS lambda
+	docker build -t bucket-antivirus-function:latest .
+	mkdir -p ./build/
+	docker run -v $(current_dir)/build:/opt/mount --rm --entrypoint cp bucket-antivirus-function:latest /opt/app/build/lambda.zip /opt/mount/lambda.zip
+
+.PHONY: pre_commit_install  ## Ensure that pre-commit hook is installed and kept up to date
+pre_commit_install: .git/hooks/pre-commit ## Ensure pre-commit is installed
+.git/hooks/pre-commit: /usr/local/bin/pre-commit
+	pip install pre-commit==2.12.1
+	pre-commit install
+	pre-commit install-hooks
+
+.PHONY: pre_commit_tests
+pre_commit_tests: ## Run pre-commit tests
+	pre-commit run --all-files
+
+.PHONY: test
+test: clean  ## Run python tests
+	nosetests
+
+.PHONY: coverage
+coverage: clean  ## Run python tests with coverage
+	nosetests --with-coverage
+
+.PHONY: scan
+scan: ./build/lambda.zip ## Run scan function locally
+	scripts/run-scan-lambda $(TEST_BUCKET) $(TEST_KEY)
+
+.PHONY: update
+update: ./build/lambda.zip ## Run update function locally
+	scripts/run-update-lambda
