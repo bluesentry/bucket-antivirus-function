@@ -21,7 +21,13 @@ RUN rm -rf /root/.cache/pip
 
 # Download libraries we need to run in lambda
 WORKDIR /tmp
-RUN yumdownloader -x \*i686 --archlist=x86_64 clamav clamav-lib clamav-update json-c pcre2 libprelude gnutls libtasn1 lib64nettle nettle
+RUN yumdownloader -x \*i686 --archlist=x86_64 json-c pcre2 libprelude gnutls libtasn1 lib64nettle nettle && \
+    wget \
+        https://kojipkgs.fedoraproject.org//packages/clamav/0.102.3/1.el7/x86_64/clamav-0.102.3-1.el7.x86_64.rpm \
+        https://kojipkgs.fedoraproject.org//packages/clamav/0.102.3/1.el7/x86_64/clamav-lib-0.102.3-1.el7.x86_64.rpm \
+        https://kojipkgs.fedoraproject.org//packages/clamav/0.102.3/1.el7/x86_64/clamav-update-0.102.3-1.el7.x86_64.rpm \
+        https://kojipkgs.fedoraproject.org//packages/clamav/0.102.3/1.el7/noarch/clamav-filesystem-0.102.3-1.el7.noarch.rpm \
+    ;
 RUN rpm2cpio clamav-0*.rpm | cpio -idmv
 RUN rpm2cpio clamav-lib*.rpm | cpio -idmv
 RUN rpm2cpio clamav-update*.rpm | cpio -idmv
