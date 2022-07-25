@@ -81,6 +81,7 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
         for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
             filename = file_prefix + "." + file_suffix
             local_file_path = os.path.join(local_path, filename)
+            print("local_file_path = %s" % local_file_path)
             if os.path.exists(local_file_path):
                 local_file_md5 = md5_from_file(local_file_path)
                 if local_file_md5 != md5_from_s3_tags(
