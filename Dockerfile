@@ -11,34 +11,52 @@ COPY ./*.py /opt/app/
 COPY requirements.txt /opt/app/requirements.txt
 
 # Install packages
-RUN yum update -y
-RUN yum install -y cpio python3-pip yum-utils zip unzip less
-RUN yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-
-# This had --no-cache-dir, tracing through multiple tickets led to a problem in wheel
-RUN pip3 install -r requirements.txt
-RUN rm -rf /root/.cache/pip
+RUN yum update -y && \
+    amazon-linux-extras install epel -y && \
+    yum install -y cpio yum-utils tar.x86_64 gzip zip python3-pip shadow-utils.x86_64 && \
+    pip3 install -r requirements.txt && \
+    rm -rf /root/.cache/pip
 
 # Download libraries we need to run in lambda
 WORKDIR /tmp
-RUN yumdownloader -x \*i686 --archlist=x86_64 clamav clamav-lib clamav-update json-c pcre2 libprelude gnutls libtasn1 lib64nettle nettle
-RUN rpm2cpio clamav-0*.rpm | cpio -idmv
-RUN rpm2cpio clamav-lib*.rpm | cpio -idmv
-RUN rpm2cpio clamav-update*.rpm | cpio -idmv
-RUN rpm2cpio json-c*.rpm | cpio -idmv
-RUN rpm2cpio pcre*.rpm | cpio -idmv
-RUN rpm2cpio gnutls* | cpio -idmv
-RUN rpm2cpio nettle* | cpio -idmv
-RUN rpm2cpio lib* | cpio -idmv
-RUN rpm2cpio *.rpm | cpio -idmv
-RUN rpm2cpio libtasn1* | cpio -idmv
+RUN yumdownloader -x \*i686 --archlist=x86_64 \
+        clamav clamav-lib clamav-update json-c \
+        pcre2 libtool-ltdl libxml2 bzip2-libs \
+        xz-libs libprelude gnutls nettle
+
+RUN rpm2cpio clamav-0*.rpm | cpio -vimd && \
+    rpm2cpio clamav-lib*.rpm | cpio -vimd && \
+    rpm2cpio clamav-update*.rpm | cpio -vimd && \
+    rpm2cpio json-c*.rpm | cpio -vimd && \
+    rpm2cpio pcre*.rpm | cpio -vimd && \
+    rpm2cpio libtool-ltdl*.rpm | cpio -vimd && \
+    rpm2cpio libxml2*.rpm | cpio -vimd && \
+    rpm2cpio bzip2-libs*.rpm | cpio -vimd && \
+    rpm2cpio xz-libs*.rpm | cpio -vimd && \
+    rpm2cpio libprelude*.rpm | cpio -vimd && \
+    rpm2cpio gnutls*.rpm | cpio -vimd && \
+    rpm2cpio nettle*.rpm | cpio -vimd
+
 
 # Copy over the binaries and libraries
-RUN cp /tmp/usr/bin/clamscan /tmp/usr/bin/freshclam /tmp/usr/lib64/* /opt/app/bin/
+RUN cp /tmp/usr/bin/clamscan \
+       /tmp/usr/bin/freshclam \
+       /tmp/usr/lib64/* \
+       /usr/lib64/libpcre.so.1 \
+       /opt/app/bin/
 
 # Fix the freshclam.conf settings
-RUN echo "DatabaseMirror database.clamav.net" > /opt/app/bin/freshclam.conf
-RUN echo "CompressLocalDatabase yes" >> /opt/app/bin/freshclam.conf
+RUN echo "DatabaseMirror database.clamav.net" > /opt/app/bin/freshclam.conf && \
+    echo "CompressLocalDatabase yes" >> /opt/app/bin/freshclam.conf && \
+    echo "ScriptedUpdates no" >> /opt/app/bin/freshclam.conf && \
+    echo "DatabaseDirectory /var/lib/clamav" >> /opt/app/bin/freshclam.conf
+
+RUN groupadd clamav
+RUN useradd -g clamav -s /bin/false -c "Clam Antivirus" clamav
+RUN useradd -g clamav -s /bin/false -c "Clam Antivirus" clamupdate
+
+ENV LD_LIBRARY_PATH=/opt/app/bin
+RUN ldconfig
 
 # Create the zip file
 WORKDIR /opt/app
