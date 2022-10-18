@@ -17,7 +17,7 @@ import os
 import urllib
 from datetime import datetime
 from distutils.util import strtobool
-
+import pprint
 import boto3
 import clamav
 import metrics
@@ -43,7 +43,7 @@ ENV = os.getenv("ENV", "")
 
 def event_object(event):
     bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.unquote_plus(event['Records'][0]['s3']['object']['key'].encode('utf8'))
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'])
     if (not bucket) or (not key):
         print("Unable to retrieve object from event.\n%s" % event)
         raise Exception("Unable to retrieve object from event.")
@@ -198,7 +198,8 @@ def lambda_handler(event, context):
     start_time = datetime.utcnow()
     print("Script starting at %s\n" %
           (start_time.strftime("%Y/%m/%d %H:%M:%S UTC")))
-    s3_object = event_object(event)
+    s3_object = boto3.resource('s3').Object(event["Records"][0]["s3"]["bucket"]["name"],event["Records"][0]["s3"]["object"]["key"])
+    print("Checking uploaded object s3://"+s3_object.bucket_name+"/"+s3_object.key);
     verify_s3_object_version(s3_object)
     verify_s3_tags(s3_object)
     sns_start_scan(s3_object)

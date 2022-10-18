@@ -18,7 +18,7 @@
 set -e
 
 yum update -y
-yum install -y cpio python27-pip zip git json-c
+yum install -y cpio python3-9-pip zip git json-c
 pip install --no-cache-dir virtualenv
 virtualenv env
 . env/bin/activate

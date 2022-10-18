@@ -46,14 +46,16 @@ def update_defs_from_s3(bucket, prefix):
         s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
         local_path = os.path.join(AV_DEFINITION_PATH, filename)
         s3_md5 = md5_from_s3_tags(bucket, s3_path)
+        print(f"Processing file { filename } with md5 { s3_md5 }")
         if os.path.exists(local_path) and md5_from_file(local_path) == s3_md5:
             print("Not downloading %s because local md5 matches s3." % filename)
             continue
         if s3_md5:
-            print("Downloading definition file %s from s3://%s" %
-                  (filename, os.path.join(bucket, prefix))
+            print("Downloading definition file %s from s3://%s   -> %s" %
+                  (filename, os.path.join(bucket, prefix),local_path)
                   )
             s3.Bucket(bucket).download_file(s3_path, local_path)
+            print(f"Done : { local_path }/{ filename }")
 
 
 def upload_defs_to_s3(bucket, prefix, local_path):
@@ -143,8 +145,10 @@ def scan_file(path):
         stdout=PIPE,
         env=av_env
     )
-    output = av_proc.communicate()[0]
-    print("clamscan output:\n%s" % output)
+    print"Processing scan results ...")
+    out = av_proc.communicate()[0]
+    print("clamscan stdout+stderr:\n%s" % str(out))
+    print("clamscan result: %d" % av_proc.returncode )
     if av_proc.returncode == 0:
         return AV_STATUS_CLEAN
     elif av_proc.returncode == 1:
@@ -153,3 +157,4 @@ def scan_file(path):
         msg = "Unexpected exit code from clamscan: %s.\n" % av_proc.returncode
         print(msg)
         raise Exception(msg)
+
