@@ -1,4 +1,4 @@
-FROM amazonlinux:2
+FROM public.ecr.aws/lambda/python:3.7
 
 # Set up working directories
 RUN mkdir -p /opt/app
