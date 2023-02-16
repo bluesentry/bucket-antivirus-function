@@ -13,13 +13,13 @@ COPY requirements.txt /opt/app/requirements.txt
 # Install packages
 RUN yum update -y && \
     amazon-linux-extras install epel -y && \
-    yum install -y cpio yum-utils tar.x86_64 gzip zip python3-pip shadow-utils.x86_64 && \
+    yum install -y cpio yum-utils tar gzip zip python3-pip shadow-utils && \
     pip3 install -r requirements.txt && \
     rm -rf /root/.cache/pip
 
 # Download libraries we need to run in lambda
 WORKDIR /tmp
-RUN yumdownloader -x \*i686 --archlist=x86_64 \
+RUN yumdownloader -x \*i686 --archlist=x86_64,aarch64 \
         clamav clamav-lib clamav-update json-c \
         pcre2 libtool-ltdl libxml2 bzip2-libs \
         xz-libs libprelude gnutls nettle
