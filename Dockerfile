@@ -3,7 +3,8 @@ FROM amazonlinux:2
 # Set up working directories
 RUN mkdir -p /opt/app
 RUN mkdir -p /opt/app/build
-RUN mkdir -p /opt/app/bin/
+RUN mkdir -p /opt/app/bin
+RUN mkdir -p /opt/app/python_deps
 
 # Copy in the lambda source
 WORKDIR /opt/app
@@ -16,7 +17,7 @@ RUN amazon-linux-extras install epel -y
 RUN yum install -y cpio yum-utils tar.x86_64 gzip zip python3-pip
 
 # This had --no-cache-dir, tracing through multiple tickets led to a problem in wheel
-RUN pip3 install -r requirements.txt \
+RUN pip3 install --requirement requirements.txt --target /opt/app/python_deps \
     && cp /usr/local/bin/fangfrisch /opt/app/bin
 RUN rm -rf /root/.cache/pip
 
@@ -86,9 +87,7 @@ RUN ldconfig
 # Create the zip file
 RUN cd /opt/app \
     && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin aws-cli \
-    && cd /usr/local/lib/python3.7/site-packages \
-    && zip -r9 /opt/app/build/lambda.zip * \
-    && cd /usr/local/lib64/python3.7/site-packages/ \
+    && cd /opt/app/python_deps \
     && zip -r9 /opt/app/build/lambda.zip * \
     && cd /var/task \
     && zip -r9 /opt/app/build/lambda.zip aws-cli bin
