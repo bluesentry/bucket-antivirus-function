@@ -14,13 +14,17 @@
 # limitations under the License.
 
 import os
+import subprocess
 
 import boto3
 
 import clamav
 from common import AV_DEFINITION_PATH
+from common import AV_DEFINITION_EXTRA_PATH
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
+from common import AV_DEFINITION_S3_EXTRA_PREFIX
+from common import AV_USE_FANGFRISCH
 from common import CLAMAVLIB_PATH
 from common import S3_ENDPOINT
 from common import get_timestamp
@@ -41,6 +45,18 @@ def lambda_handler(event, context):
         print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % (local_path))
+
+    if AV_USE_FANGFRISCH:
+        bucket_extra_defs_path = os.path.join("s3://", AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_EXTRA_PREFIX)
+        sync_command = f"aws s3 sync {bucket_extra_defs_path} {AV_DEFINITION_EXTRA_PATH}"
+        subprocess.run(sync_command, shell=True)
+
+        fangfrisch_base_command = "fangfrisch --conf fangfrisch.conf"
+        subprocess.run(f"{fangfrisch_base_command} initdb", shell=True)
+        subprocess.run(f"{fangfrisch_base_command} refresh", shell=True)
+
+        sync_after_command = f"aws s3 sync {AV_DEFINITION_EXTRA_PATH} {bucket_extra_defs_path}"
+        subprocess.run(sync_after_command, shell=True)
 
     clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
     # If main.cvd gets updated (very rare), we will need to force freshclam
