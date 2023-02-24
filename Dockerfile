@@ -80,6 +80,8 @@ RUN ldconfig
 # Create the zip file
 RUN cd /opt/app \
     && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin \
+    && cd /usr/local/lib/python3.7/site-packages \
+    && zip -r9 /opt/app/build/lambda.zip * \
     && cd /opt/app/python_deps \
     && zip -r9 /opt/app/build/lambda.zip *
 
