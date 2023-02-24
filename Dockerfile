@@ -17,8 +17,7 @@ RUN amazon-linux-extras install epel -y
 RUN yum install -y cpio yum-utils tar.x86_64 gzip zip python3-pip
 
 # This had --no-cache-dir, tracing through multiple tickets led to a problem in wheel
-RUN pip3 install --requirement requirements.txt --target /opt/app/python_deps \
-    && cp /usr/local/bin/fangfrisch /opt/app/bin
+RUN pip3 install --requirement requirements.txt --target /opt/app/python_deps
 RUN rm -rf /root/.cache/pip
 
 # Download libraries we need to run in lambda
@@ -86,7 +85,7 @@ RUN ldconfig
 
 # Create the zip file
 RUN cd /opt/app \
-    && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin aws-cli \
+    && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin \
     && cd /opt/app/python_deps \
     && zip -r9 /opt/app/build/lambda.zip * \
     && cd /var/task \
