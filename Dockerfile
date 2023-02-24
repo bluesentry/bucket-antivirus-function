@@ -78,7 +78,8 @@ RUN ldconfig
 
 # Create the zip file
 WORKDIR /opt/app
-RUN zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py bin
+RUN cp /usr/local/bin/fangfrisch bin \
+    && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin
 
 WORKDIR /usr/local/lib/python3.7/site-packages
 RUN zip -r9 /opt/app/build/lambda.zip *

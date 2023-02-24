@@ -51,12 +51,14 @@ def lambda_handler(event, context):
         sync_command = f"aws s3 sync {bucket_extra_defs_path} {AV_DEFINITION_EXTRA_PATH}"
         subprocess.run(sync_command, shell=True)
 
-        fangfrisch_base_command = "fangfrisch --conf fangfrisch.conf"
+        fangfrisch_base_command = "bin/fangfrisch --conf fangfrisch.conf"
         subprocess.run(f"{fangfrisch_base_command} initdb", shell=True)
         subprocess.run(f"{fangfrisch_base_command} refresh", shell=True)
 
         sync_after_command = f"aws s3 sync {AV_DEFINITION_EXTRA_PATH} {bucket_extra_defs_path}"
         subprocess.run(sync_after_command, shell=True)
+    else:
+        print("Skip downloading extra virus definitions with Fangfrisch")
 
     clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
     # If main.cvd gets updated (very rare), we will need to force freshclam
