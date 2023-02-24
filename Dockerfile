@@ -87,6 +87,8 @@ RUN ldconfig
 RUN cd /opt/app \
     && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin aws-cli \
     && cd /usr/local/lib/python3.7/site-packages \
-    && zip -r9 /opt/app/build/lambda.zip *
+    && zip -r9 /opt/app/build/lambda.zip * \
+    && cd /var/task \
+    && zip -r9 /opt/app/build/lambda.zip aws-cli bin
 
 WORKDIR /opt/app
