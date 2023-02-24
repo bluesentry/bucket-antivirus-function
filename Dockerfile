@@ -74,12 +74,6 @@ RUN groupadd clamav
 RUN useradd -g clamav -s /bin/false -c "Clam Antivirus" clamav
 RUN useradd -g clamav -s /bin/false -c "Clam Antivirus" clamupdate
 
-# install AWSCLI
-RUN yum install -y unzip \
-    && curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
-    && unzip awscliv2.zip \
-    && ./aws/install --bin-dir /var/task/bin --install-dir /var/task/aws-cli
-
 ENV LD_LIBRARY_PATH=/opt/app/bin
 RUN ldconfig
 
@@ -87,8 +81,6 @@ RUN ldconfig
 RUN cd /opt/app \
     && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin \
     && cd /opt/app/python_deps \
-    && zip -r9 /opt/app/build/lambda.zip * \
-    && cd /var/task \
-    && zip -r9 /opt/app/build/lambda.zip aws-cli bin
+    && zip -r9 /opt/app/build/lambda.zip *
 
 WORKDIR /opt/app
