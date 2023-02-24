@@ -52,8 +52,10 @@ def lambda_handler(event, context):
         subprocess.run(sync_command, shell=True)
 
         fangfrisch_base_command = "bin/fangfrisch --conf fangfrisch.conf"
-        subprocess.run(f"{fangfrisch_base_command} initdb", shell=True)
-        subprocess.run(f"{fangfrisch_base_command} refresh", shell=True)
+        fangfrisch_env = os.environ.copy()
+        fangfrisch_env["PYTHONPATH"] = fangfrisch_env["LAMBDA_TASK_ROOT"]
+        subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=fangfrisch_env)
+        subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=fangfrisch_env)
 
         sync_after_command = f"aws s3 sync {AV_DEFINITION_EXTRA_PATH} {bucket_extra_defs_path}"
         subprocess.run(sync_after_command, shell=True)
