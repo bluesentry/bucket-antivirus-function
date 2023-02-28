@@ -47,20 +47,19 @@ def lambda_handler(event, context):
         print("Downloading definition file %s complete!" % (local_path))
 
     if AV_USE_FANGFRISCH:
-        awscli_env = os.environ.copy()
-        awscli_env["PYTHONPATH"] = awscli_env["LAMBDA_TASK_ROOT"]
+        subprocess.run("/usr/bin/python3 --version", shell=True)
+        env_pythonpath = os.environ.copy()
+        env_pythonpath["PYTHONPATH"] = os.path.join(env_pythonpath["LAMBDA_TASK_ROOT"], "cli")
         bucket_extra_defs_path = os.path.join("s3://", AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_EXTRA_PREFIX)
-        sync_command = f"bin/aws s3 sync {bucket_extra_defs_path} {AV_DEFINITION_EXTRA_PATH}"
-        subprocess.run(sync_command, shell=True, env=awscli_env)
+        sync_command = f"cli/bin/aws s3 sync {bucket_extra_defs_path} {AV_DEFINITION_EXTRA_PATH}"
+        subprocess.run(sync_command, shell=True, env=env_pythonpath)
 
-        fangfrisch_env = os.environ.copy()
-        fangfrisch_env["PYTHONPATH"] = os.path.join(fangfrisch_env["LAMBDA_TASK_ROOT"], "fangfrisch")
-        fangfrisch_base_command = "fangfrisch/bin/fangfrisch --conf fangfrisch.conf"
-        subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=fangfrisch_env)
-        subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=fangfrisch_env)
+        fangfrisch_base_command = "cli/bin/fangfrisch --conf fangfrisch.conf"
+        subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=env_pythonpath)
+        subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=env_pythonpath)
 
-        sync_after_command = f"bin/aws s3 sync {AV_DEFINITION_EXTRA_PATH} {bucket_extra_defs_path}"
-        subprocess.run(sync_after_command, shell=True, env=awscli_env)
+        sync_after_command = f"cli/bin/aws s3 sync {AV_DEFINITION_EXTRA_PATH} {bucket_extra_defs_path}"
+        subprocess.run(sync_after_command, shell=True, env=env_pythonpath)
     else:
         print("Skip downloading extra virus definitions with Fangfrisch")
 

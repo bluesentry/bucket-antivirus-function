@@ -6,7 +6,7 @@ RUN mkdir -p \
     /opt/app/build \
     /opt/app/bin \
     /opt/app/python_deps \
-    /opt/app/fangfrisch
+    /opt/app/cli
 
 # Copy in the lambda source
 WORKDIR /opt/app
@@ -20,11 +20,14 @@ RUN yum update -y \
 
 # This had --no-cache-dir, tracing through multiple tickets led to a problem in wheel
 RUN pip3 install --requirement requirements.txt --target /opt/app/python_deps \
-  && rm -rf /root/.cache/pip
+    && rm -rf /root/.cache/pip
 
-COPY requirements-fangfrisch.txt /opt/app/
-RUN pip3 install --requirement requirements-fangfrisch.txt --target /opt/app/fangfrisch \
-  && rm -rf /root/.cache/pip
+COPY requirements-cli.txt /opt/app/
+RUN pip3 install --requirement requirements-cli.txt --target /opt/app/cli \
+    && rm -rf /root/.cache/pip \
+    && sed -i 's~/usr/bin/python3~/var/lang/bin/python3~g' \
+        /opt/app/cli/bin/fangfrisch \
+        /opt/app/cli/bin/aws
 
 # Download libraries we need to run in lambda
 WORKDIR /tmp
@@ -73,7 +76,7 @@ RUN ldconfig
 
 # Create the zip file
 RUN cd /opt/app \
-    && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin fangfrisch \
+    && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin cli \
     && cd /opt/app/python_deps \
     && zip -r9 /opt/app/build/lambda.zip *
 
