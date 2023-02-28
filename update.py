@@ -48,7 +48,7 @@ def lambda_handler(event, context):
 
     if AV_USE_FANGFRISCH:
         bucket_extra_defs_path = os.path.join("s3://", AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_EXTRA_PREFIX)
-        sync_command = f"aws s3 sync {bucket_extra_defs_path} {AV_DEFINITION_EXTRA_PATH}"
+        sync_command = f"bin/aws s3 sync {bucket_extra_defs_path} {AV_DEFINITION_EXTRA_PATH}"
         subprocess.run(sync_command, shell=True)
 
         fangfrisch_base_command = "bin/fangfrisch --conf fangfrisch.conf"
@@ -57,7 +57,7 @@ def lambda_handler(event, context):
         subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=fangfrisch_env)
         subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=fangfrisch_env)
 
-        sync_after_command = f"aws s3 sync {AV_DEFINITION_EXTRA_PATH} {bucket_extra_defs_path}"
+        sync_after_command = f"bin/aws s3 sync {AV_DEFINITION_EXTRA_PATH} {bucket_extra_defs_path}"
         subprocess.run(sync_after_command, shell=True)
     else:
         print("Skip downloading extra virus definitions with Fangfrisch")
