@@ -44,12 +44,14 @@ def lambda_handler(event, context):
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % (local_path))
 
-    if AV_EXTRA_VIRUS_DEFINITIONS:
+    if AV_EXTRA_VIRUS_DEFINITIONS is True:
         env_pythonpath = os.environ.copy()
         env_pythonpath["PYTHONPATH"] = os.path.join(env_pythonpath["LAMBDA_TASK_ROOT"], "cli")
 
-        fangfrisch_base_command = ("cli/bin/fangfrisch "
-                                   f"--conf {os.path.join(os.environ['LAMBDA_TASK_ROOT'], 'fangfrisch.conf')}")
+        fangfrisch_conf_filepath = os.path.join(os.environ['LAMBDA_TASK_ROOT'], 'fangfrisch.conf')
+        fangfrisch_base_command = f"cli/bin/fangfrisch --conf {fangfrisch_conf_filepath}"
+        subprocess.run(f"sed -i 's~AV_DEFINITION_PATH~{AV_DEFINITION_PATH}~g' {fangfrisch_conf_filepath}",
+                       shell=True, check=True)
         subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=env_pythonpath, check=True)
         subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=env_pythonpath, check=True)
 
