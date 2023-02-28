@@ -75,6 +75,7 @@ ENV LD_LIBRARY_PATH=/opt/app/bin
 RUN ldconfig
 
 # Create the zip file
+COPY fangfrisch.conf /opt/app/fangfrisch.conf
 RUN cd /opt/app \
     && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin cli \
     && cd /opt/app/python_deps \
