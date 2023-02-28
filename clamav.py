@@ -54,7 +54,7 @@ def update_defs_from_s3(s3_client, bucket, prefix):
         s3_best_time = None
         for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
             filename = file_prefix + "." + file_suffix
-            s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
+            s3_path = os.path.join(prefix, filename)
             local_path = os.path.join(AV_DEFINITION_PATH, filename)
             s3_md5 = md5_from_s3_tags(s3_client, bucket, s3_path)
             s3_time = time_from_s3(s3_client, bucket, s3_path)

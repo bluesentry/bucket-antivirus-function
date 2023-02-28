@@ -24,6 +24,7 @@ import clamav
 import metrics
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
+from common import AV_DEFINITION_S3_EXTRA_PREFIX
 from common import AV_DELETE_INFECTED_FILES
 from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
 from common import AV_SCAN_START_METADATA
@@ -225,6 +226,9 @@ def lambda_handler(event, context):
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
     )
+    to_download.update(clamav.update_defs_from_s3(
+        s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_EXTRA_PREFIX
+    ))
 
     for download in to_download.values():
         s3_path = download["s3_path"]

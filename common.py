@@ -64,8 +64,47 @@ AV_PROCESS_ORIGINAL_VERSION_ONLY = str_to_bool(os.getenv(
 ))
 AV_DELETE_INFECTED_FILES = str_to_bool(os.getenv("AV_DELETE_INFECTED_FILES", "False"))
 
-AV_DEFINITION_FILE_PREFIXES = ["main", "daily", "bytecode"]
-AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
+AV_DEFINITION_FILE_PREFIXES = [
+    "main",
+    "daily",
+    "bytecode",
+    'badmacro',
+    'blurl',
+    'bofhland_cracked_URL',
+    'bofhland_malware_URL',
+    'bofhland_malware_attach',
+    'bofhland_phishing_URL',
+    'foxhole_filename',
+    'foxhole_generic',
+    'foxhole_js',
+    'hackingteam',
+    'junk',
+    'jurlbl',
+    'jurlbla',
+    'lott',
+    'malware.expert',
+    'malwarehash',
+    'phish',
+    'phishtank',
+    'porcupine',
+    'rogue',
+    'scam',
+    'shelter',
+    'spamattach',
+    'spamimg',
+    'spear',
+    'spearl',
+    'urlhaus',
+    'winnow.attachments',
+    'winnow_bad_cw',
+    'winnow_extended_malware',
+    'winnow_extended_malware_links',
+    'winnow_malware',
+    'winnow_malware_links',
+    'winnow_phish_complete_url',
+    'winnow_spam_complete'
+]
+AV_DEFINITION_FILE_SUFFIXES = ['cdb', 'fp', 'hdb', 'hsb', 'ldb', 'ndb', "cld", "cvd"]
 SNS_ENDPOINT = os.getenv("SNS_ENDPOINT", None)
 S3_ENDPOINT = os.getenv("S3_ENDPOINT", None)
 LAMBDA_ENDPOINT = os.getenv("LAMBDA_ENDPOINT", None)
