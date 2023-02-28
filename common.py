@@ -71,34 +71,43 @@ AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 
 if AV_EXTRA_VIRUS_DEFINITIONS is True:
     AV_DEFINITION_FILE_PREFIXES = list(set(AV_DEFINITION_FILE_PREFIXES + [
+        'MiscreantPunch099-Low',
         'badmacro',
         'blurl',
         'bofhland_cracked_URL',
         'bofhland_malware_URL',
         'bofhland_malware_attach',
         'bofhland_phishing_URL',
+        'ditekshen',
+        'exexor99',
         'foxhole_filename',
         'foxhole_generic',
         'foxhole_js',
-        'db',
         'hackingteam',
+        'interserver256',
+        'interservertopline',
         'junk',
         'jurlbl',
         'jurlbla',
         'lott',
-        'malware.expert',
         'malwarehash',
+        'miscreantpunch',
         'phish',
         'phishtank',
         'porcupine',
+        'rfxn',
         'rogue',
         'scam',
+        'shell',
         'shelter',
         'spamattach',
         'spamimg',
         'spear',
         'spearl',
+        'twinclams',
+        'twinwave',
         'urlhaus',
+        'whitelist',
         'winnow.attachments',
         'winnow_bad_cw',
         'winnow_extended_malware',
@@ -109,7 +118,7 @@ if AV_EXTRA_VIRUS_DEFINITIONS is True:
         'winnow_spam_complete'
     ]))
     AV_DEFINITION_FILE_SUFFIXES = list(set(
-        AV_DEFINITION_FILE_SUFFIXES + ['cdb', 'fp', 'hdb', 'hsb', 'ldb', 'ndb', 'sqlite']
+        AV_DEFINITION_FILE_SUFFIXES + ['cdb', 'db', 'fp', 'hdb', 'hsb', 'ign2', 'ldb', 'ndb', 'yara']
     ))
 
 SNS_ENDPOINT = os.getenv("SNS_ENDPOINT", None)

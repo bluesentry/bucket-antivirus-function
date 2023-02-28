@@ -64,7 +64,13 @@ RUN cp /tmp/usr/bin/clamscan /tmp/usr/bin/freshclam /tmp/usr/lib64/* /usr/lib64/
 RUN echo "DatabaseMirror database.clamav.net" > /opt/app/bin/freshclam.conf \
     && echo "CompressLocalDatabase yes" >> /opt/app/bin/freshclam.conf \
     && echo "ScriptedUpdates no" >> /opt/app/bin/freshclam.conf \
-    && echo "DatabaseDirectory /var/lib/clamav" >> /opt/app/bin/freshclam.conf
+    && echo "DatabaseDirectory /var/lib/clamav" >> /opt/app/bin/freshclam.conf \
+    && echo "DetectPUA yes" >> /opt/app/bin/freshclam.conf \
+    && echo "ExcludePUA PUA.Win.Packer" >> /opt/app/bin/freshclam.conf \
+    && echo "ExcludePUA PUA.Win.Trojan.Packed" >> /opt/app/bin/freshclam.conf \
+    && echo "ExcludePUA PUA.Win.Trojan.Molebox" >> /opt/app/bin/freshclam.conf \
+    && echo "ExcludePUA PUA.Win.Packer.Upx" >> /opt/app/bin/freshclam.conf \
+    && echo "ExcludePUA PUA.Doc.Packed" >> /opt/app/bin/freshclam.conf
 
 RUN groupadd clamav \
     && useradd -g clamav -s /bin/false -c "Clam Antivirus" clamav \
