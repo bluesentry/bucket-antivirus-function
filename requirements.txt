@@ -7,5 +7,4 @@ requests==2.21
 simplejson==3.16
 urllib3==1.26.7
 pytz==2019.3
-fangfrisch==1.6.1
 awscli==1.27.78
