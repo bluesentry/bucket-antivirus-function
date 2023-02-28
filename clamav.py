@@ -143,7 +143,7 @@ def md5_from_file(filename):
 
 def md5_from_s3_tags(s3_client, bucket, key):
     try:
-        tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["ETag"]
+        tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["TagSet"]
     except botocore.exceptions.ClientError as e:
         expected_errors = {
             "404",  # Object does not exist
