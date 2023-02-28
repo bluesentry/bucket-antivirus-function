@@ -49,9 +49,11 @@ def lambda_handler(event, context):
         env_pythonpath["PYTHONPATH"] = os.path.join(env_pythonpath["LAMBDA_TASK_ROOT"], "cli")
 
         fangfrisch_conf_filepath = os.path.join(os.environ['LAMBDA_TASK_ROOT'], 'fangfrisch.conf')
-        fangfrisch_base_command = f"cli/bin/fangfrisch --conf {fangfrisch_conf_filepath}"
-        subprocess.run(f"sed -i 's~AV_DEFINITION_PATH~{AV_DEFINITION_PATH}~g' {fangfrisch_conf_filepath}",
-                       shell=True, check=True)
+        fangfrisch_base_command = f"cli/bin/fangfrisch --conf /tmp/fangfrisch.conf"
+        subprocess.run(f"cp {fangfrisch_conf_filepath} /tmp/fangfrisch.conf &&"
+                       f"sed -i 's~AV_DEFINITION_PATH~{AV_DEFINITION_PATH}~g' /tmp/fangfrisch.conf",
+                       shell=True,
+                       check=True)
         subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=env_pythonpath, check=True)
         subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=env_pythonpath, check=True)
 
