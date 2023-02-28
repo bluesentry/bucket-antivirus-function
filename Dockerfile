@@ -26,8 +26,7 @@ COPY requirements-cli.txt /opt/app/
 RUN pip3 install --requirement requirements-cli.txt --target /opt/app/cli \
     && rm -rf /root/.cache/pip \
     && sed -i 's~/usr/bin/python3~/var/lang/bin/python3~g' \
-        /opt/app/cli/bin/fangfrisch \
-        /opt/app/cli/bin/aws
+        /opt/app/cli/bin/fangfrisch
 
 # Download libraries we need to run in lambda
 WORKDIR /tmp

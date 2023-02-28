@@ -20,11 +20,9 @@ import boto3
 
 import clamav
 from common import AV_DEFINITION_PATH
-from common import AV_DEFINITION_EXTRA_PATH
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
-from common import AV_DEFINITION_S3_EXTRA_PREFIX
-from common import AV_USE_FANGFRISCH
+from common import AV_EXTRA_VIRUS_DEFINITIONS
 from common import CLAMAVLIB_PATH
 from common import S3_ENDPOINT
 from common import get_timestamp
@@ -46,21 +44,15 @@ def lambda_handler(event, context):
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % (local_path))
 
-    if AV_USE_FANGFRISCH:
+    if AV_EXTRA_VIRUS_DEFINITIONS:
         env_pythonpath = os.environ.copy()
         env_pythonpath["PYTHONPATH"] = os.path.join(env_pythonpath["LAMBDA_TASK_ROOT"], "cli")
-        bucket_extra_defs_path = os.path.join("s3://", AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_EXTRA_PREFIX)
-        aws_s3_sync_command = "cli/bin/aws s3 sync --no-progress"
-        sync_command = f"{aws_s3_sync_command} {bucket_extra_defs_path} {AV_DEFINITION_EXTRA_PATH}"
-        subprocess.run(sync_command, shell=True, env=env_pythonpath, check=True)
 
         fangfrisch_base_command = ("cli/bin/fangfrisch "
                                    f"--conf {os.path.join(os.environ['LAMBDA_TASK_ROOT'], 'fangfrisch.conf')}")
         subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=env_pythonpath, check=True)
         subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=env_pythonpath, check=True)
 
-        sync_after_command = f"{aws_s3_sync_command} {AV_DEFINITION_EXTRA_PATH} {bucket_extra_defs_path}"
-        subprocess.run(sync_after_command, shell=True, env=env_pythonpath, check=True)
     else:
         print("Skip downloading extra virus definitions with Fangfrisch")
 

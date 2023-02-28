@@ -24,7 +24,6 @@ import clamav
 import metrics
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
-from common import AV_DEFINITION_S3_EXTRA_PREFIX
 from common import AV_DELETE_INFECTED_FILES
 from common import AV_PROCESS_ORIGINAL_VERSION_ONLY
 from common import AV_SCAN_START_METADATA
@@ -37,14 +36,13 @@ from common import AV_STATUS_SNS_ARN
 from common import AV_STATUS_SNS_PUBLISH_CLEAN
 from common import AV_STATUS_SNS_PUBLISH_INFECTED
 from common import AV_TIMESTAMP_METADATA
-from common import SNS_ENDPOINT
 from common import S3_ENDPOINT
+from common import SNS_ENDPOINT
 from common import create_dir
 from common import get_timestamp
 
 
 def event_object(event, event_source="s3"):
-
     # SNS events are slightly different
     if event_source.upper() == "SNS":
         event = json.loads(event["Records"][0]["Sns"]["Message"])
@@ -226,9 +224,6 @@ def lambda_handler(event, context):
     to_download = clamav.update_defs_from_s3(
         s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX
     )
-    to_download.update(clamav.update_defs_from_s3(
-        s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_EXTRA_PREFIX
-    ))
 
     for download in to_download.values():
         s3_path = download["s3_path"]

@@ -85,9 +85,7 @@ the table below for reference.
 |----------------------------------|-------------------------------------------------------------------------------------------------|------------------------|----------|
 | AV_DEFINITION_S3_BUCKET          | Bucket containing antivirus definition files                                                    |                        | Yes      |
 | AV_DEFINITION_S3_PREFIX          | Prefix for antivirus definition files                                                           | clamav_defs            | No       |
-| AV_DEFINITION_S3_EXTRA_PREFIX    | Prefix for extra antivirus definition files (downloaded with fangfrisch)                        | clamav_extra_defs      | No       |
 | AV_DEFINITION_PATH               | Path containing virus definition files at runtime                                               | /tmp/clamav_defs       | No       |
-| AV_DEFINITION_EXTRA_PATH         | Path containing extra virus definition files at runtime                                         | /tmp/clamav_extra_defs | No       |
 | AV_SCAN_START_SNS_ARN            | SNS topic ARN to publish notification about start of scan                                       |                        | No       |
 | AV_SCAN_START_METADATA           | The tag/metadata indicating the start of the scan                                               | av-scan-start          | No       |
 | AV_SIGNATURE_METADATA            | The tag/metadata name representing file's AV type                                               | av-signature           | No       |
@@ -98,7 +96,7 @@ the table below for reference.
 | AV_STATUS_SNS_PUBLISH_CLEAN      | Publish AV_STATUS_CLEAN results to AV_STATUS_SNS_ARN                                            | True                   | No       |
 | AV_STATUS_SNS_PUBLISH_INFECTED   | Publish AV_STATUS_INFECTED results to AV_STATUS_SNS_ARN                                         | True                   | No       |
 | AV_TIMESTAMP_METADATA            | The tag/metadata name representing file's scan time                                             | av-timestamp           | No       |
-| AV_USE_FANGFRISCH                | Uses fangfrisch for extra download definitions                                                  | False                  | No       |
+| AV_EXTRA_VIRUS_DEFINITIONS       | Uses fangfrisch for extra antivirus definitions                                                 | False                  | No       |
 | CLAMAVLIB_PATH                   | Path to ClamAV library files                                                                    | ./bin                  | No       |
 | CLAMSCAN_PATH                    | Path to ClamAV clamscan binary                                                                  | ./bin/clamscan         | No       |
 | FRESHCLAM_PATH                   | Path to ClamAV freshclam binary                                                                 | ./bin/freshclam        | No       |

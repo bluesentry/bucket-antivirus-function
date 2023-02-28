@@ -24,10 +24,9 @@ import boto3
 import botocore
 from pytz import utc
 
-from common import AV_DEFINITION_S3_PREFIX, S3_ENDPOINT
-from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_FILE_PREFIXES
 from common import AV_DEFINITION_FILE_SUFFIXES
+from common import AV_DEFINITION_PATH
 from common import AV_SIGNATURE_OK
 from common import AV_SIGNATURE_UNKNOWN
 from common import AV_STATUS_CLEAN
@@ -35,8 +34,8 @@ from common import AV_STATUS_INFECTED
 from common import CLAMAVLIB_PATH
 from common import CLAMSCAN_PATH
 from common import FRESHCLAM_PATH
+from common import S3_ENDPOINT
 from common import create_dir
-
 
 RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"
 
@@ -144,7 +143,7 @@ def md5_from_file(filename):
 
 def md5_from_s3_tags(s3_client, bucket, key):
     try:
-        tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["TagSet"]
+        tags = s3_client.get_object_tagging(Bucket=bucket, Key=key)["ETag"]
     except botocore.exceptions.ClientError as e:
         expected_errors = {
             "404",  # Object does not exist
