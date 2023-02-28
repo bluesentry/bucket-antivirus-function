@@ -228,7 +228,8 @@ def lambda_handler(event, context):
     for download in to_download.values():
         s3_path = download["s3_path"]
         local_path = download["local_path"]
-        print("Downloading definition file %s from s3://%s" % (local_path, s3_path))
+        s3_url = os.path.join("s3://", AV_DEFINITION_S3_BUCKET, s3_path)
+        print("Downloading definition file %s from %s" % (local_path, s3_url))
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % local_path)
     scan_result, scan_signature = clamav.scan_file(file_path)
