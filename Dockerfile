@@ -71,12 +71,12 @@ RUN echo "DatabaseMirror database.clamav.net" > /opt/app/bin/freshclam.conf \
     && echo "CompressLocalDatabase yes" >> /opt/app/bin/freshclam.conf \
     && echo "ScriptedUpdates no" >> /opt/app/bin/freshclam.conf \
     && echo "DatabaseDirectory /var/lib/clamav" >> /opt/app/bin/freshclam.conf \
-    && echo "DetectPUA yes" >> /opt/app/bin/freshclam.conf \
     && echo "DatabaseDirectory /tmp/clamav_defs" > /opt/app/bin/scan.conf \
     && echo "PidFile /tmp/clamd.pid" >> /opt/app/bin/scan.conf \
     && echo "LogFile /tmp/clamd.log" >> /opt/app/bin/scan.conf \
     && echo "LocalSocket /tmp/clamd.sock" >> /opt/app/bin/scan.conf \
     && echo "FixStaleSocket yes" >> /opt/app/bin/scan.conf \
+    && echo "DetectPUA yes" >> /opt/app/bin/scan.conf \
     && echo "ExcludePUA PUA.Win.Packer" >> /opt/app/bin/scan.conf \
     && echo "ExcludePUA PUA.Win.Trojan.Packed" >> /opt/app/bin/scan.conf \
     && echo "ExcludePUA PUA.Win.Trojan.Molebox" >> /opt/app/bin/scan.conf \
