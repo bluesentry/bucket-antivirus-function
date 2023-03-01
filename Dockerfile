@@ -70,8 +70,9 @@ RUN yumdownloader -x \*i686 --archlist=x86_64 \
 RUN echo "DatabaseMirror database.clamav.net" > /opt/app/bin/freshclam.conf \
     && echo "CompressLocalDatabase yes" >> /opt/app/bin/freshclam.conf \
     && echo "ScriptedUpdates no" >> /opt/app/bin/freshclam.conf \
-    && echo "DatabaseDirectory /var/lib/clamav" >> /opt/app/bin/freshclam.conf \
-    && echo "DatabaseDirectory /tmp/clamav_defs" > /opt/app/bin/scan.conf \
+    && echo "DatabaseDirectory /var/lib/clamav" >> /opt/app/bin/freshclam.conf
+# clamd conf with hardened configs to avoid false positives
+RUN echo "DatabaseDirectory /tmp/clamav_defs" > /opt/app/bin/scan.conf \
     && echo "PidFile /tmp/clamd.pid" >> /opt/app/bin/scan.conf \
     && echo "LogFile /tmp/clamd.log" >> /opt/app/bin/scan.conf \
     && echo "LocalSocket /tmp/clamd.sock" >> /opt/app/bin/scan.conf \
