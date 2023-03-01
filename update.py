@@ -44,6 +44,8 @@ def lambda_handler(event, context):
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % (local_path))
 
+    clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
+
     if AV_EXTRA_VIRUS_DEFINITIONS is True:
         env_pythonpath = os.environ.copy()
         env_pythonpath["PYTHONPATH"] = os.path.join(env_pythonpath["LAMBDA_TASK_ROOT"], "cli")
@@ -54,13 +56,13 @@ def lambda_handler(event, context):
                        f"sed -i 's~AV_DEFINITION_PATH~{AV_DEFINITION_PATH}~g' /tmp/fangfrisch.conf",
                        shell=True,
                        check=True)
+        print("running fangfrisch refresh...")
         subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=env_pythonpath)
         subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=env_pythonpath, check=True)
 
     else:
         print("Skip downloading extra virus definitions with Fangfrisch")
 
-    clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
     # If main.cvd gets updated (very rare), we will need to force freshclam
     # to download the compressed version to keep file sizes down.
     # The existence of main.cud is the trigger to know this has happened.
