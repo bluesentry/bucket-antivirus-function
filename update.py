@@ -44,7 +44,8 @@ def lambda_handler(event, context):
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % (local_path))
 
-    clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
+    if clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH) != 0:
+        return 1
 
     if AV_EXTRA_VIRUS_DEFINITIONS is True:
         env_pythonpath = os.environ.copy()
