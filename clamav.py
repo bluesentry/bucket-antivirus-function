@@ -14,34 +14,34 @@
 # limitations under the License.
 
 import datetime
+import errno
 import hashlib
+import json
 import os
 import pwd
 import re
-import subprocess
 import socket
-import errno
+import subprocess
 
 import boto3
 import botocore
 from pytz import utc
 
-from common import AV_DEFINITION_S3_BUCKET
-from common import AV_DEFINITION_S3_PREFIX
-from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_FILE_PREFIXES
 from common import AV_DEFINITION_FILE_SUFFIXES
+from common import AV_DEFINITION_PATH
+from common import AV_DEFINITION_S3_BUCKET
+from common import AV_DEFINITION_S3_PREFIX
 from common import AV_SIGNATURE_OK
 from common import AV_SIGNATURE_UNKNOWN
 from common import AV_STATUS_CLEAN
 from common import AV_STATUS_INFECTED
 from common import CLAMAVLIB_PATH
 from common import CLAMDSCAN_PATH
-from common import FRESHCLAM_PATH
 from common import CLAMDSCAN_TIMEOUT
-from common import create_dir
 from common import CLAMD_SOCKET
-
+from common import FRESHCLAM_PATH
+from common import create_dir
 
 RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"
 
@@ -82,6 +82,7 @@ def update_defs_from_s3(s3_client, bucket, prefix):
 
 
 def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
+    non_existent_files = set()
     for file_prefix in AV_DEFINITION_FILE_PREFIXES:
         for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
             filename = file_prefix + "." + file_suffix
@@ -109,7 +110,9 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
                         % filename
                     )
             else:
-                print("File does not exist: %s" % filename)
+                non_existent_files.add(filename)
+    print("The following files do not exist for upload:")
+    print(json.dumps(list(non_existent_files)))
 
 
 def update_defs_from_freshclam(path, library_path=""):
@@ -232,6 +235,7 @@ def scan_file(path):
         print(msg)
         raise Exception(msg)
 
+
 def is_clamd_running():
     print("Checking if clamd is running on %s" % CLAMD_SOCKET)
 
@@ -251,6 +255,7 @@ def is_clamd_running():
 
     print("Clamd is not running on %s" % CLAMD_SOCKET)
     return False
+
 
 def start_clamd_daemon():
     s3 = boto3.resource("s3")
