@@ -55,8 +55,10 @@ AV_STATUS_SNS_PUBLISH_INFECTED = str_to_bool(os.getenv("AV_STATUS_SNS_PUBLISH_IN
 AV_TIMESTAMP_METADATA = os.getenv("AV_TIMESTAMP_METADATA", "av-timestamp")
 AV_EXTRA_VIRUS_DEFINITIONS = str_to_bool(os.getenv("AV_EXTRA_VIRUS_DEFINITIONS", "False"))
 CLAMAVLIB_PATH = os.getenv("CLAMAVLIB_PATH", "./bin")
-CLAMSCAN_PATH = os.getenv("CLAMSCAN_PATH", "./bin/clamscan")
+CLAMDSCAN_PATH = os.getenv("CLAMDSCAN_PATH", "./bin/clamdscan")
 FRESHCLAM_PATH = os.getenv("FRESHCLAM_PATH", "./bin/freshclam")
+CLAMDSCAN_TIMEOUT = os.getenv("CLAMDSCAN_TIMEOUT", 240)
+CLAMD_SOCKET = os.getenv("CLAMD_SOCKET", "/tmp/clamd.sock")
 AV_PROCESS_ORIGINAL_VERSION_ONLY = str_to_bool(os.getenv(
     "AV_PROCESS_ORIGINAL_VERSION_ONLY", "False"
 ))

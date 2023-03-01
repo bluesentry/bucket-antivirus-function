@@ -34,8 +34,12 @@ RUN yumdownloader -x \*i686 --archlist=x86_64 \
     clamav \
     clamav-lib \
     clamav-update \
+    clamav-scanner-systemd \
+    elfutils-libs \
     json-c \
+    lz4 \
     pcre2 \
+    systemd-libs \
     libtool-ltdl \
     libxml2 \
     bzip2-libs \
@@ -54,11 +58,21 @@ RUN rpm2cpio clamav-0*.rpm | cpio -vimd \
     && rpm2cpio xz-libs*.rpm | cpio -vimd \
     && rpm2cpio libprelude*.rpm | cpio -vimd \
     && rpm2cpio gnutls*.rpm | cpio -vimd \
-    && rpm2cpio nettle*.rpm | cpio -vimd
+    && rpm2cpio nettle*.rpm | cpio -vimd \
+    && rpm2cpio clamd-0*.rpm | cpio -idmv \
+    && rpm2cpio elfutils-libs*.rpm | cpio -idmv \
+    && rpm2cpio lz4*.rpm | cpio -idmv \
+    && rpm2cpio systemd-libs*.rpm | cpio -idmv
 
 
 # Copy over the binaries and libraries
-RUN cp /tmp/usr/bin/clamscan /tmp/usr/bin/freshclam /tmp/usr/lib64/* /usr/lib64/libpcre.so.1 /opt/app/bin/
+RUN cp -r \
+        /tmp/usr/bin/clamdscan \
+        /tmp/usr/sbin/clamd \
+        /tmp/usr/bin/freshclam \
+        /tmp/usr/lib64/* \
+        /usr/lib64/libpcre.so.1 \
+        /opt/app/bin/
 
 # Fix the freshclam.conf settings
 RUN echo "DatabaseMirror database.clamav.net" > /opt/app/bin/freshclam.conf \
@@ -66,11 +80,16 @@ RUN echo "DatabaseMirror database.clamav.net" > /opt/app/bin/freshclam.conf \
     && echo "ScriptedUpdates no" >> /opt/app/bin/freshclam.conf \
     && echo "DatabaseDirectory /var/lib/clamav" >> /opt/app/bin/freshclam.conf \
     && echo "DetectPUA yes" >> /opt/app/bin/freshclam.conf \
-    && echo "ExcludePUA PUA.Win.Packer" >> /opt/app/bin/freshclam.conf \
-    && echo "ExcludePUA PUA.Win.Trojan.Packed" >> /opt/app/bin/freshclam.conf \
-    && echo "ExcludePUA PUA.Win.Trojan.Molebox" >> /opt/app/bin/freshclam.conf \
-    && echo "ExcludePUA PUA.Win.Packer.Upx" >> /opt/app/bin/freshclam.conf \
-    && echo "ExcludePUA PUA.Doc.Packed" >> /opt/app/bin/freshclam.conf
+    && echo "DatabaseDirectory /tmp/clamav_defs" > /opt/app/bin/scan.conf \
+    && echo "PidFile /tmp/clamd.pid" >> /opt/app/bin/scan.conf \
+    && echo "LogFile /tmp/clamd.log" >> /opt/app/bin/scan.conf \
+    && echo "LocalSocket /tmp/clamd.sock" >> /opt/app/bin/scan.conf \
+    && echo "FixStaleSocket yes" >> /opt/app/bin/scan.conf \
+    && echo "ExcludePUA PUA.Win.Packer" >> /opt/app/bin/scan.conf \
+    && echo "ExcludePUA PUA.Win.Trojan.Packed" >> /opt/app/bin/scan.conf \
+    && echo "ExcludePUA PUA.Win.Trojan.Molebox" >> /opt/app/bin/scan.conf \
+    && echo "ExcludePUA PUA.Win.Packer.Upx" >> /opt/app/bin/scan.conf \
+    && echo "ExcludePUA PUA.Doc.Packed" >> /opt/app/bin/scan.conf
 
 RUN groupadd clamav \
     && useradd -g clamav -s /bin/false -c "Clam Antivirus" clamav \
