@@ -54,7 +54,7 @@ def lambda_handler(event, context):
                        f"sed -i 's~AV_DEFINITION_PATH~{AV_DEFINITION_PATH}~g' /tmp/fangfrisch.conf",
                        shell=True,
                        check=True)
-        subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=env_pythonpath, check=True)
+        subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=env_pythonpath)
         subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=env_pythonpath, check=True)
 
     else:

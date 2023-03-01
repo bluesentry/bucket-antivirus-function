@@ -117,10 +117,11 @@ if AV_EXTRA_VIRUS_DEFINITIONS is True:
         'winnow_malware',
         'winnow_malware_links',
         'winnow_phish_complete_url',
-        'winnow_spam_complete'
+        'winnow_spam_complete',
+        'db'
     ]))
     AV_DEFINITION_FILE_SUFFIXES = list(set(
-        AV_DEFINITION_FILE_SUFFIXES + ['cdb', 'db', 'fp', 'hdb', 'hsb', 'ign2', 'ldb', 'ndb', 'yara']
+        AV_DEFINITION_FILE_SUFFIXES + ['cdb', 'db', 'fp', 'hdb', 'hsb', 'ign2', 'ldb', 'ndb', 'yara', 'sqlite']
     ))
 
 SNS_ENDPOINT = os.getenv("SNS_ENDPOINT", None)
