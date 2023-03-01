@@ -143,7 +143,7 @@ def update_defs_from_freshclam(path, library_path=""):
     )
     output = fc_proc.communicate()[0].decode()
     print("freshclam output:")
-    print(json.dumps(output.split("/n")))
+    print(json.dumps(output.split("\n")))
     if fc_proc.returncode != 0:
         print("Unexpected exit code from freshclam: %s." % fc_proc.returncode)
     return fc_proc.returncode
