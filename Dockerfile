@@ -62,7 +62,7 @@ RUN yumdownloader -x \*i686 --archlist=x86_64 \
       /tmp/usr/sbin/clamd \
       /tmp/usr/bin/freshclam \
       /tmp/usr/lib64/* \
-      /usr/lib64/libpcre.so.1 \
+      /usr/lib64/libpcre.so* \
       /opt/app/bin/ \
     && rm -rf /tmp/usr
 
@@ -106,8 +106,7 @@ RUN pip3 install --requirement requirements-cli.txt --target /opt/app/cli \
 # Create the zip file
 COPY ./*.py /opt/app/
 COPY fangfrisch.conf /opt/app/fangfrisch.conf
-RUN cd /opt/app \
-    && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin cli \
+RUN zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin cli \
     && cd /opt/app/python_deps \
     && zip -r9 /opt/app/build/lambda.zip *
 
