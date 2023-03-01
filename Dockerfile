@@ -11,30 +11,37 @@ RUN mkdir -p \
 # Install packages
 RUN yum update -y \
     && amazon-linux-extras install epel -y \
-    && yum install -y cpio yum-utils tar.x86_64 gzip zip python3-pip shadow-utils.x86_64 \
+    && yum install -y \
+      cpio \
+      yum-utils \
+      tar.x86_64 \
+      gzip \
+      zip \
+      python3-pip \
+      shadow-utils.x86_64 \
     && yum clean all \
     && rm -rf /var/cache/yum
 
 # Download libraries we need to run in lambda
 WORKDIR /tmp
 RUN yumdownloader -x \*i686 --archlist=x86_64 \
-    clamav \
-    clamav-lib \
-    clamav-update \
-    clamav-scanner-systemd \
-    elfutils-libs \
-    json-c \
-    lz4 \
-    pcre2 \
-    systemd-libs \
-    libtool-ltdl \
-    libxml2 \
-    bzip2-libs \
-    xz-libs \
-    libprelude \
-    gnutls \
-    nettle
-RUN rpm2cpio clamav-0*.rpm | cpio -vimd \
+      clamav \
+      clamav-lib \
+      clamav-update \
+      clamav-scanner-systemd \
+      elfutils-libs \
+      json-c \
+      lz4 \
+      pcre2 \
+      systemd-libs \
+      libtool-ltdl \
+      libxml2 \
+      bzip2-libs \
+      xz-libs \
+      libprelude \
+      gnutls \
+      nettle \
+    && rpm2cpio clamav-0*.rpm | cpio -vimd \
     && rpm2cpio clamav-lib*.rpm | cpio -vimd \
     && rpm2cpio clamav-update*.rpm | cpio -vimd \
     && rpm2cpio json-c*.rpm | cpio -vimd \
@@ -49,17 +56,15 @@ RUN rpm2cpio clamav-0*.rpm | cpio -vimd \
     && rpm2cpio clamd-0*.rpm | cpio -idmv \
     && rpm2cpio elfutils-libs*.rpm | cpio -idmv \
     && rpm2cpio lz4*.rpm | cpio -idmv \
-    && rpm2cpio systemd-libs*.rpm | cpio -idmv
-
-
-# Copy over the binaries and libraries
-RUN cp -r \
-        /tmp/usr/bin/clamdscan \
-        /tmp/usr/sbin/clamd \
-        /tmp/usr/bin/freshclam \
-        /tmp/usr/lib64/* \
-        /usr/lib64/libpcre.so.1 \
-        /opt/app/bin/
+    && rpm2cpio systemd-libs*.rpm | cpio -idmv \
+    && cp -r \
+      /tmp/usr/bin/clamdscan \
+      /tmp/usr/sbin/clamd \
+      /tmp/usr/bin/freshclam \
+      /tmp/usr/lib64/* \
+      /usr/lib64/libpcre.so.1 \
+      /opt/app/bin/ \
+    && rm -rf /tmp/usr
 
 # Fix the freshclam.conf settings
 RUN echo "DatabaseMirror database.clamav.net" > /opt/app/bin/freshclam.conf \
@@ -96,8 +101,7 @@ RUN pip3 install --requirement requirements.txt --target /opt/app/python_deps \
 COPY requirements-cli.txt /opt/app/
 RUN pip3 install --requirement requirements-cli.txt --target /opt/app/cli \
     && rm -rf /root/.cache/pip \
-    && sed -i 's~/usr/bin/python3~/var/lang/bin/python3~g' \
-        /opt/app/cli/bin/fangfrisch
+    && sed -i 's~/usr/bin/python3~/var/lang/bin/python3~g' /opt/app/cli/bin/fangfrisch
 
 # Create the zip file
 COPY ./*.py /opt/app/
