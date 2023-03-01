@@ -8,25 +8,12 @@ RUN mkdir -p \
     /opt/app/python_deps \
     /opt/app/cli
 
-# Copy in the lambda source
-WORKDIR /opt/app
-COPY ./*.py /opt/app/
-COPY requirements.txt /opt/app/requirements.txt
-
 # Install packages
 RUN yum update -y \
     && amazon-linux-extras install epel -y \
-    && yum install -y cpio yum-utils tar.x86_64 gzip zip python3-pip shadow-utils.x86_64
-
-# This had --no-cache-dir, tracing through multiple tickets led to a problem in wheel
-RUN pip3 install --requirement requirements.txt --target /opt/app/python_deps \
-    && rm -rf /root/.cache/pip
-
-COPY requirements-cli.txt /opt/app/
-RUN pip3 install --requirement requirements-cli.txt --target /opt/app/cli \
-    && rm -rf /root/.cache/pip \
-    && sed -i 's~/usr/bin/python3~/var/lang/bin/python3~g' \
-        /opt/app/cli/bin/fangfrisch
+    && yum install -y cpio yum-utils tar.x86_64 gzip zip python3-pip shadow-utils.x86_64 \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 # Download libraries we need to run in lambda
 WORKDIR /tmp
@@ -98,7 +85,22 @@ RUN groupadd clamav \
 ENV LD_LIBRARY_PATH=/opt/app/bin
 RUN ldconfig
 
+# Copy in the lambda source
+WORKDIR /opt/app
+COPY requirements.txt /opt/app/requirements.txt
+
+# This had --no-cache-dir, tracing through multiple tickets led to a problem in wheel
+RUN pip3 install --requirement requirements.txt --target /opt/app/python_deps \
+    && rm -rf /root/.cache/pip
+
+COPY requirements-cli.txt /opt/app/
+RUN pip3 install --requirement requirements-cli.txt --target /opt/app/cli \
+    && rm -rf /root/.cache/pip \
+    && sed -i 's~/usr/bin/python3~/var/lang/bin/python3~g' \
+        /opt/app/cli/bin/fangfrisch
+
 # Create the zip file
+COPY ./*.py /opt/app/
 COPY fangfrisch.conf /opt/app/fangfrisch.conf
 RUN cd /opt/app \
     && zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py *.conf bin cli \
