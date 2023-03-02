@@ -29,6 +29,8 @@ from pytz import utc
 
 from common import AV_DEFINITION_FILE_PREFIXES
 from common import AV_DEFINITION_FILE_SUFFIXES
+from common import AV_EXTRA_VIRUS_DEFINITIONS
+from common import AV_DETINITION_EXTRA_FILES
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
@@ -80,6 +82,21 @@ def update_defs_from_s3(s3_client, bucket, prefix):
                     "s3_path": s3_path,
                     "local_path": local_path,
                 }
+
+    if AV_EXTRA_VIRUS_DEFINITIONS is True:
+        for filename in AV_DETINITION_EXTRA_FILES:
+            s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
+            local_path = os.path.join(AV_DEFINITION_PATH, filename)
+            s3_md5 = md5_from_s3_tags(s3_client, bucket, s3_path)
+            if os.path.exists(local_path) and md5_from_file(local_path) == s3_md5:
+                md5_matches.add(filename)
+                continue
+            if s3_md5:
+                to_download[filename] = {
+                    "s3_path": s3_path,
+                    "local_path": local_path,
+                }
+
     print("Not downloading the following older files in series:")
     print(json.dumps(list(older_files)))
     print("Not downloading the following files because local md5 matches s3:")

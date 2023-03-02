@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import errno
 import datetime
+import errno
 import os
 import os.path
 from distutils.util import strtobool
@@ -71,58 +71,56 @@ AV_DEFINITION_FILE_PREFIXES = [
 ]
 AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 
-if AV_EXTRA_VIRUS_DEFINITIONS is True:
-    AV_DEFINITION_FILE_PREFIXES = list(set(AV_DEFINITION_FILE_PREFIXES + [
-        'MiscreantPunch099-Low',
-        'badmacro',
-        'blurl',
-        'bofhland_cracked_URL',
-        'bofhland_malware_URL',
-        'bofhland_malware_attach',
-        'bofhland_phishing_URL',
-        'ditekshen',
-        'exexor99',
-        'foxhole_filename',
-        'foxhole_generic',
-        'foxhole_js',
-        'hackingteam',
-        'interserver256',
-        'interservertopline',
-        'junk',
-        'jurlbl',
-        'jurlbla',
-        'lott',
-        'malwarehash',
-        'miscreantpunch',
-        'phish',
-        'phishtank',
-        'porcupine',
-        'rfxn',
-        'rogue',
-        'scam',
-        'shell',
-        'shelter',
-        'spamattach',
-        'spamimg',
-        'spear',
-        'spearl',
-        'twinclams',
-        'twinwave',
-        'urlhaus',
-        'whitelist',
-        'winnow.attachments',
-        'winnow_bad_cw',
-        'winnow_extended_malware',
-        'winnow_extended_malware_links',
-        'winnow_malware',
-        'winnow_malware_links',
-        'winnow_phish_complete_url',
-        'winnow_spam_complete',
-        'db'
-    ]))
-    AV_DEFINITION_FILE_SUFFIXES = list(set(
-        AV_DEFINITION_FILE_SUFFIXES + ['cdb', 'db', 'fp', 'hdb', 'hsb', 'ign2', 'ldb', 'ndb', 'yara', 'sqlite']
-    ))
+AV_DETINITION_EXTRA_FILES = [
+    "MiscreantPunch099-Low.ldb",
+    "badmacro.ndb",
+    "blurl.ndb",
+    "bofhland_cracked_URL.ndb",
+    "bofhland_malware_URL.ndb",
+    "bofhland_malware_attach.hdb",
+    "bofhland_phishing_URL.ndb",
+    "ditekshen.ldb",
+    "exexor99.ldb",
+    "foxhole_filename.cdb",
+    "foxhole_generic.cdb",
+    "foxhole_js.cdb",
+    "foxhole_js.ndb",
+    "hackingteam.hsb",
+    "interserver256.hdb",
+    "interservertopline.db",
+    "junk.ndb",
+    "jurlbl.ndb",
+    "jurlbla.ndb",
+    "lott.ndb",
+    "malwarehash.hsb",
+    "miscreantpunch.hdb",
+    "phish.ndb",
+    "phishtank.ndb",
+    "porcupine.ndb",
+    "rfxn.hdb",
+    "rfxn.ndb",
+    "rfxn.yara",
+    "rogue.hdb",
+    "scam.ndb",
+    "shell.ldb",
+    "shelter.ldb",
+    "spamattach.hdb",
+    "spamimg.hdb",
+    "spear.ndb",
+    "spearl.ndb",
+    "twinclams.ldb",
+    "twinwave.ign2",
+    "urlhaus.ndb",
+    "whitelist.fp",
+    "winnow.attachments.hdb",
+    "winnow_bad_cw.hdb",
+    "winnow_extended_malware.hdb",
+    "winnow_extended_malware_links.ndb",
+    "winnow_malware.hdb",
+    "winnow_malware_links.ndb",
+    "winnow_phish_complete_url.ndb",
+    "winnow_spam_complete.ndb"
+]
 
 SNS_ENDPOINT = os.getenv("SNS_ENDPOINT", None)
 S3_ENDPOINT = os.getenv("S3_ENDPOINT", None)
