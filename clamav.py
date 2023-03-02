@@ -120,7 +120,9 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
     official_databases = [file_prefix + "." + file_suffix
                           for file_prefix in AV_DEFINITION_FILE_PREFIXES
                           for file_suffix in AV_DEFINITION_FILE_SUFFIXES]
-    all_databases = official_databases + AV_DEFINITION_EXTRA_FILES
+    all_databases = (official_databases + AV_DEFINITION_EXTRA_FILES
+                     if AV_EXTRA_VIRUS_DEFINITIONS is True
+                     else official_databases)
 
     for filename in all_databases:
         try:
