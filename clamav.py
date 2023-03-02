@@ -29,11 +29,11 @@ from pytz import utc
 
 from common import AV_DEFINITION_FILE_PREFIXES
 from common import AV_DEFINITION_FILE_SUFFIXES
-from common import AV_EXTRA_VIRUS_DEFINITIONS
-from common import AV_DETINITION_EXTRA_FILES
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
+from common import AV_DETINITION_EXTRA_FILES
+from common import AV_EXTRA_VIRUS_DEFINITIONS
 from common import AV_SIGNATURE_OK
 from common import AV_SIGNATURE_UNKNOWN
 from common import AV_STATUS_CLEAN
@@ -106,38 +106,66 @@ def update_defs_from_s3(s3_client, bucket, prefix):
     return to_download
 
 
+class Md5Matches(Exception):
+    pass
+
+
+class NoSuchFile(Exception):
+    pass
+
+
 def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
+    md5_matches = set()
     non_existent_files = set()
     for file_prefix in AV_DEFINITION_FILE_PREFIXES:
         for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
             filename = file_prefix + "." + file_suffix
-            local_file_path = os.path.join(local_path, filename)
-            if os.path.exists(local_file_path):
-                local_file_md5 = md5_from_file(local_file_path)
-                if local_file_md5 != md5_from_s3_tags(
-                    s3_client, bucket, os.path.join(prefix, filename)
-                ):
-                    print(
-                        "Uploading %s to s3://%s"
-                        % (local_file_path, os.path.join(bucket, prefix, filename))
-                    )
-                    s3 = boto3.resource("s3")
-                    s3_object = s3.Object(bucket, os.path.join(prefix, filename))
-                    s3_object.upload_file(os.path.join(local_path, filename))
-                    s3_client.put_object_tagging(
-                        Bucket=s3_object.bucket_name,
-                        Key=s3_object.key,
-                        Tagging={"TagSet": [{"Key": "md5", "Value": local_file_md5}]},
-                    )
-                else:
-                    print(
-                        "Not uploading %s because md5 on remote matches local."
-                        % filename
-                    )
-            else:
+            try:
+                upload_new_file_to_s3(bucket, filename, local_path, non_existent_files, prefix, s3_client)
+            except Md5Matches:
+                md5_matches.add(filename)
+            except NoSuchFile:
                 non_existent_files.add(filename)
-    print("The following files do not exist for upload:")
-    print(json.dumps(list(non_existent_files)))
+
+    for filename in AV_DETINITION_EXTRA_FILES:
+        try:
+            upload_new_file_to_s3(bucket, filename, local_path, non_existent_files, prefix, s3_client)
+        except Md5Matches:
+            md5_matches.add(filename)
+        except NoSuchFile:
+            non_existent_files.add(filename)
+
+    if non_existent_files:
+        print("The following files do not exist for upload:")
+        print(json.dumps(list(non_existent_files)))
+    if md5_matches:
+        print("The following files MD5 hashes matches those in S3:")
+        print(json.dumps(list(md5_matches)))
+
+
+def upload_new_file_to_s3(bucket, filename, local_path, non_existent_files, prefix, s3_client):
+    local_file_path = os.path.join(local_path, filename)
+
+    if not os.path.exists(local_file_path):
+        raise NoSuchFile
+
+    local_file_md5 = md5_from_file(local_file_path)
+
+    if local_file_md5 == md5_from_s3_tags(s3_client, bucket, os.path.join(prefix, filename)):
+        raise Md5Matches
+
+    print(
+        "Uploading %s to s3://%s"
+        % (local_file_path, os.path.join(bucket, prefix, filename))
+    )
+    s3 = boto3.resource("s3")
+    s3_object = s3.Object(bucket, os.path.join(prefix, filename))
+    s3_object.upload_file(os.path.join(local_path, filename))
+    s3_client.put_object_tagging(
+        Bucket=s3_object.bucket_name,
+        Key=s3_object.key,
+        Tagging={"TagSet": [{"Key": "md5", "Value": local_file_md5}]},
+    )
 
 
 def update_defs_from_freshclam(path, library_path=""):
