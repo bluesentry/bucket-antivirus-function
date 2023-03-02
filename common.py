@@ -71,7 +71,7 @@ AV_DEFINITION_FILE_PREFIXES = [
 ]
 AV_DEFINITION_FILE_SUFFIXES = ["cld", "cvd"]
 
-AV_DETINITION_EXTRA_FILES = [
+AV_DEFINITION_EXTRA_FILES = [
     "MiscreantPunch099-Low.ldb",
     "badmacro.ndb",
     "blurl.ndb",

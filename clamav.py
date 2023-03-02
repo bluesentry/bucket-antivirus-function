@@ -32,7 +32,7 @@ from common import AV_DEFINITION_FILE_SUFFIXES
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
-from common import AV_DETINITION_EXTRA_FILES
+from common import AV_DEFINITION_EXTRA_FILES
 from common import AV_EXTRA_VIRUS_DEFINITIONS
 from common import AV_SIGNATURE_OK
 from common import AV_SIGNATURE_UNKNOWN
@@ -84,7 +84,7 @@ def update_defs_from_s3(s3_client, bucket, prefix):
                 }
 
     if AV_EXTRA_VIRUS_DEFINITIONS is True:
-        for filename in AV_DETINITION_EXTRA_FILES:
+        for filename in AV_DEFINITION_EXTRA_FILES:
             s3_path = os.path.join(AV_DEFINITION_S3_PREFIX, filename)
             local_path = os.path.join(AV_DEFINITION_PATH, filename)
             s3_md5 = md5_from_s3_tags(s3_client, bucket, s3_path)
@@ -120,7 +120,7 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
     official_databases = [file_prefix + "." + file_suffix
                           for file_prefix in AV_DEFINITION_FILE_PREFIXES
                           for file_suffix in AV_DEFINITION_FILE_SUFFIXES]
-    all_databases = official_databases + AV_DETINITION_EXTRA_FILES
+    all_databases = official_databases + AV_DEFINITION_EXTRA_FILES
 
     for filename in all_databases:
         try:
