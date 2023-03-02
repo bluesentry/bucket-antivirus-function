@@ -117,19 +117,14 @@ class NoSuchFile(Exception):
 def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
     md5_matches = set()
     non_existent_files = set()
-    for file_prefix in AV_DEFINITION_FILE_PREFIXES:
-        for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
-            filename = file_prefix + "." + file_suffix
-            try:
-                upload_new_file_to_s3(bucket, filename, local_path, non_existent_files, prefix, s3_client)
-            except Md5Matches:
-                md5_matches.add(filename)
-            except NoSuchFile:
-                non_existent_files.add(filename)
+    official_databases = [file_prefix + "." + file_suffix
+                          for file_prefix in AV_DEFINITION_FILE_PREFIXES
+                          for file_suffix in AV_DEFINITION_FILE_SUFFIXES]
+    all_databases = official_databases + AV_DETINITION_EXTRA_FILES
 
-    for filename in AV_DETINITION_EXTRA_FILES:
+    for filename in all_databases:
         try:
-            upload_new_file_to_s3(bucket, filename, local_path, non_existent_files, prefix, s3_client)
+            upload_new_file_to_s3(bucket, filename, local_path, prefix, s3_client)
         except Md5Matches:
             md5_matches.add(filename)
         except NoSuchFile:
@@ -139,11 +134,11 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
         print("The following files do not exist for upload:")
         print(json.dumps(list(non_existent_files)))
     if md5_matches:
-        print("The following files MD5 hashes matches those in S3:")
+        print("The following MD5 hashes match those in S3:")
         print(json.dumps(list(md5_matches)))
 
 
-def upload_new_file_to_s3(bucket, filename, local_path, non_existent_files, prefix, s3_client):
+def upload_new_file_to_s3(bucket, filename, local_path, prefix, s3_client):
     local_file_path = os.path.join(local_path, filename)
 
     if not os.path.exists(local_file_path):
