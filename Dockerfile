@@ -1,3 +1,10 @@
+FROM public.ecr.aws/lambda/python:3.7 AS cli_deps
+
+COPY requirements-cli.txt requirements-cli.txt
+RUN mkdir -p /opt/app/cli \
+    && pip3 install --requirement requirements-cli.txt --target /opt/app/cli \
+    && rm -rf /root/.cache/pip
+
 FROM amazonlinux:2
 
 # Set up working directories
@@ -99,10 +106,8 @@ COPY requirements.txt /opt/app/requirements.txt
 RUN pip3 install --requirement requirements.txt --target /opt/app/python_deps \
     && rm -rf /root/.cache/pip
 
-COPY requirements-cli.txt /opt/app/
-RUN pip3 install --requirement requirements-cli.txt --target /opt/app/cli \
-    && rm -rf /root/.cache/pip \
-    && sed -i 's~/usr/bin/python3~/var/lang/bin/python3~g' /opt/app/cli/bin/fangfrisch
+# Copy fangfrisch CLI from lambda image
+COPY --from=cli_deps /opt/app/cli /opt/app/cli
 
 # Create the zip file
 COPY ./*.py /opt/app/
