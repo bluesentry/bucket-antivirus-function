@@ -81,31 +81,32 @@ can cause a continuous loop of scanning if improperly configured.
 Runtime configuration is accomplished using environment variables.  See
 the table below for reference.
 
-| Variable | Description | Default | Required |
-| --- | --- | --- | --- |
-| AV_DEFINITION_S3_BUCKET | Bucket containing antivirus definition files |  | Yes |
-| AV_DEFINITION_S3_PREFIX | Prefix for antivirus definition files | clamav_defs | No |
-| AV_DEFINITION_PATH | Path containing files at runtime | /tmp/clamav_defs | No |
-| AV_SCAN_START_SNS_ARN | SNS topic ARN to publish notification about start of scan | | No |
-| AV_SCAN_START_METADATA | The tag/metadata indicating the start of the scan | av-scan-start | No |
-| AV_SIGNATURE_METADATA | The tag/metadata name representing file's AV type | av-signature | No |
-| AV_STATUS_CLEAN | The value assigned to clean items inside of tags/metadata | CLEAN | No |
-| AV_STATUS_INFECTED | The value assigned to clean items inside of tags/metadata | INFECTED | No |
-| AV_STATUS_METADATA | The tag/metadata name representing file's AV status | av-status | No |
-| AV_STATUS_SNS_ARN | SNS topic ARN to publish scan results (optional) | | No |
-| AV_STATUS_SNS_PUBLISH_CLEAN | Publish AV_STATUS_CLEAN results to AV_STATUS_SNS_ARN | True | No |
-| AV_STATUS_SNS_PUBLISH_INFECTED | Publish AV_STATUS_INFECTED results to AV_STATUS_SNS_ARN | True | No |
-| AV_TIMESTAMP_METADATA | The tag/metadata name representing file's scan time | av-timestamp | No |
-| CLAMAVLIB_PATH | Path to ClamAV library files | ./bin | No |
-| CLAMSCAN_PATH | Path to ClamAV clamscan binary | ./bin/clamscan | No |
-| FRESHCLAM_PATH | Path to ClamAV freshclam binary | ./bin/freshclam | No |
-| DATADOG_API_KEY | API Key for pushing metrics to DataDog (optional) | | No |
-| AV_PROCESS_ORIGINAL_VERSION_ONLY | Controls that only original version of an S3 key is processed (if bucket versioning is enabled) | False | No |
-| AV_DELETE_INFECTED_FILES | Controls whether infected files should be automatically deleted | False | No |
-| EVENT_SOURCE | The source of antivirus scan event "S3" or "SNS" (optional) | S3 | No |
-| S3_ENDPOINT | The Endpoint to use when interacting wth S3 | None | No |
-| SNS_ENDPOINT | The Endpoint to use when interacting wth SNS | None | No |
-| LAMBDA_ENDPOINT | The Endpoint to use when interacting wth Lambda | None | No |
+| Variable                         | Description                                                                                     | Default          | Required |
+|----------------------------------|-------------------------------------------------------------------------------------------------|------------------|----------|
+| AV_DEFINITION_S3_BUCKET          | Bucket containing antivirus definition files                                                    |                  | Yes      |
+| AV_DEFINITION_S3_PREFIX          | Prefix for antivirus definition files                                                           | clamav_defs      | No       |
+| AV_DEFINITION_PATH               | Path containing virus definition files at runtime                                               | /tmp/clamav_defs | No       |
+| AV_SCAN_START_SNS_ARN            | SNS topic ARN to publish notification about start of scan                                       |                  | No       |
+| AV_SCAN_START_METADATA           | The tag/metadata indicating the start of the scan                                               | av-scan-start    | No       |
+| AV_SIGNATURE_METADATA            | The tag/metadata name representing file's AV type                                               | av-signature     | No       |
+| AV_STATUS_CLEAN                  | The value assigned to clean items inside of tags/metadata                                       | CLEAN            | No       |
+| AV_STATUS_INFECTED               | The value assigned to clean items inside of tags/metadata                                       | INFECTED         | No       |
+| AV_STATUS_METADATA               | The tag/metadata name representing file's AV status                                             | av-status        | No       |
+| AV_STATUS_SNS_ARN                | SNS topic ARN to publish scan results (optional)                                                |                  | No       |
+| AV_STATUS_SNS_PUBLISH_CLEAN      | Publish AV_STATUS_CLEAN results to AV_STATUS_SNS_ARN                                            | True             | No       |
+| AV_STATUS_SNS_PUBLISH_INFECTED   | Publish AV_STATUS_INFECTED results to AV_STATUS_SNS_ARN                                         | True             | No       |
+| AV_TIMESTAMP_METADATA            | The tag/metadata name representing file's scan time                                             | av-timestamp     | No       |
+| AV_EXTRA_VIRUS_DEFINITIONS       | Uses fangfrisch for extra antivirus definitions                                                 | False            | No       |
+| CLAMAVLIB_PATH                   | Path to ClamAV library files                                                                    | ./bin            | No       |
+| CLAMDSCAN_PATH                   | Path to ClamAV clamdscan binary                                                                 | ./bin/clamdscan  | No       |
+| FRESHCLAM_PATH                   | Path to ClamAV freshclam binary                                                                 | ./bin/freshclam  | No       |
+| DATADOG_API_KEY                  | API Key for pushing metrics to DataDog (optional)                                               |                  | No       |
+| AV_PROCESS_ORIGINAL_VERSION_ONLY | Controls that only original version of an S3 key is processed (if bucket versioning is enabled) | False            | No       |
+| AV_DELETE_INFECTED_FILES         | Controls whether infected files should be automatically deleted                                 | False            | No       |
+| EVENT_SOURCE                     | The source of antivirus scan event "S3" or "SNS" (optional)                                     | S3               | No       |
+| S3_ENDPOINT                      | The Endpoint to use when interacting wth S3                                                     | None             | No       |
+| SNS_ENDPOINT                     | The Endpoint to use when interacting wth SNS                                                    | None             | No       |
+| LAMBDA_ENDPOINT                  | The Endpoint to use when interacting wth Lambda                                                 | None             | No       |
 
 ## S3 Bucket Policy Examples
 

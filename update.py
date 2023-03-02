@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import os
+import subprocess
 
 import boto3
 
@@ -21,6 +22,7 @@ import clamav
 from common import AV_DEFINITION_PATH
 from common import AV_DEFINITION_S3_BUCKET
 from common import AV_DEFINITION_S3_PREFIX
+from common import AV_EXTRA_VIRUS_DEFINITIONS
 from common import CLAMAVLIB_PATH
 from common import S3_ENDPOINT
 from common import get_timestamp
@@ -42,7 +44,26 @@ def lambda_handler(event, context):
         s3.Bucket(AV_DEFINITION_S3_BUCKET).download_file(s3_path, local_path)
         print("Downloading definition file %s complete!" % (local_path))
 
-    clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
+    if clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH) != 0:
+        return 1
+
+    if AV_EXTRA_VIRUS_DEFINITIONS is True:
+        env_pythonpath = os.environ.copy()
+        env_pythonpath["PYTHONPATH"] = os.path.join(env_pythonpath["LAMBDA_TASK_ROOT"], "cli")
+
+        fangfrisch_conf_filepath = os.path.join(os.environ['LAMBDA_TASK_ROOT'], 'fangfrisch.conf')
+        fangfrisch_base_command = f"cli/bin/fangfrisch --conf /tmp/fangfrisch.conf"
+        subprocess.run(f"cp {fangfrisch_conf_filepath} /tmp/fangfrisch.conf &&"
+                       f"sed -i 's~AV_DEFINITION_PATH~{AV_DEFINITION_PATH}~g' /tmp/fangfrisch.conf",
+                       shell=True,
+                       check=True)
+        print("running fangfrisch refresh...")
+        subprocess.run(f"{fangfrisch_base_command} initdb", shell=True, env=env_pythonpath)
+        subprocess.run(f"{fangfrisch_base_command} refresh", shell=True, env=env_pythonpath, check=True)
+
+    else:
+        print("Skip downloading extra virus definitions with Fangfrisch")
+
     # If main.cvd gets updated (very rare), we will need to force freshclam
     # to download the compressed version to keep file sizes down.
     # The existence of main.cud is the trigger to know this has happened.
