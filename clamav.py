@@ -97,10 +97,12 @@ def update_defs_from_s3(s3_client, bucket, prefix):
                     "local_path": local_path,
                 }
 
-    print("Not downloading the following older files in series:")
-    print(json.dumps(list(older_files)))
-    print("Not downloading the following files because local md5 matches s3:")
-    print(json.dumps(list(md5_matches)))
+    if older_files:
+        print("Not downloading the following older files in series:")
+        print(json.dumps(list(older_files)))
+    if md5_matches:
+        print("Not downloading the following files because local md5 matches s3:")
+        print(json.dumps(list(md5_matches)))
     return to_download
 
 
