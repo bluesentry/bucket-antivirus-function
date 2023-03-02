@@ -114,7 +114,7 @@ def delete_s3_object(s3_object):
             % (s3_object.bucket_name, s3_object.key)
         )
     else:
-        print("Infected file deleted: %s.%s" % (s3_object.bucket_name, s3_object.key))
+        print("Infected file deleted: %s" % os.path.join("s3://", s3_object.bucket_name, s3_object.key))
 
 
 def set_av_metadata(s3_object, scan_result, scan_signature, timestamp):
