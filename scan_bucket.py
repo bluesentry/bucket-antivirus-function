@@ -28,7 +28,6 @@ from common import S3_ENDPOINT
 
 # Get all objects in an S3 bucket that have not been previously scanned
 def get_objects(s3_client, s3_bucket_name):
-
     s3_object_list = []
 
     s3_list_objects_result = {"IsTruncated": True}
@@ -63,7 +62,6 @@ def object_previously_scanned(s3_client, s3_bucket_name, key_name):
 # Scan an S3 object for viruses by invoking the lambda function
 # Skip any objects that have already been scanned
 def scan_object(lambda_client, lambda_function_name, s3_bucket_name, key_name):
-
     print("Scanning: {}/{}".format(s3_bucket_name, key_name))
     s3_event = format_s3_event(s3_bucket_name, key_name)
     lambda_invoke_result = lambda_client.invoke(

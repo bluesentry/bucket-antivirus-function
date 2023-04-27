@@ -129,7 +129,6 @@ class TestDisplayInfected(unittest.TestCase):
             self.assertEqual(s3_object_list, expected_object_list)
 
     def test_get_objects_and_sigs_clean(self):
-
         get_object_tagging_response = {
             "VersionId": "abc123",
             "TagSet": [{"Key": AV_STATUS_METADATA, "Value": AV_STATUS_CLEAN}],
@@ -150,7 +149,6 @@ class TestDisplayInfected(unittest.TestCase):
             self.assertEqual(s3_object_list, expected_object_list)
 
     def test_get_objects_and_sigs_unscanned(self):
-
         get_object_tagging_response = {"VersionId": "abc123", "TagSet": []}
         get_object_tagging_expected_params = {
             "Bucket": self.s3_bucket_name,
