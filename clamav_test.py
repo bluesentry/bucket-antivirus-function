@@ -156,7 +156,6 @@ class TestClamAV(unittest.TestCase):
             self.assertEquals(expected_md5_hash, md5_hash)
 
     def test_time_from_s3(self):
-
         expected_s3_time = datetime.datetime(2019, 1, 1)
 
         s3_stubber = Stubber(self.s3_client)

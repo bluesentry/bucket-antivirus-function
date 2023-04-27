@@ -56,7 +56,6 @@ class TestDisplayInfected(unittest.TestCase):
         )
 
     def test_get_objects_previously_scanned_status(self):
-
         get_object_tagging_response = {
             "VersionId": "abc123",
             "TagSet": [{"Key": AV_STATUS_METADATA, "Value": AV_STATUS_INFECTED}],
@@ -77,7 +76,6 @@ class TestDisplayInfected(unittest.TestCase):
             self.assertEqual(s3_object_list, expected_object_list)
 
     def test_get_objects_previously_scanned_timestamp(self):
-
         get_object_tagging_response = {
             "VersionId": "abc123",
             "TagSet": [{"Key": AV_TIMESTAMP_METADATA, "Value": get_timestamp()}],
@@ -98,7 +96,6 @@ class TestDisplayInfected(unittest.TestCase):
             self.assertEqual(s3_object_list, expected_object_list)
 
     def test_get_objects_unscanned(self):
-
         get_object_tagging_response = {"VersionId": "abc123", "TagSet": []}
         get_object_tagging_expected_params = {
             "Bucket": self.s3_bucket_name,
