@@ -76,7 +76,7 @@ def update_defs_from_s3(s3_client, bucket, prefix):
     return to_download
 
 
-def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
+def upload_defs_to_s3(s3_client, bucket, prefix, local_path, extra_args):
     for file_prefix in AV_DEFINITION_FILE_PREFIXES:
         for file_suffix in AV_DEFINITION_FILE_SUFFIXES:
             filename = file_prefix + "." + file_suffix
@@ -92,7 +92,9 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path):
                     )
                     s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
                     s3_object = s3.Object(bucket, os.path.join(prefix, filename))
-                    s3_object.upload_file(os.path.join(local_path, filename))
+                    s3_object.upload_file(
+                        os.path.join(local_path, filename), ExtraArgs=extra_args
+                    )
                     s3_client.put_object_tagging(
                         Bucket=s3_object.bucket_name,
                         Key=s3_object.key,

@@ -52,6 +52,10 @@ def lambda_handler(event, context):
             os.remove(os.path.join(AV_DEFINITION_PATH, "main.cvd"))
         clamav.update_defs_from_freshclam(AV_DEFINITION_PATH, CLAMAVLIB_PATH)
     clamav.upload_defs_to_s3(
-        s3_client, AV_DEFINITION_S3_BUCKET, AV_DEFINITION_S3_PREFIX, AV_DEFINITION_PATH
+        s3_client,
+        AV_DEFINITION_S3_BUCKET,
+        AV_DEFINITION_S3_PREFIX,
+        AV_DEFINITION_PATH,
+        extra_args={"ServerSideEncryption": "AES256"},
     )
     print("Script finished at %s\n" % get_timestamp())
