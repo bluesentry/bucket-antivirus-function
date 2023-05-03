@@ -92,7 +92,9 @@ def upload_defs_to_s3(s3_client, bucket, prefix, local_path, extra_args):
                     )
                     s3 = boto3.resource("s3", endpoint_url=S3_ENDPOINT)
                     s3_object = s3.Object(bucket, os.path.join(prefix, filename))
-                    s3_object.upload_file(os.path.join(local_path, filename), ExtraArgs=extra_args)
+                    s3_object.upload_file(
+                        os.path.join(local_path, filename), ExtraArgs=extra_args
+                    )
                     s3_client.put_object_tagging(
                         Bucket=s3_object.bucket_name,
                         Key=s3_object.key,
