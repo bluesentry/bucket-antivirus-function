@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "bucket-antivirus-function"
+version = "0.1.0"
+description = ""
+authors = ["ralren <ren@truss.works>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+certifi = "^2018.11.29"
+chardet = "^3.0.4"
+decorator = "^4.3"
+idna = "^2.8"
+requests = "^2.21"
+simplejson = "^3.16"
+urllib3 = "^1.24.2"
+pytz = "^2019.3"
+pytest = "^7.3.1"
+datadog = "^0.45.0"
+
+[tool.poetry.group.dev.dependencies]
+mock = "^5.0.2"
+coverage = "^7.2.5"
+nose = "^1.3.7"
+botocore = "^1.29.126"
+boto3 = "^1.26.126"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

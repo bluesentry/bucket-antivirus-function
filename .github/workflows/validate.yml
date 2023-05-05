@@ -10,4 +10,4 @@ on:
 
 jobs:
   validate:
-    uses: trussworks/shared-actions/.github/workflows/validate.yml@main
+    uses: trussworks/shared-actions/.github/workflows/validate-python.yml@main
