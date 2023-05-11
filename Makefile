@@ -36,7 +36,7 @@ clean:  ## Clean build artifacts
 archive: clean  ## Create the archive for AWS lambda
 	docker build -t bucket-antivirus-function:latest .
 	mkdir -p ./build/
-	docker run -v $(current_dir)/build:/opt/mount --rm --entrypoint cp bucket-antivirus-function:latest /opt/app/build/lambda.zip /opt/mount/lambda.zip
+	docker run -v $(current_dir)/build:/opt/mount --rm --entrypoint cp bucket-antivirus-function:latest /opt/app/build/anti-virus.zip /opt/mount/anti-virus.zip
 
 .PHONY: pre_commit_install  ## Ensure that pre-commit hook is installed and kept up to date
 pre_commit_install: .git/hooks/pre-commit ## Ensure pre-commit is installed
@@ -58,9 +58,9 @@ coverage: clean  ## Run python tests with coverage
 	nosetests --with-coverage
 
 .PHONY: scan
-scan: ./build/lambda.zip ## Run scan function locally
+scan: ./build/anti-virus.zip ## Run scan function locally
 	scripts/run-scan-lambda $(TEST_BUCKET) $(TEST_KEY)
 
 .PHONY: update
-update: ./build/lambda.zip ## Run update function locally
+update: ./build/anti-virus.zip ## Run update function locally
 	scripts/run-update-lambda
