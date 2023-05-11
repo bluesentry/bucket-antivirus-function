@@ -60,9 +60,9 @@ RUN ldconfig
 
 # Create the zip file
 WORKDIR /opt/app
-RUN zip -r9 --exclude="*test*" /opt/app/build/lambda.zip *.py bin
+RUN zip -r9 --exclude="*test*" /opt/app/build/anti-virus.zip *.py bin
 
 WORKDIR /usr/local/lib/python3.7/site-packages
-RUN zip -r9 /opt/app/build/lambda.zip *
+RUN zip -r9 /opt/app/build/anti-virus.zip *
 
 WORKDIR /opt/app

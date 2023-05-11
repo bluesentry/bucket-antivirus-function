@@ -7,7 +7,7 @@ set -eu -o pipefail
 #
 
 rm -rf tmp/
-unzip -qq -d ./tmp build/lambda.zip
+unzip -qq -d ./tmp build/anti-virus.zip
 
 NAME="antivirus-update"
 

@@ -36,7 +36,7 @@ or INFECTED, along with the date and time of the scan.
 
 To build the archive to upload to AWS Lambda, run `make all`.  The build process is completed using
 the [amazonlinux](https://hub.docker.com/_/amazonlinux/) [Docker](https://www.docker.com)
- image.  The resulting archive will be built at `build/lambda.zip`.  This file will be
+ image.  The resulting archive will be built at `build/anti-virus.zip`.  This file will be
  uploaded to AWS for both Lambda functions below.
 
 ### Create Relevant AWS Infra via CloudFormation
@@ -55,7 +55,7 @@ Running CloudFormation, it will ask for 2 inputs for this stack:
 
 After the Stack has successfully created, there are 3 manual processes that still have to be done:
 
-1. Upload the `build/lambda.zip` file that was created by running `make all` to the `avUpdateDefinitions` and `avScanner` Lambda functions via the Lambda Console.
+1. Upload the `build/anti-virus.zip` file that was created by running `make all` to the `avUpdateDefinitions` and `avScanner` Lambda functions via the Lambda Console.
 2. To trigger the Scanner function on new S3 objects, go to the `avScanner` Lambda function console, navigate to `Configuration` -> `Trigger` -> `Add Trigger` -> Search for S3, and choose your bucket(s) and select `All object create events`, then click `Add`. _Note - if you chose more than 1 bucket as the source, or chose a different bucket than the Source Bucket in the CloudFormation parameter, you will have to also edit the IAM Role to reflect these new buckets (see "Adding or Changing Source Buckets")_
 3. Navigate to the `avUpdateDefinitions` Lambda function and manually trigger the function to get the initial Clam definitions in the bucket (instead of waiting for the 3 hour trigger to happen). Do this by clicking the `Test` section, and then clicking the orange `test` button. The function should take a few seconds to execute, and when finished you should see the `clam_defs` in the `av-definitions` S3 bucket.
 
