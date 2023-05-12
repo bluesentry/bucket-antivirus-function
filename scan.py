@@ -180,7 +180,6 @@ def sns_scan_results(
     message = {
         "bucket": s3_object.bucket_name,
         "key": s3_object.key,
-        "version": s3_object.version_id,
         AV_SIGNATURE_METADATA: scan_signature,
         AV_STATUS_METADATA: scan_result,
         AV_TIMESTAMP_METADATA: get_timestamp(),

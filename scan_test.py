@@ -371,7 +371,6 @@ class TestScan(unittest.TestCase):
         message = {
             "bucket": self.s3_bucket_name,
             "key": self.s3_key_name,
-            "version": version_id,
             AV_SIGNATURE_METADATA: scan_signature,
             AV_STATUS_METADATA: scan_result,
             AV_TIMESTAMP_METADATA: timestamp,
