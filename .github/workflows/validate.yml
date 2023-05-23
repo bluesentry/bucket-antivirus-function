@@ -10,4 +10,12 @@ on:
 
 jobs:
   validate:
-    uses: trussworks/shared-actions/.github/workflows/validate-python.yml@main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: trussworks/shared-actions/.github/workflows/validate-python.yml@main
+
+      - name: Run nosetests
+        run: nosetests
+
+      - name: Test build
+        run: make archive
