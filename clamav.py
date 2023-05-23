@@ -17,7 +17,6 @@ import datetime
 import hashlib
 import os
 import pwd
-import re
 import subprocess
 
 import boto3
@@ -37,14 +36,34 @@ from common import CLAMSCAN_PATH
 from common import FRESHCLAM_PATH
 from common import create_dir
 
-
 RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"
 
 
 def current_library_search_path():
-    ld_verbose = subprocess.check_output(["ld", "--verbose"]).decode("utf-8")
-    rd_ld = re.compile(RE_SEARCH_DIR)
-    return rd_ld.findall(ld_verbose)
+    common_library_paths = [
+        "/lib",
+        "/usr/lib",
+        "/usr/local/lib",
+        "/lib64",
+        "/usr/local/lib64",
+        "/usr/lib64",
+        "/usr/x86_64-amazon-linux/lib",
+        "/usr/x86_64-amazon-linux/lib64",
+        "/usr/x86_64-redhat-linux/lib",
+        "/usr/x86_64-redhat-linux/lib64",
+    ]
+    existing_library_paths = []
+
+    for path in common_library_paths:
+        if os.path.exists(path):
+            existing_library_paths.append(path)
+
+    # get the LD_LIBRARY_PATH directories if set
+    ld_library_path = os.environ.get("LD_LIBRARY_PATH")
+    if ld_library_path:
+        existing_library_paths.extend(ld_library_path.split(":"))
+
+    return existing_library_paths
 
 
 def update_defs_from_s3(s3_client, bucket, prefix):
