@@ -22,7 +22,9 @@ WORKDIR /tmp
 RUN yumdownloader -x \*i686 --archlist=x86_64,aarch64 \
         clamav clamav-lib clamav-update json-c \
         pcre2 libtool-ltdl libxml2 bzip2-libs \
-        xz-libs libprelude gnutls nettle
+        xz-libs libprelude gnutls nettle libcurl \
+        libnghttp2 libidn2 libssh2 openldap \
+        libunistring cyrus-sasl-lib nss pcre
 
 RUN rpm2cpio clamav-0*.rpm | cpio -vimd && \
     rpm2cpio clamav-lib*.rpm | cpio -vimd && \
@@ -35,14 +37,22 @@ RUN rpm2cpio clamav-0*.rpm | cpio -vimd && \
     rpm2cpio xz-libs*.rpm | cpio -vimd && \
     rpm2cpio libprelude*.rpm | cpio -vimd && \
     rpm2cpio gnutls*.rpm | cpio -vimd && \
-    rpm2cpio nettle*.rpm | cpio -vimd
-
+    rpm2cpio nettle*.rpm | cpio -vimd && \
+    rpm2cpio libcurl*.rpm | cpio -vimd && \
+    rpm2cpio libnghttp2*.rpm | cpio -vimd && \
+    rpm2cpio libidn2*.rpm | cpio -vimd && \
+    rpm2cpio libssh2*.rpm | cpio -vimd && \
+    rpm2cpio openldap*.rpm | cpio -vimd && \
+    rpm2cpio libunistring*.rpm | cpio -vimd && \
+    rpm2cpio cyrus-sasl-lib-2*.rpm | cpio -vimd && \
+    rpm2cpio nss*.rpm | cpio -vimd && \
+    rpm2cpio pcre*.rpm | cpio -vimd
 
 # Copy over the binaries and libraries
-RUN cp /tmp/usr/bin/clamscan \
+RUN cp -rf /tmp/usr/bin/clamscan \
        /tmp/usr/bin/freshclam \
        /tmp/usr/lib64/* \
-       /usr/lib64/libpcre.so.1 \
+#       /usr/lib64/libpcre.so.1 \
        /opt/app/bin/
 
 # Fix the freshclam.conf settings
