@@ -36,6 +36,8 @@ from common import CLAMSCAN_PATH
 from common import FRESHCLAM_PATH
 from common import create_dir
 
+RE_SEARCH_DIR = r"SEARCH_DIR\(\"=([A-z0-9\/\-_]*)\"\)"
+
 
 def current_library_search_path():
     common_library_paths = [
