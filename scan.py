@@ -273,4 +273,4 @@ def lambda_handler(event, context):
 
 
 def str_to_bool(s):
-    return bool(strtobool(str(s)))
+    return bool(strtobool(str(s))
