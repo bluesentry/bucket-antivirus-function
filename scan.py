@@ -271,6 +271,3 @@ def lambda_handler(event, context):
     stop_scan_time = get_timestamp()
     print("Script finished at %s\n" % stop_scan_time)
 
-
-def str_to_bool(s):
-    return bool(strtobool(str(s)))
